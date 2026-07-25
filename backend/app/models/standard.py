@@ -6,24 +6,26 @@ KEOS-S1-M1
 from datetime import date
 
 from sqlalchemy import Boolean, Date, Integer, String, Text
+
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base
+from app.db.base import (
+    Base,
+    TimestampMixin,
+    UUIDPrimaryKeyMixin,
+)
 
 
-class Standard(Base):
+class Standard(
+    UUIDPrimaryKeyMixin,
+    TimestampMixin,
+    Base,
+):
     """
-    Master registry of engineering standards used throughout
-    KES Electrical OS.
+    Master engineering standards registry.
     """
 
     __tablename__ = "standards"
-
-    id: Mapped[int] = mapped_column(
-        Integer,
-        primary_key=True,
-        index=True,
-    )
 
     code: Mapped[str] = mapped_column(
         String(50),
@@ -49,19 +51,16 @@ class Standard(Base):
         index=True,
     )
 
-    edition: Mapped[str] = mapped_column(
+    edition: Mapped[str | None] = mapped_column(
         String(50),
-        nullable=True,
     )
 
     publication_year: Mapped[int | None] = mapped_column(
         Integer,
-        nullable=True,
     )
 
     country: Mapped[str | None] = mapped_column(
         String(100),
-        nullable=True,
     )
 
     status: Mapped[str] = mapped_column(
@@ -72,22 +71,18 @@ class Standard(Base):
 
     effective_date: Mapped[date | None] = mapped_column(
         Date,
-        nullable=True,
     )
 
     withdrawn_date: Mapped[date | None] = mapped_column(
         Date,
-        nullable=True,
     )
 
     description: Mapped[str | None] = mapped_column(
         Text,
-        nullable=True,
     )
 
     remarks: Mapped[str | None] = mapped_column(
         Text,
-        nullable=True,
     )
 
     is_active: Mapped[bool] = mapped_column(
@@ -98,7 +93,6 @@ class Standard(Base):
 
     def __repr__(self) -> str:
         return (
-            f"<Standard("
-            f"code='{self.code}', "
+            f"<Standard(code='{self.code}', "
             f"organization='{self.organization}')>"
         )
