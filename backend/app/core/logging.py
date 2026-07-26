@@ -1,104 +1,23 @@
 """
-Standards Registry Model
-KEOS-S1-M1
+Application logging configuration.
 """
 
-from datetime import date
-
-from sqlalchemy import Boolean, Date, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base
+import logging
+import sys
 
 
-class Standard(Base):
-    """
-    Master registry of engineering standards used throughout
-    KES Electrical OS.
-    """
+def configure_logging() -> None:
+    """Configure application logging."""
 
-    __tablename__ = "standards"
-
-    id: Mapped[int] = mapped_column(
-        Integer,
-        primary_key=True,
-        index=True,
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+        ],
+        force=True,
     )
 
-    code: Mapped[str] = mapped_column(
-        String(50),
-        unique=True,
-        nullable=False,
-        index=True,
-    )
-
-    title: Mapped[str] = mapped_column(
-        String(300),
-        nullable=False,
-    )
-
-    organization: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        index=True,
-    )
-
-    category: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-        index=True,
-    )
-
-    edition: Mapped[str] = mapped_column(
-        String(50),
-        nullable=True,
-    )
-
-    publication_year: Mapped[int | None] = mapped_column(
-        Integer,
-        nullable=True,
-    )
-
-    country: Mapped[str | None] = mapped_column(
-        String(100),
-        nullable=True,
-    )
-
-    status: Mapped[str] = mapped_column(
-        String(30),
-        default="ACTIVE",
-        nullable=False,
-    )
-
-    effective_date: Mapped[date | None] = mapped_column(
-        Date,
-        nullable=True,
-    )
-
-    withdrawn_date: Mapped[date | None] = mapped_column(
-        Date,
-        nullable=True,
-    )
-
-    description: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-    )
-
-    remarks: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-    )
-
-    is_active: Mapped[bool] = mapped_column(
-        Boolean,
-        default=True,
-        nullable=False,
-    )
-
-    def __repr__(self) -> str:
-        return (
-            f"<Standard("
-            f"code='{self.code}', "
-            f"organization='{self.organization}')>"
-        )
+    logging.getLogger("uvicorn").setLevel(logging.INFO)
+    logging.getLogger("uvicorn.error").setLevel(logging.INFO)
+    logging.getLogger("uvicorn.access").setLevel(logging.INFO)

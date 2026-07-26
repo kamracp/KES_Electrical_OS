@@ -4,6 +4,8 @@ Central API router for KES Electrical OS.
 
 from fastapi import APIRouter
 
+from app.api.v1.unit import router as unit_router
+
 api_router = APIRouter()
 
 
@@ -21,3 +23,6 @@ async def version():
         "application": "KES Electrical OS API",
         "version": "0.1.0",
     }
+
+
+api_router.include_router(unit_router)
