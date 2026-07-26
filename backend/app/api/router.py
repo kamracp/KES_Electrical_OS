@@ -1,24 +1,36 @@
 """
-Central API router for KES Electrical OS.
+Main API router.
 """
 
 from fastapi import APIRouter
 
+from app.api.v1.standard import router as standard_router
 from app.api.v1.unit import router as unit_router
+
 
 api_router = APIRouter()
 
 
-@api_router.get("/health", tags=["System"])
-async def health():
+@api_router.get(
+    "/health",
+    tags=["System"],
+)
+async def health_check():
+    """Return application health status."""
+
     return {
         "status": "healthy",
-        "service": "KES Electrical OS API",
+        "application": "KES Electrical OS API",
     }
 
 
-@api_router.get("/version", tags=["System"])
+@api_router.get(
+    "/version",
+    tags=["System"],
+)
 async def version():
+    """Return application version information."""
+
     return {
         "application": "KES Electrical OS API",
         "version": "0.1.0",
@@ -26,3 +38,4 @@ async def version():
 
 
 api_router.include_router(unit_router)
+api_router.include_router(standard_router)

@@ -1,6 +1,6 @@
 """
-Repository for Standards Registry.
-KEOS-S1-M1
+Repository for Engineering Standards.
+KESE-S1-M3
 """
 
 from uuid import UUID
@@ -12,46 +12,66 @@ from app.models.standard import Standard
 
 
 class StandardRepository:
-    """Repository for Standard database operations."""
+    """Repository for Engineering Standard database operations."""
 
-    def __init__(self, session: AsyncSession):
-        self._session = session
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
     async def create(self, standard: Standard) -> Standard:
-        """Create a new standard."""
-        self._session.add(standard)
-        await self._session.commit()
-        await self._session.refresh(standard)
+        """Persist and return a new Engineering Standard."""
+
+        self.db.add(standard)
+        await self.db.commit()
+        await self.db.refresh(standard)
+
         return standard
 
-    async def get(self, standard_id: UUID) -> Standard | None:
-        """Get a standard by UUID."""
-        result = await self._session.execute(
-            select(Standard).where(Standard.id == standard_id)
-        )
-        return result.scalar_one_or_none()
+    async def get_by_id(
+        self,
+        standard_id: UUID,
+    ) -> Standard | None:
+        """Return an Engineering Standard by UUID."""
 
-    async def get_by_code(self, code: str) -> Standard | None:
-        """Get a standard by code."""
-        result = await self._session.execute(
-            select(Standard).where(Standard.code == code)
-        )
+        return await self.db.get(Standard, standard_id)
+
+    async def get_by_code(
+        self,
+        code: str,
+    ) -> Standard | None:
+        """Return an Engineering Standard by its unique code."""
+
+        stmt = select(Standard).where(Standard.code == code)
+        result = await self.db.execute(stmt)
+
         return result.scalar_one_or_none()
 
     async def list(self) -> list[Standard]:
-        """List all standards."""
-        result = await self._session.execute(
-            select(Standard).order_by(Standard.code)
+        """Return all Engineering Standards in a stable order."""
+
+        stmt = select(Standard).order_by(
+            Standard.issuing_organization,
+            Standard.code,
         )
+        result = await self.db.execute(stmt)
+
         return list(result.scalars().all())
 
-    async def update(self, standard: Standard) -> Standard:
-        """Persist changes to a standard."""
-        await self._session.commit()
-        await self._session.refresh(standard)
+    async def update(
+        self,
+        standard: Standard,
+    ) -> Standard:
+        """Commit changes made to an Engineering Standard."""
+
+        await self.db.commit()
+        await self.db.refresh(standard)
+
         return standard
 
-    async def delete(self, standard: Standard) -> None:
-        """Delete a standard."""
-        await self._session.delete(standard)
-        await self._session.commit()
+    async def delete(
+        self,
+        standard: Standard,
+    ) -> None:
+        """Delete an Engineering Standard."""
+
+        await self.db.delete(standard)
+        await self.db.commit()
