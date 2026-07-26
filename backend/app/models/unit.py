@@ -1,9 +1,17 @@
 """
 Engineering Units Model.
-KESE-S1-M2
+KESE-S1-M4
 """
 
-from sqlalchemy import Boolean, Float, String, Text
+from decimal import Decimal
+
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Numeric,
+    String,
+    Text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import (
@@ -20,9 +28,19 @@ class Unit(
 ):
     """
     Engineering Units master library.
+
+    Conversion factors are stored as exact decimal values to prevent
+    binary floating-point drift in engineering calculations.
     """
 
     __tablename__ = "units"
+
+    __table_args__ = (
+        CheckConstraint(
+            "conversion_factor > 0",
+            name="conversion_factor_positive",
+        ),
+    )
 
     code: Mapped[str] = mapped_column(
         String(20),
@@ -59,9 +77,13 @@ class Unit(
         nullable=False,
     )
 
-    conversion_factor: Mapped[float] = mapped_column(
-        Float,
-        default=1.0,
+    conversion_factor: Mapped[Decimal] = mapped_column(
+        Numeric(
+            precision=38,
+            scale=18,
+            asdecimal=True,
+        ),
+        default=Decimal("1"),
         nullable=False,
     )
 
@@ -88,5 +110,6 @@ class Unit(
     def __repr__(self) -> str:
         return (
             f"<Unit(code='{self.code}', "
-            f"quantity='{self.quantity}')>"
+            f"quantity='{self.quantity}', "
+            f"conversion_factor='{self.conversion_factor}')>"
         )
