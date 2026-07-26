@@ -4,9 +4,9 @@ Main API router.
 
 from fastapi import APIRouter
 
+from app.api.v1.load_demand import router as load_demand_router
 from app.api.v1.standard import router as standard_router
 from app.api.v1.unit import router as unit_router
-
 
 api_router = APIRouter()
 
@@ -39,3 +39,4 @@ async def version():
 
 api_router.include_router(unit_router)
 api_router.include_router(standard_router)
+api_router.include_router(load_demand_router)

@@ -51,8 +51,8 @@ class TimestampMixin:
 
 
 __all__ = [
-    "Base",
     "NAMING_CONVENTION",
+    "Base",
     "TimestampMixin",
     "UUIDPrimaryKeyMixin",
     "metadata",

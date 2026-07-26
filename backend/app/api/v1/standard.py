@@ -5,10 +5,9 @@ KESE-S1-M3
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, status
 
-from app.db.session import get_db_session
+from app.api.dependencies import DatabaseSession
 from app.repositories.standard import StandardRepository
 from app.schemas.standard import (
     StandardCreate,
@@ -17,14 +16,15 @@ from app.schemas.standard import (
 )
 from app.services.standard import StandardService
 
-
 router = APIRouter(
     prefix="/standards",
     tags=["Engineering Standards"],
 )
 
 
-def get_service(db: AsyncSession) -> StandardService:
+def get_service(
+    db: DatabaseSession,
+) -> StandardService:
     """Create an Engineering Standards service for the request."""
 
     return StandardService(StandardRepository(db))
@@ -37,7 +37,7 @@ def get_service(db: AsyncSession) -> StandardService:
 )
 async def create_standard(
     payload: StandardCreate,
-    db: AsyncSession = Depends(get_db_session),
+    db: DatabaseSession,
 ) -> StandardResponse:
     """Create a new Engineering Standard."""
 
@@ -59,7 +59,7 @@ async def create_standard(
     response_model=list[StandardResponse],
 )
 async def list_standards(
-    db: AsyncSession = Depends(get_db_session),
+    db: DatabaseSession,
 ) -> list[StandardResponse]:
     """Return all Engineering Standards."""
 
@@ -72,11 +72,13 @@ async def list_standards(
 )
 async def get_standard(
     standard_id: UUID,
-    db: AsyncSession = Depends(get_db_session),
+    db: DatabaseSession,
 ) -> StandardResponse:
     """Return an Engineering Standard by UUID."""
 
-    standard = await get_service(db).get_by_id(standard_id)
+    standard = await get_service(db).get_by_id(
+        standard_id
+    )
 
     if standard is None:
         raise HTTPException(
@@ -94,7 +96,7 @@ async def get_standard(
 async def update_standard(
     standard_id: UUID,
     payload: StandardUpdate,
-    db: AsyncSession = Depends(get_db_session),
+    db: DatabaseSession,
 ) -> StandardResponse:
     """Partially update an Engineering Standard."""
 
@@ -108,8 +110,13 @@ async def update_standard(
             detail="Standard not found",
         )
 
-    if payload.code is not None and payload.code != standard.code:
-        standard_with_code = await service.get_by_code(payload.code)
+    if (
+        payload.code is not None
+        and payload.code != standard.code
+    ):
+        standard_with_code = await service.get_by_code(
+            payload.code
+        )
 
         if standard_with_code is not None:
             raise HTTPException(
@@ -117,7 +124,10 @@ async def update_standard(
                 detail="Standard code already exists",
             )
 
-    return await service.update(standard, payload)
+    return await service.update(
+        standard,
+        payload,
+    )
 
 
 @router.delete(
@@ -126,7 +136,7 @@ async def update_standard(
 )
 async def delete_standard(
     standard_id: UUID,
-    db: AsyncSession = Depends(get_db_session),
+    db: DatabaseSession,
 ) -> None:
     """Delete an Engineering Standard."""
 
