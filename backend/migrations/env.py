@@ -7,13 +7,18 @@ from app.core.config import settings
 from app.db.base import Base
 
 # Import all models so that SQLAlchemy metadata is populated.
+import app.models.load_calculation_run  # noqa: F401
 import app.models.standard  # noqa: F401
-import app.models.unit      # noqa: F401
+import app.models.unit  # noqa: F401
+
 
 config = context.config
 
-# Override database URL from application settings (.env)
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Override the Alembic database URL using application settings.
+config.set_main_option(
+    "sqlalchemy.url",
+    settings.DATABASE_URL,
+)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -28,7 +33,9 @@ def run_migrations_offline() -> None:
         url=settings.DATABASE_URL,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        dialect_opts={
+            "paramstyle": "named",
+        },
         compare_type=True,
         compare_server_default=True,
     )
@@ -41,7 +48,10 @@ def run_migrations_online() -> None:
     """Run migrations in online mode."""
 
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(
+            config.config_ini_section,
+            {},
+        ),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
         future=True,
