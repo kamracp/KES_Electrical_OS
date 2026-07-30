@@ -1,41 +1,8 @@
-# KES Electrical OS — Monorepo
+# KES Electrical OS
 
 **Standards-governed · Calculation-first · Audit-ready · Manufacturer-neutral**
 
-This repository now contains two things:
-
-1. **`packages/kes_electrical_core`** — a standalone, zero-dependency Python package
-   with the electrical engineering calculation engines (load & demand, transformer and
-   generator source sizing, Decimal/units policy). It has no FastAPI, SQLAlchemy, or
-   database code in it and can be installed by any product that needs these
-   calculations: KES Electrical OS, Kamra BENAS, Kamra Climate OS, MEP, BMS.
-2. **`apps/kes-electrical-os`** — the standalone KES Electrical OS product: FastAPI
-   API, PostgreSQL persistence, Alembic migrations, standards/units registries,
-   calculation-run audit trail. It depends on `kes_electrical_core`.
-
-See `docs/adr/0003-multi-product-reusable-core.md` for why this split exists and
-`docs/KESE_Master_Development_Prompt.md` for the full project status, mission history,
-and open items — **read that file before starting any new work**, it is the
-controlled source of truth, not this README.
-
-## Repository Layout
-
-```text
-KES_Electrical_OS/
-├── packages/
-│   └── kes_electrical_core/      # reusable calculation core (product-agnostic)
-├── apps/
-│   └── kes-electrical-os/        # standalone KES Electrical OS backend (FastAPI)
-├── docs/
-│   ├── adr/                      # architecture decisions (0001, 0002, 0003)
-│   ├── domain-glossary.md        # controlled terminology
-│   ├── KESE_Master_Development_Prompt.md
-│   ├── specifications/
-│   │   ├── completed/            # historical record of shipped missions
-│   │   └── future/                # explicitly not-yet-built scope
-│   └── standards/                 # CPWD / Schneider reference material
-└── README.md
-```
+KES Electrical OS is the electrical engineering domain of Kamra Engineering Solutions. It converts a controlled project design basis into traceable calculations, coordinated equipment selections, engineering schedules, compliance evidence, reports, and commissioning records.
 
 ## Product Principles
 
@@ -47,23 +14,85 @@ KES_Electrical_OS/
 - Manufacturer information is consumed through versioned adapters without vendor lock-in.
 - Safety-critical calculations require independent engineering review.
 
-## Working On This Repository
+## Current Mission
 
-Each package/app has its own virtual environment and its own test suite.
+### KEOS-S1-M1 — Standards Registry & Compliance Matrix
 
-```bash
-# Core (product-agnostic) package
-cd packages/kes_electrical_core
-python -m venv .venv && . .venv/bin/activate
-pip install -e ".[dev]"
-pytest
+The first implementation mission will provide:
 
-# KES Electrical OS app shell — depends on the core package above
-cd apps/kes-electrical-os/backend
-python -m venv .venv && . .venv/bin/activate
-pip install -e "../../../packages/kes_electrical_core"
-pip install -e ".[dev]"
-pytest
+- Standards, editions, amendments, parts, and clause records.
+- Evidence-source and provenance records.
+- Project-level standards assignment and precedence.
+- Applicability and jurisdiction controls.
+- Compliance workflow states.
+- Searchable registry and applicability matrix.
+- Repository, service, persistence, API, and automated tests.
+- Import of the controlled 16-record initial registry seed.
+
+No unknown or unverified standard edition may produce a compliance-ready conclusion.
+
+## Next Mission
+
+### KEOS-S1-M2 — Load, Demand & Source Sizing
+
+The first engineering calculation vertical slice will cover:
+
+- Connected and demand load.
+- Utilization and coincidence factors.
+- Normal, emergency, outage, starting, UPS, PV, and future scenarios.
+- Transformer, DG, UPS, battery, and PV source-sizing basis.
+- Explicit units, Decimal arithmetic, rounding, assumptions, and warnings.
+- Immutable calculation runs and approved golden-reference tests.
+
+## Product Modules
+
+| ID | Module |
+|---|---|
+| EOS-01 | Project Configuration |
+| EOS-02 | Load & Demand |
+| EOS-03 | Transformer, DG, UPS & PV |
+| EOS-04 | Short-Circuit & Earth-Fault |
+| EOS-05 | Protection Coordination |
+| EOS-06 | Cable Sizing |
+| EOS-07 | Panels & IEC 61439 |
+| EOS-08 | Earthing & Bonding |
+| EOS-09 | Lightning Protection |
+| EOS-10 | Surge Protection |
+| EOS-11 | Power Factor & Harmonics |
+| EOS-12 | Cable Tray & Routing |
+| EOS-13 | Engineering Deliverables |
+| EOS-14 | FAT, SAT & Commissioning |
+| EOS-15 | Metering, BMS, SCADA & IoT |
+
+## Technology Stack
+
+- **Frontend:** React, Vite, TypeScript
+- **API:** FastAPI, Pydantic v2
+- **Domain core:** Pure Python, Decimal, unit-aware value objects
+- **Persistence:** PostgreSQL, SQLAlchemy 2.x, Alembic
+- **Testing:** pytest, API, integration, persistence, golden-reference, and regression tests
+- **Reporting:** DOCX, PDF, Excel, and CSV
+- **Deployment:** Docker-ready modular architecture
+
+## Repository Structure
+
+```text
+KES_Electrical_OS/
+├── backend/
+│   ├── app/api/v1/electrical/
+│   ├── app/core/
+│   ├── app/domain/electrical/
+│   ├── app/models/
+│   ├── app/repositories/
+│   ├── app/schemas/
+│   ├── app/services/
+│   ├── migrations/
+│   └── tests/
+├── frontend/
+├── reports/
+├── docs/
+│   └── adr/
+└── deployment/
 ```
 
 ## Development Workflow
@@ -73,20 +102,12 @@ pytest
 3. Review the result before proceeding.
 4. Add automated tests with every functional layer.
 5. Commit only after the mission or controlled milestone is complete.
-6. Update the master development prompt and README when a mission completes.
-7. Keep code and comments in English.
+6. Keep explanations and operating guidance simple; keep code and comments in English.
 
-## Verified Status (30 July 2026, post-restructure)
+## Current Status
 
-- `packages/kes_electrical_core`: 303 tests passing, 95.98% coverage.
-- `apps/kes-electrical-os/backend`: 43 tests passing, 81.26% coverage.
-- Combined: 346 tests passing (unchanged from pre-restructure — this was a move, not a
-  rewrite).
-- Live end-to-end check: PostgreSQL provisioned, Alembic migrations run clean to head,
-  the FastAPI server booted, and real calculations (transformer sizing, load demand)
-  and real CPWD standard records were exercised through the live API.
-- Repository cleaned (30 July 2026): all `__pycache__`, `.ruff_cache`, `.pytest_cache`,
-  and `*.egg-info` build artifacts purged; `docs/README-legacy-2026-07-25.md` removed
-  as fully superseded by this README + `docs/KESE_Master_Development_Prompt.md` +
-  `docs/adr/0003-multi-product-reusable-core.md`. `.gitignore` already excludes all of
-  these so they won't reappear once this is a real git repository.
+- Master Framework and Implementation Roadmap V1.0 frozen on 25 July 2026.
+- Git repository initialized on the `master` branch.
+- Initial enterprise directory structure created.
+- Root `.gitignore` created and functionally validated.
+- `KEOS-S1-M1` foundation work is in progress.
