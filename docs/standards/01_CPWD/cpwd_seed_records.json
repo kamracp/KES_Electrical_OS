@@ -1,0 +1,85 @@
+{
+  "_note": "Bibliographic metadata only, extracted from official CPWD publication listings (cpwd.gov.in/Publication and CPWD's own publication catalogue). No document text is reproduced. Fields match the KESE-S1-M3 Standards CRUD schema (docs/specifications/completed/kese-s1-m3-engineering-standards-crud.md). Verify each record against the current cpwd.gov.in listing before marking a project assignment compliance-ready — some editions below may have been superseded since this seed was compiled (30 July 2026).",
+  "records": [
+    {
+      "code": "CPWD-GS-ELEC-PART-I-2023",
+      "title": "General Specifications for Electrical Works, Part I: Internal",
+      "issuing_organization": "CPWD",
+      "category": "Electrical Installation - Internal",
+      "edition": "2023",
+      "publication_year": 2023,
+      "country": "India",
+      "status": "ACTIVE",
+      "reference_url": "https://cpwd.gov.in/Publication/CPWD_General_Specification_for_Electrical_Works_Part-I_Internal_2023.pdf",
+      "remarks": "Supersedes the 2013 edition. Source document supplied by KES on 30 July 2026 (331 pages, 20 chapters, Appendices A-L, Tables 1-11H) — verification_status can be set to SOURCE_VERIFIED. See part1_internal_chapter_index.json for chapter/appendix/table structure.",
+      "local_source_file": "docs/standards/01_CPWD/CPWD_General_Specification_for_Electrical_Works_Part-I_Internal_2023.pdf"
+    },
+    {
+      "code": "CPWD-GS-ELEC-PART-II-2023",
+      "title": "General Specifications for Electrical Works, Part II: External",
+      "issuing_organization": "CPWD",
+      "category": "Electrical Installation - External",
+      "edition": "2023",
+      "publication_year": 2023,
+      "country": "India",
+      "status": "ACTIVE",
+      "remarks": "Source document supplied by KES on 30 July 2026 (237 pages, 9 chapters covering cable work, trenchless cable work, overhead lines, aerial bunched cables, road/external lighting, poles and high masts, Appendices A-H). verification_status can be set to SOURCE_VERIFIED. See part2_external_chapter_index.json for chapter/appendix/table structure. Chapters 2-5 (cable work, trenchless, overhead line, ABC) and their Tables 1(A)-VI are directly relevant to EOS-04 (Short-Circuit) and EOS-06 (Cable Sizing).",
+      "local_source_file": "docs/standards/01_CPWD/CPWD_General_Specification_for_Electrical_Works_Part-II_External_2023.pdf"
+    },
+    {
+      "code": "CPWD-GS-ELEC-PART-I-2013",
+      "title": "General Specifications for Electrical Works, Part I: Internal",
+      "issuing_organization": "CPWD",
+      "category": "Electrical Installation - Internal",
+      "edition": "2013",
+      "publication_year": 2013,
+      "country": "India",
+      "status": "SUPERSEDED",
+      "remarks": "Superseded by the 2023 edition per CPWD's publication list; retained as a legacy/searchable reference only, not for new compliance-ready assignments."
+    },
+    {
+      "code": "CPWD-GS-ELEC-PART-IV-2013",
+      "title": "General Specifications for Electrical Works, Part IV: Sub-Station",
+      "issuing_organization": "CPWD",
+      "category": "Electrical Installation - Substation",
+      "edition": "2013",
+      "publication_year": 2013,
+      "country": "India",
+      "status": "ACTIVE",
+      "remarks": "Verify current status on cpwd.gov.in; edition not independently re-confirmed as of 30 July 2026."
+    },
+    {
+      "code": "CPWD-GS-ELEC-PART-VI-2018",
+      "title": "General Specifications for Electrical Works, Part VI: Fire Detection and Alarm System",
+      "issuing_organization": "CPWD",
+      "category": "Fire Detection & Alarm",
+      "edition": "2018",
+      "publication_year": 2018,
+      "country": "India",
+      "status": "ACTIVE",
+      "remarks": "Verify current status on cpwd.gov.in; edition not independently re-confirmed as of 30 July 2026."
+    },
+    {
+      "code": "CPWD-GS-ELEC-PART-VII-2013",
+      "title": "General Specifications for Electrical Works, Part VII: D.G. Sets",
+      "issuing_organization": "CPWD",
+      "category": "Diesel Generator Sets",
+      "edition": "2013",
+      "publication_year": 2013,
+      "country": "India",
+      "status": "ACTIVE",
+      "remarks": "Directly relevant to KES Electrical OS EOS-03 generator sizing module. Verify current status on cpwd.gov.in."
+    },
+    {
+      "code": "CPWD-GS-ELEC-PART-VIII-2013",
+      "title": "General Specifications for Electrical Works, Part VIII: Gas Based Fire Extinguishing System",
+      "issuing_organization": "CPWD",
+      "category": "Fire Suppression",
+      "edition": "2013",
+      "publication_year": 2013,
+      "country": "India",
+      "status": "ACTIVE",
+      "remarks": "Verify current status on cpwd.gov.in; edition not independently re-confirmed as of 30 July 2026."
+    }
+  ]
+}
