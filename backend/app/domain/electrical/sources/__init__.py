@@ -1,6 +1,7 @@
 """
-Electrical transformer and generator source-sizing domain.
-KESE-S2-M4 / KESE-S2-M6
+Electrical transformer, generator, and UPS source-sizing domain.
+
+KESE-S2-M4 / KESE-S2-M6 / KESE-S2-M7
 """
 
 from app.domain.electrical.sources.engine import (
@@ -30,6 +31,20 @@ from app.domain.electrical.sources.results import (
     TransformerSizingWarning,
     TransformerSizingWarningCode,
 )
+from app.domain.electrical.sources.ups_engine import (
+    calculate_ups_sizing,
+)
+from app.domain.electrical.sources.ups_models import (
+    UPSBatteryTechnology,
+    UPSPhaseConfiguration,
+    UPSRedundancyMode,
+    UPSSizingInput,
+    UPSTopology,
+)
+from app.domain.electrical.sources.ups_results import (
+    UPSSizingResult,
+    UPSSizingStatus,
+)
 
 
 __all__ = [
@@ -46,6 +61,14 @@ __all__ = [
     "TransformerSizingStatus",
     "TransformerSizingWarning",
     "TransformerSizingWarningCode",
+    "UPSBatteryTechnology",
+    "UPSPhaseConfiguration",
+    "UPSRedundancyMode",
+    "UPSSizingInput",
+    "UPSSizingResult",
+    "UPSSizingStatus",
+    "UPSTopology",
     "calculate_generator_sizing",
     "calculate_transformer_sizing",
+    "calculate_ups_sizing",
 ]
