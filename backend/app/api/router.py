@@ -22,7 +22,9 @@ from app.api.v1.transformer_sizing import (
 from app.api.v1.unit import (
     router as unit_router,
 )
-
+from app.api.v1.ht_panel import (
+    router as ht_panel_router,
+)
 
 api_router = APIRouter()
 
@@ -59,3 +61,4 @@ api_router.include_router(load_demand_router)
 api_router.include_router(transformer_sizing_router)
 api_router.include_router(generator_sizing_router)
 api_router.include_router(load_calculation_run_router)
+api_router.include_router(ht_panel_router)
