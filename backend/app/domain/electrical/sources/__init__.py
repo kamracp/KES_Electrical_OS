@@ -45,6 +45,23 @@ from app.domain.electrical.sources.ups_results import (
     UPSSizingResult,
     UPSSizingStatus,
 )
+from app.domain.electrical.sources.pv_engine import (
+    calculate_pv_sizing,
+)
+from app.domain.electrical.sources.pv_models import (
+    PVBatteryConfiguration,
+    PVInverterRedundancyMode,
+    PVPhaseConfiguration,
+    PVSizingInput,
+    PVSystemType,
+)
+from app.domain.electrical.sources.pv_results import (
+    PVSizingResult,
+    PVSizingStatus,
+    PVSizingWarning,
+    PVSizingWarningCode,
+)
+
 
 
 __all__ = [
@@ -72,3 +89,13 @@ __all__ = [
     "calculate_transformer_sizing",
     "calculate_ups_sizing",
 ]
+"PVBatteryConfiguration",
+"PVInverterRedundancyMode",
+"PVPhaseConfiguration",
+"PVSizingInput",
+"PVSizingResult",
+"PVSizingStatus",
+"PVSizingWarning",
+"PVSizingWarningCode",
+"PVSystemType",
+"calculate_pv_sizing",
