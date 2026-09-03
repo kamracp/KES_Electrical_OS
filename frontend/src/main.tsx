@@ -5,6 +5,8 @@ import { RouterProvider } from "react-router-dom";
 import { AppProviders } from "./app/providers";
 import { router } from "./app/router";
 
+import "./styles/global.css";
+
 const rootElement = document.getElementById("root");
 
 if (rootElement === null) {
