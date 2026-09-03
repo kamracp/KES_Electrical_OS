@@ -1,3 +1,5 @@
+import { ApiHealthStatus } from "./components/ApiHealthStatus";
+
 export function App() {
   return (
     <main>
@@ -13,6 +15,8 @@ export function App() {
           deliverables workspace.
         </p>
       </section>
+
+      <ApiHealthStatus />
     </main>
   );
 }
