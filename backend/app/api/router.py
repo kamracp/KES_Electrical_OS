@@ -1,12 +1,12 @@
-
-
-
 """
 Main API router.
 """
 
 from fastapi import APIRouter
 
+from app.api.v1.fault import (
+    router as fault_router,
+)
 from app.api.v1.generator_sizing import (
     router as generator_sizing_router,
 )
@@ -32,7 +32,6 @@ from app.api.v1.unit import (
     router as unit_router,
 )
 
-
 api_router = APIRouter()
 
 
@@ -40,7 +39,7 @@ api_router = APIRouter()
     "/health",
     tags=["System"],
 )
-async def health_check():
+async def health_check() -> dict[str, str]:
     """Return application health status."""
 
     return {
@@ -53,7 +52,7 @@ async def health_check():
     "/version",
     tags=["System"],
 )
-async def version():
+async def version() -> dict[str, str]:
     """Return application version information."""
 
     return {
@@ -64,6 +63,7 @@ async def version():
 
 api_router.include_router(unit_router)
 api_router.include_router(standard_router)
+api_router.include_router(fault_router)
 api_router.include_router(load_demand_router)
 api_router.include_router(transformer_sizing_router)
 api_router.include_router(generator_sizing_router)
