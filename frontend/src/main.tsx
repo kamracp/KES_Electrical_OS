@@ -1,6 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
+import { App } from "./App";
+
 const rootElement = document.getElementById("root");
 
 if (rootElement === null) {
@@ -9,9 +11,6 @@ if (rootElement === null) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <main>
-      <h1>KES Electrical OS</h1>
-      <p>Engineering workspace initializing.</p>
-    </main>
+    <App />
   </StrictMode>,
 );
