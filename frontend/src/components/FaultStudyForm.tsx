@@ -98,17 +98,17 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
           bus_code: draft.faultBusCode,
           source_type: draft.sourceType,
           representation: draft.sourceRepresentation,
-          positive_sequence_impedance:
-            draft.sourceRepresentation === "VOLTAGE_BEHIND_IMPEDANCE"
-              ? {
+          ...(draft.sourceRepresentation === "VOLTAGE_BEHIND_IMPEDANCE"
+            ? {
+                positive_sequence_impedance: {
                   resistance_ohm: draft.sourceResistanceOhm,
                   reactance_ohm: draft.sourceReactanceOhm,
-                }
-              : undefined,
-          current_contribution_ka:
-            draft.sourceRepresentation === "CURRENT_INJECTION"
-              ? draft.currentContributionKa
-              : undefined,
+                },
+              }
+            : {}),
+          ...(draft.sourceRepresentation === "CURRENT_INJECTION"
+            ? { current_contribution_ka: draft.currentContributionKa }
+            : {}),
         },
       ],
       frequency_hz: draft.frequencyHz || undefined,
