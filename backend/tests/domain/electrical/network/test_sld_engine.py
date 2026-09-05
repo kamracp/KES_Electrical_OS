@@ -164,7 +164,7 @@ def test_evaluate_normal_state_from_utility() -> None:
     nodes = {node.node_code: node for node in result.node_results}
     sources = {source.source_code: source for source in result.source_results}
 
-    assert result.status is SLDResultStatus.COMPLIANT
+    assert result.status is SLDResultStatus.DESIGN_CHECK_PASSED
     assert result.primary_source_code == "UTILITY-01"
     assert result.final_load_supply_percent == Decimal("100")
     assert nodes["LOAD-01"].energized is True
@@ -179,7 +179,7 @@ def test_evaluate_emergency_state_from_generator() -> None:
     result = SLDEngine.evaluate_operating_state(make_network(), "STATE-EMERGENCY")
     nodes = {node.node_code: node for node in result.node_results}
 
-    assert result.status is SLDResultStatus.COMPLIANT
+    assert result.status is SLDResultStatus.DESIGN_CHECK_PASSED
     assert result.primary_source_code == "DG-01"
     assert result.final_load_supply_percent == Decimal("100")
     assert nodes["UTILITY-01"].isolated is True
@@ -191,7 +191,7 @@ def test_evaluate_emergency_state_from_generator() -> None:
 def test_evaluate_complete_network() -> None:
     result = SLDEngine.evaluate(make_network())
 
-    assert result.status is SLDResultStatus.COMPLIANT
+    assert result.status is SLDResultStatus.DESIGN_CHECK_PASSED
     assert tuple(state.state_code for state in result.operating_state_results) == (
         "STATE-NORMAL",
         "STATE-EMERGENCY",
@@ -232,7 +232,7 @@ def test_open_load_connection_reports_unsupplied_final_load() -> None:
 
     result = SLDEngine.evaluate(network)
 
-    assert result.status is SLDResultStatus.NON_COMPLIANT
+    assert result.status is SLDResultStatus.DESIGN_CHECK_FAILED
     assert result.operating_state_results[0].final_load_supply_percent == Decimal("0")
     assert SLDWarningCode.FINAL_LOAD_UNSUPPLIED in warning_codes(result.operating_state_results[0])
 
@@ -252,7 +252,7 @@ def test_disabled_active_source_reports_no_primary_source() -> None:
 
     result = SLDEngine.evaluate(network).operating_state_results[0]
 
-    assert result.status is SLDResultStatus.NON_COMPLIANT
+    assert result.status is SLDResultStatus.DESIGN_CHECK_FAILED
     assert result.primary_source_code is None
     assert SLDWarningCode.ACTIVE_SOURCE_DISABLED in warning_codes(result)
     assert SLDWarningCode.NO_PRIMARY_SOURCE in warning_codes(result)
@@ -313,7 +313,7 @@ def test_isolated_load_stops_propagation_without_unsupplied_warning() -> None:
     result = SLDEngine.evaluate(network).operating_state_results[0]
     load = next(node for node in result.node_results if node.node_code == "LOAD-01")
 
-    assert result.status is SLDResultStatus.COMPLIANT
+    assert result.status is SLDResultStatus.DESIGN_CHECK_PASSED
     assert load.isolated is True
     assert load.energized is False
     assert SLDWarningCode.FINAL_LOAD_UNSUPPLIED not in warning_codes(result)
@@ -345,7 +345,7 @@ def test_bidirectional_connection_allows_reverse_reachability() -> None:
 
     result = SLDEngine.evaluate(network).operating_state_results[0]
 
-    assert result.status is SLDResultStatus.COMPLIANT
+    assert result.status is SLDResultStatus.DESIGN_CHECK_PASSED
     assert result.final_load_supply_percent == Decimal("100")
     assert SLDWarningCode.REVERSE_POWER_FLOW_BLOCKED not in warning_codes(result)
 
@@ -375,7 +375,7 @@ def test_unidirectional_connection_blocks_reverse_reachability() -> None:
 
     result = SLDEngine.evaluate(network).operating_state_results[0]
 
-    assert result.status is SLDResultStatus.NON_COMPLIANT
+    assert result.status is SLDResultStatus.DESIGN_CHECK_FAILED
     assert result.final_load_supply_percent == Decimal("0")
     assert SLDWarningCode.REVERSE_POWER_FLOW_BLOCKED in warning_codes(result)
 
@@ -395,7 +395,7 @@ def test_parallel_sources_are_reported() -> None:
     result = SLDEngine.evaluate(network).operating_state_results[0]
     load = next(node for node in result.node_results if node.node_code == "LOAD-01")
 
-    assert result.status is SLDResultStatus.WARNING
+    assert result.status is SLDResultStatus.REVIEW_REQUIRED
     assert result.primary_source_code == "UTILITY-01"
     assert load.supplying_source_codes == ("UTILITY-01", "DG-01")
     assert SLDWarningCode.MULTIPLE_ACTIVE_SOURCES in warning_codes(result)
@@ -431,7 +431,7 @@ def test_closed_transition_requires_synchronization_verification() -> None:
 
     result = SLDEngine.evaluate(network).operating_state_results[0]
 
-    assert result.status is SLDResultStatus.WARNING
+    assert result.status is SLDResultStatus.REVIEW_REQUIRED
     assert SLDWarningCode.SYNCHRONIZATION_REQUIRED in warning_codes(result)
 
 
@@ -462,7 +462,7 @@ def test_closed_deenergized_connection_is_reported() -> None:
         item for item in result.connection_results if item.connection_code == "DG-UPS"
     )
 
-    assert result.status is SLDResultStatus.WARNING
+    assert result.status is SLDResultStatus.REVIEW_REQUIRED
     assert connection.closed is True
     assert connection.energized is False
     assert SLDWarningCode.CLOSED_CONNECTION_UNENERGIZED in warning_codes(result)
@@ -482,7 +482,7 @@ def test_intentionally_deenergized_load_does_not_warn() -> None:
 
     result = SLDEngine.evaluate(network).operating_state_results[0]
 
-    assert result.status is SLDResultStatus.COMPLIANT
+    assert result.status is SLDResultStatus.DESIGN_CHECK_PASSED
     assert result.final_load_supply_percent == Decimal("0")
     assert SLDWarningCode.FINAL_LOAD_UNSUPPLIED not in warning_codes(result)
 
@@ -501,7 +501,7 @@ def test_disabled_load_does_not_warn() -> None:
 
     result = SLDEngine.evaluate(network).operating_state_results[0]
 
-    assert result.status is SLDResultStatus.COMPLIANT
+    assert result.status is SLDResultStatus.DESIGN_CHECK_PASSED
     assert result.enabled_final_load_count == 0
     assert result.final_load_supply_percent == Decimal("100")
 
