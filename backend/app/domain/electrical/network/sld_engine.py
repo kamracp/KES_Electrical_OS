@@ -46,11 +46,11 @@ class SLDEngine:
             cls.evaluate_operating_state(network, state.code) for state in network.operating_states
         )
 
-        status = SLDResultStatus.COMPLIANT
-        if any(result.status is SLDResultStatus.NON_COMPLIANT for result in state_results):
-            status = SLDResultStatus.NON_COMPLIANT
-        elif any(result.status is SLDResultStatus.WARNING for result in state_results):
-            status = SLDResultStatus.WARNING
+        status = SLDResultStatus.DESIGN_CHECK_PASSED
+        if any(result.status is SLDResultStatus.DESIGN_CHECK_FAILED for result in state_results):
+            status = SLDResultStatus.DESIGN_CHECK_FAILED
+        elif any(result.status is SLDResultStatus.REVIEW_REQUIRED for result in state_results):
+            status = SLDResultStatus.REVIEW_REQUIRED
 
         return SLDNetworkResult(
             network_code=network.code,
@@ -441,10 +441,10 @@ class SLDEngine:
         if any(warning.severity is SLDWarningSeverity.ERROR for warning in warnings) or any(
             result.status is SLDCheckStatus.FAIL for result in interlock_results
         ):
-            return SLDResultStatus.NON_COMPLIANT
+            return SLDResultStatus.DESIGN_CHECK_FAILED
         if warnings:
-            return SLDResultStatus.WARNING
-        return SLDResultStatus.COMPLIANT
+            return SLDResultStatus.REVIEW_REQUIRED
+        return SLDResultStatus.DESIGN_CHECK_PASSED
 
 
 __all__ = ["SLDEngine"]
