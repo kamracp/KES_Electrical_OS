@@ -15,11 +15,16 @@ from app.domain.electrical.sources.common import (
 
 
 class SLDResultStatus(StrEnum):
-    """Overall outcome of an SLD engineering evaluation."""
+    """Outcome of an SLD engineering design check, not statutory compliance."""
 
-    COMPLIANT = "COMPLIANT"
-    WARNING = "WARNING"
-    NON_COMPLIANT = "NON_COMPLIANT"
+    DESIGN_CHECK_PASSED = "DESIGN_CHECK_PASSED"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
+    DESIGN_CHECK_FAILED = "DESIGN_CHECK_FAILED"
+
+    # Temporary compatibility aliases for pre-KEOS-S2-M1 callers.
+    COMPLIANT = DESIGN_CHECK_PASSED
+    WARNING = REVIEW_REQUIRED
+    NON_COMPLIANT = DESIGN_CHECK_FAILED
 
 
 class SLDCheckStatus(StrEnum):
@@ -384,11 +389,11 @@ class SLDOperatingStateResult:
             result.status is SLDCheckStatus.FAIL for result in self.interlock_results
         )
         has_error = any(warning.severity is SLDWarningSeverity.ERROR for warning in self.warnings)
-        expected_status = SLDResultStatus.COMPLIANT
+        expected_status = SLDResultStatus.DESIGN_CHECK_PASSED
         if has_failed_check or has_error:
-            expected_status = SLDResultStatus.NON_COMPLIANT
+            expected_status = SLDResultStatus.DESIGN_CHECK_FAILED
         elif self.warnings:
-            expected_status = SLDResultStatus.WARNING
+            expected_status = SLDResultStatus.REVIEW_REQUIRED
 
         if self.status is not expected_status:
             raise ValueError("operating-state status does not match checks and warnings")
@@ -487,30 +492,32 @@ class SLDNetworkResult:
         if len(warning_keys) != len(set(warning_keys)):
             raise ValueError("warning code and reference combinations must be unique")
 
-        has_non_compliant_state = any(
-            result.status is SLDResultStatus.NON_COMPLIANT
+        has_failed_state = any(
+            result.status is SLDResultStatus.DESIGN_CHECK_FAILED
             for result in self.operating_state_results
         )
         has_warning_state = any(
-            result.status is SLDResultStatus.WARNING for result in self.operating_state_results
+            result.status is SLDResultStatus.REVIEW_REQUIRED
+            for result in self.operating_state_results
         )
         has_error = any(warning.severity is SLDWarningSeverity.ERROR for warning in self.warnings)
 
-        expected_status = SLDResultStatus.COMPLIANT
-        if has_non_compliant_state or has_error:
-            expected_status = SLDResultStatus.NON_COMPLIANT
+        expected_status = SLDResultStatus.DESIGN_CHECK_PASSED
+        if has_failed_state or has_error:
+            expected_status = SLDResultStatus.DESIGN_CHECK_FAILED
         elif has_warning_state or self.warnings:
-            expected_status = SLDResultStatus.WARNING
+            expected_status = SLDResultStatus.REVIEW_REQUIRED
 
         if self.status is not expected_status:
             raise ValueError("network status does not match state results and warnings")
 
     @property
     def compliant_state_count(self) -> int:
-        """Return the number of compliant operating states."""
+        """Return the number of operating states whose design checks passed."""
 
         return sum(
-            result.status is SLDResultStatus.COMPLIANT for result in self.operating_state_results
+            result.status is SLDResultStatus.DESIGN_CHECK_PASSED
+            for result in self.operating_state_results
         )
 
     @property
@@ -518,15 +525,16 @@ class SLDNetworkResult:
         """Return the number of operating states with warnings."""
 
         return sum(
-            result.status is SLDResultStatus.WARNING for result in self.operating_state_results
+            result.status is SLDResultStatus.REVIEW_REQUIRED
+            for result in self.operating_state_results
         )
 
     @property
     def non_compliant_state_count(self) -> int:
-        """Return the number of non-compliant operating states."""
+        """Return the number of operating states whose design checks failed."""
 
         return sum(
-            result.status is SLDResultStatus.NON_COMPLIANT
+            result.status is SLDResultStatus.DESIGN_CHECK_FAILED
             for result in self.operating_state_results
         )
 
