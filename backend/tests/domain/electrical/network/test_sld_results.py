@@ -96,7 +96,7 @@ def make_state(**overrides: object) -> SLDOperatingStateResult:
         "network_code": "SLD-01",
         "state_code": "STATE-NORMAL",
         "mode": OperatingMode.NORMAL,
-        "status": SLDResultStatus.COMPLIANT,
+        "status": SLDResultStatus.DESIGN_CHECK_PASSED,
         "primary_source_code": "UTILITY-01",
         "source_results": (source,),
         "node_results": nodes,
@@ -122,7 +122,7 @@ def make_warning_state(**overrides: object) -> SLDOperatingStateResult:
     values: dict[str, object] = {
         "state_code": "STATE-MAINTENANCE",
         "mode": OperatingMode.MAINTENANCE,
-        "status": SLDResultStatus.WARNING,
+        "status": SLDResultStatus.REVIEW_REQUIRED,
         "source_results": (source,),
         "node_results": nodes,
         "connection_results": (make_connection(to_node_energized=False),),
@@ -135,7 +135,7 @@ def make_warning_state(**overrides: object) -> SLDOperatingStateResult:
 def make_network(**overrides: object) -> SLDNetworkResult:
     values: dict[str, object] = {
         "network_code": "SLD-01",
-        "status": SLDResultStatus.COMPLIANT,
+        "status": SLDResultStatus.DESIGN_CHECK_PASSED,
         "operating_state_results": (make_state(),),
         "warnings": (),
         "standard_reference": "IEC 60364",
@@ -295,7 +295,7 @@ def test_create_valid_operating_state_result() -> None:
 def test_warning_state_reports_zero_load_supply() -> None:
     state = make_warning_state()
 
-    assert state.status is SLDResultStatus.WARNING
+    assert state.status is SLDResultStatus.REVIEW_REQUIRED
     assert state.energized_final_load_count == 0
     assert state.final_load_supply_percent == Decimal("0")
 
@@ -414,7 +414,7 @@ def test_warning_reference_combinations_must_be_unique() -> None:
 
     with pytest.raises(ValueError, match="combinations must be unique"):
         make_state(
-            status=SLDResultStatus.WARNING,
+            status=SLDResultStatus.REVIEW_REQUIRED,
             warnings=(warning, warning),
         )
 
@@ -423,21 +423,21 @@ def test_warning_reference_combinations_must_be_unique() -> None:
 def test_operating_state_status_must_match_warning_severity() -> None:
     with pytest.raises(ValueError, match="status does not match"):
         make_state(
-            status=SLDResultStatus.COMPLIANT,
+            status=SLDResultStatus.DESIGN_CHECK_PASSED,
             warnings=(make_warning(),),
         )
 
     error = make_warning(severity=SLDWarningSeverity.ERROR)
     state = make_state(
-        status=SLDResultStatus.NON_COMPLIANT,
+        status=SLDResultStatus.DESIGN_CHECK_FAILED,
         warnings=(error,),
     )
 
-    assert state.status is SLDResultStatus.NON_COMPLIANT
+    assert state.status is SLDResultStatus.DESIGN_CHECK_FAILED
 
 
 @pytest.mark.unit
-def test_failed_interlock_requires_non_compliant_state() -> None:
+def test_failed_interlock_requires_failed_design_check_state() -> None:
     connections = (
         make_connection(connection_code="INCOMER-A"),
         make_connection(connection_code="INCOMER-B"),
@@ -447,19 +447,19 @@ def test_failed_interlock_requires_non_compliant_state() -> None:
         status=SLDCheckStatus.FAIL,
     )
     state = make_state(
-        status=SLDResultStatus.NON_COMPLIANT,
+        status=SLDResultStatus.DESIGN_CHECK_FAILED,
         connection_results=connections,
         interlock_results=(failed_interlock,),
     )
 
-    assert state.status is SLDResultStatus.NON_COMPLIANT
+    assert state.status is SLDResultStatus.DESIGN_CHECK_FAILED
 
 
 @pytest.mark.unit
 def test_create_valid_network_result() -> None:
     result = make_network()
 
-    assert result.status is SLDResultStatus.COMPLIANT
+    assert result.status is SLDResultStatus.DESIGN_CHECK_PASSED
     assert result.compliant_state_count == 1
     assert result.warning_state_count == 0
     assert result.non_compliant_state_count == 0
@@ -486,7 +486,7 @@ def test_network_states_must_reference_same_network() -> None:
 def test_network_status_aggregates_operating_states() -> None:
     warning_state = make_warning_state()
     result = make_network(
-        status=SLDResultStatus.WARNING,
+        status=SLDResultStatus.REVIEW_REQUIRED,
         operating_state_results=(make_state(), warning_state),
     )
 
@@ -498,7 +498,7 @@ def test_network_status_aggregates_operating_states() -> None:
 def test_network_status_must_match_results_and_warnings() -> None:
     with pytest.raises(ValueError, match="network status does not match"):
         make_network(
-            status=SLDResultStatus.COMPLIANT,
+            status=SLDResultStatus.DESIGN_CHECK_PASSED,
             warnings=(make_warning(),),
         )
 
@@ -509,6 +509,6 @@ def test_network_warning_reference_combinations_must_be_unique() -> None:
 
     with pytest.raises(ValueError, match="combinations must be unique"):
         make_network(
-            status=SLDResultStatus.WARNING,
+            status=SLDResultStatus.REVIEW_REQUIRED,
             warnings=(warning, warning),
         )
