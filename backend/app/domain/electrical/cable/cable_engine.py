@@ -144,6 +144,7 @@ class CableSizingEngine:
                 ),
                 standard_reference=study.standard_reference,
                 ampacity_reference=study.ampacity_reference,
+                notes=study.notes,
             )
 
         warning = CableEngineeringWarning(
@@ -161,6 +162,7 @@ class CableSizingEngine:
             warnings=cls._deduplicate_warnings((*base_warnings, warning)),
             standard_reference=study.standard_reference,
             ampacity_reference=study.ampacity_reference,
+            notes=study.notes,
         )
 
     @classmethod
