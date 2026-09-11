@@ -102,10 +102,10 @@ def make_study(**overrides: object) -> CableSizingInput:
 
 
 @pytest.mark.unit
-def test_selects_smallest_fully_compliant_standard_size() -> None:
+def test_selects_smallest_standard_size_passing_all_design_checks() -> None:
     result = CableSizingEngine.calculate(make_study())
 
-    assert result.status is CableSizingStatus.COMPLIANT
+    assert result.status is CableSizingStatus.DESIGN_CHECK_PASSED
     assert result.conductor is not None
     assert result.conductor.phase_area_mm2 == Decimal("150")
     assert result.conductor.neutral_area_mm2 == Decimal("150")
