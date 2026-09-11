@@ -131,7 +131,7 @@ class CableSizingEngine:
             )
             return CableSizingResult(
                 study_code=study.code,
-                status=CableSizingStatus.COMPLIANT,
+                status=CableSizingStatus.DESIGN_CHECK_PASSED,
                 conductor=conductor,
                 ampacity=ampacity,
                 voltage_drop=voltage_drop,
