@@ -81,7 +81,7 @@ def make_conductor(**overrides: object) -> CableConductorSizingResult:
 def make_sizing_result(**overrides: object) -> CableSizingResult:
     values: dict[str, object] = {
         "study_code": "CBL-FDR-01",
-        "status": CableSizingStatus.COMPLIANT,
+        "status": CableSizingStatus.DESIGN_CHECK_PASSED,
         "conductor": make_conductor(),
         "ampacity": make_ampacity(),
         "voltage_drop": make_voltage_drop(),
@@ -96,10 +96,10 @@ def make_sizing_result(**overrides: object) -> CableSizingResult:
 
 
 @pytest.mark.unit
-def test_create_compliant_cable_sizing_result() -> None:
+def test_create_design_check_passed_cable_sizing_result() -> None:
     result = make_sizing_result()
 
-    assert result.status is CableSizingStatus.COMPLIANT
+    assert result.status is CableSizingStatus.DESIGN_CHECK_PASSED
     assert result.conductor is not None
     assert result.conductor.phase_area_mm2 == Decimal("185")
     assert result.ampacity is not None
@@ -264,13 +264,13 @@ def test_create_no_standard_size_result() -> None:
 
 
 @pytest.mark.unit
-def test_detailed_results_required_for_compliant_status() -> None:
+def test_detailed_results_required_for_design_check_passed_status() -> None:
     with pytest.raises(ValueError, match="require all detailed results"):
         make_sizing_result(voltage_drop=None)
 
 
 @pytest.mark.unit
-def test_compliant_result_rejects_failed_check() -> None:
+def test_design_check_passed_result_rejects_failed_check() -> None:
     with pytest.raises(ValueError, match="cannot contain a failed"):
         make_sizing_result(
             voltage_drop=make_voltage_drop(status=CableCheckStatus.FAIL),
@@ -278,20 +278,20 @@ def test_compliant_result_rejects_failed_check() -> None:
 
 
 @pytest.mark.unit
-def test_non_compliant_result_accepts_failed_check_and_warning() -> None:
+def test_design_check_failed_result_accepts_failed_check_and_warning() -> None:
     warning = CableEngineeringWarning(
         code=CableWarningCode.VOLTAGE_DROP_EXCEEDED,
         message="Calculated voltage drop exceeds the allowable limit",
         field_name="voltage_drop_percent",
     )
     result = make_sizing_result(
-        status=CableSizingStatus.NON_COMPLIANT,
+        status=CableSizingStatus.DESIGN_CHECK_FAILED,
         voltage_drop=make_voltage_drop(status=CableCheckStatus.FAIL),
         warnings=(warning,),
         governing_criterion="VOLTAGE_DROP",
     )
 
-    assert result.status is CableSizingStatus.NON_COMPLIANT
+    assert result.status is CableSizingStatus.DESIGN_CHECK_FAILED
     assert result.voltage_drop is not None
     assert result.voltage_drop.status is CableCheckStatus.FAIL
     assert result.warnings == (warning,)
