@@ -25,11 +25,15 @@ class CableCheckStatus(StrEnum):
 
 
 class CableSizingStatus(StrEnum):
-    """Overall cable sizing outcome."""
+    """Outcome of a cable sizing engineering design check, not statutory compliance."""
 
-    COMPLIANT = "COMPLIANT"
-    NON_COMPLIANT = "NON_COMPLIANT"
+    DESIGN_CHECK_PASSED = "DESIGN_CHECK_PASSED"
+    DESIGN_CHECK_FAILED = "DESIGN_CHECK_FAILED"
     NO_STANDARD_SIZE_AVAILABLE = "NO_STANDARD_SIZE_AVAILABLE"
+
+    # Temporary compatibility aliases for callers using legacy member names.
+    COMPLIANT = DESIGN_CHECK_PASSED
+    NON_COMPLIANT = DESIGN_CHECK_FAILED
 
 
 class CableWarningCode(StrEnum):
@@ -327,9 +331,11 @@ class CableSizingResult:
             if CableWarningCode.NO_STANDARD_SIZE_AVAILABLE not in warning_codes:
                 raise ValueError("NO_STANDARD_SIZE_AVAILABLE status requires its warning code")
         elif any(result is None for result in detailed_results):
-            raise ValueError("COMPLIANT and NON_COMPLIANT results require all detailed results")
+            raise ValueError(
+                "DESIGN_CHECK_PASSED and DESIGN_CHECK_FAILED results require all detailed results"
+            )
 
-        if self.status is CableSizingStatus.COMPLIANT:
+        if self.status is CableSizingStatus.DESIGN_CHECK_PASSED:
             assert self.conductor is not None
             assert self.ampacity is not None
             assert self.voltage_drop is not None
@@ -342,7 +348,9 @@ class CableSizingResult:
                 self.short_circuit.status,
             )
             if CableCheckStatus.FAIL in check_statuses:
-                raise ValueError("COMPLIANT result cannot contain a failed engineering check")
+                raise ValueError(
+                    "DESIGN_CHECK_PASSED result cannot contain a failed engineering check"
+                )
 
 
 __all__ = [
