@@ -270,6 +270,7 @@ class CableSizingResult:
     governing_criterion: str | None = None
     standard_reference: str = "IEC 60364-5-52"
     ampacity_reference: str = "IEC 60287"
+    notes: str | None = None
 
     def __post_init__(self) -> None:
         """Validate and normalize the complete cable sizing result."""
@@ -294,6 +295,8 @@ class CableSizingResult:
             "ampacity_reference",
             normalize_required_text("ampacity_reference", self.ampacity_reference),
         )
+
+        object.__setattr__(self, "notes", normalize_optional_text("notes", self.notes))
 
         if not isinstance(self.status, CableSizingStatus):
             raise TypeError("status must be a CableSizingStatus value")
