@@ -1027,6 +1027,7 @@ def calculate_short_circuit(
                 standard_reference=(study.standard_reference),
                 earth_current_reference=(study.earth_current_reference),
                 operating_state_code=(study.operating_state_code),
+                notes=(study.notes),
             )
 
         current_injection_total = _current_injection_total(
@@ -1108,6 +1109,7 @@ def calculate_short_circuit(
             standard_reference=(study.standard_reference),
             earth_current_reference=(study.earth_current_reference),
             operating_state_code=(study.operating_state_code),
+            notes=(study.notes),
         )
 
 
