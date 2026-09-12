@@ -103,6 +103,7 @@ def make_study(
     sources: tuple[FaultSourceInput, ...] | None = None,
     fault_resistance_ohm: Decimal = Decimal("0"),
     fault_reactance_ohm: Decimal = Decimal("0"),
+    notes: str | None = None,
 ) -> ShortCircuitStudyInput:
     return ShortCircuitStudyInput(
         code="SC-ENGINE-01",
@@ -116,6 +117,7 @@ def make_study(
         ),
         buses=(bus or make_bus(),),
         sources=sources or (make_voltage_source(),),
+        notes=notes,
     )
 
 
@@ -126,6 +128,48 @@ def test_engine_rejects_invalid_study_type() -> None:
         match="study must be a ShortCircuitStudyInput",
     ):
         calculate_short_circuit(cast(Any, "invalid"))
+
+
+@pytest.mark.unit
+def test_notes_propagate_to_normal_result() -> None:
+    notes = "Fault study assumptions retained for audit."
+
+    result = calculate_short_circuit(
+        make_study(
+            notes=notes,
+        )
+    )
+
+    assert result.status is FaultResultStatus.WARNING
+    assert result.notes == notes
+
+
+@pytest.mark.unit
+def test_notes_propagate_to_indeterminate_result(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    notes = "Fault study assumptions retained after calculation failure."
+
+    def fail_passive_calculation(
+        _study: object,
+        _reductions: object,
+    ) -> None:
+        raise ArithmeticError("forced indeterminate result")
+
+    monkeypatch.setattr(
+        "app.domain.electrical.fault.fault_engine._calculate_passive_fault",
+        fail_passive_calculation,
+    )
+
+    result = calculate_short_circuit(
+        make_study(
+            notes=notes,
+        )
+    )
+
+    assert result.status is FaultResultStatus.INDETERMINATE
+    assert result.notes == notes
+    assert any(warning.code is FaultWarningCode.CALCULATION_FAILED for warning in result.warnings)
 
 
 @pytest.mark.unit
