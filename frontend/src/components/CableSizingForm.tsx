@@ -98,6 +98,13 @@ function optionalInt(value: string): number | undefined {
   return text === "" ? undefined : Number(text);
 }
 
+/** Drop undefined entries so "not supplied" fields are absent, not null-ish. */
+function compact<T extends Record<string, unknown>>(value: T): T {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, item]) => item !== undefined),
+  ) as T;
+}
+
 /** Comma-separated sizes -> trimmed exact-decimal strings; empty -> undefined. */
 function sizeList(value: string): string[] | undefined {
   const items = value
@@ -122,10 +129,10 @@ export function CableSizingForm({ disabled = false, onSubmit }: CableSizingFormP
     event.preventDefault();
     setValidationError(null);
 
-    const payload = {
+    const payload = compact({
       code: draft.studyCode,
       name: draft.studyName,
-      circuit: {
+      circuit: compact({
         design_current_a: draft.designCurrentA,
         nominal_voltage_v: draft.nominalVoltageV,
         route_length_m: draft.routeLengthM,
@@ -135,8 +142,8 @@ export function CableSizingForm({ disabled = false, onSubmit }: CableSizingFormP
         fault_current_ka: optional(draft.faultCurrentKa),
         fault_duration_s: optional(draft.faultDurationS),
         harmonic_neutral_factor: optional(draft.harmonicNeutralFactor),
-      },
-      cable: {
+      }),
+      cable: compact({
         conductor_material: draft.conductorMaterial,
         insulation_material: draft.insulationMaterial,
         construction: draft.construction,
@@ -147,8 +154,8 @@ export function CableSizingForm({ disabled = false, onSubmit }: CableSizingFormP
         reduced_neutral_permitted: draft.reducedNeutralPermitted,
         protective_conductor_type: optional(draft.protectiveConductorType),
         armoured: draft.armoured,
-      },
-      installation: {
+      }),
+      installation: compact({
         method: draft.method,
         ambient_temperature_c: draft.ambientTemperatureC,
         ambient_derating_factor: optional(draft.ambientDeratingFactor),
@@ -160,14 +167,14 @@ export function CableSizingForm({ disabled = false, onSubmit }: CableSizingFormP
         burial_depth_m: optional(draft.burialDepthM),
         soil_thermal_resistivity_k_m_per_w: optional(draft.soilThermalResistivityKMPerW),
         conductor_spacing_mm: optional(draft.conductorSpacingMm),
-      },
-      size_schedule: {
+      }),
+      size_schedule: compact({
         phase_sizes_mm2: sizeList(draft.phaseSizesMm2) ?? [],
         neutral_sizes_mm2: sizeList(draft.neutralSizesMm2),
         protective_sizes_mm2: sizeList(draft.protectiveSizesMm2),
-      },
+      }),
       notes: optional(draft.notes),
-    };
+    });
 
     const parsed = cableSizingRequestSchema.safeParse(payload);
 
