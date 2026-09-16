@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
 
+from app.domain.electrical.jurisdiction.jurisdiction_models import JurisdictionProfile
 from app.domain.electrical.sources.common import (
     normalize_optional_text,
     normalize_required_text,
@@ -306,6 +307,7 @@ class CableSizingInput:
 
     standard_reference: str = "IEC 60364-5-52"
     ampacity_reference: str = "IEC 60287"
+    jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
     notes: str | None = None
 
     def __post_init__(self) -> None:
@@ -324,6 +326,8 @@ class CableSizingInput:
             normalize_required_text("ampacity_reference", self.ampacity_reference),
         )
         object.__setattr__(self, "notes", normalize_optional_text("notes", self.notes))
+        if not isinstance(self.jurisdiction_profile, JurisdictionProfile):
+            raise TypeError("jurisdiction_profile must be a JurisdictionProfile value")
 
         record_fields = (
             ("circuit", self.circuit, CableCircuitInput),
