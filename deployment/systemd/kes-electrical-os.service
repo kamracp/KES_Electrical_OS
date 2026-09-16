@@ -1,0 +1,32 @@
+# KES Electrical OS backend — systemd unit.
+# Install: sudo cp deployment/systemd/kes-electrical-os.service /etc/systemd/system/
+#          sudo systemctl daemon-reload && sudo systemctl enable --now kes-electrical-os
+# Layout on the server (see docs/operations/deployment-runbook.md):
+#   /opt/kes-electrical-os          git checkout (master)
+#   /opt/kes-electrical-os/.venv    Python 3.12 virtualenv with `pip install -e backend`
+#   /opt/kes-electrical-os/backend/.env   filled from backend/.env.example, mode 600
+# Port 8040 is reserved for this product in the Lightsail port map.
+
+[Unit]
+Description=KES Electrical OS API (FastAPI / uvicorn)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/kes-electrical-os/backend
+EnvironmentFile=/opt/kes-electrical-os/backend/.env
+ExecStart=/opt/kes-electrical-os/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8040 --workers 2 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target
