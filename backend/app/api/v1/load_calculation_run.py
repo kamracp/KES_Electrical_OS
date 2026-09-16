@@ -28,7 +28,6 @@ from app.services.load_calculation_run import (
     LoadCalculationRunService,
 )
 
-
 router = APIRouter(
     prefix="/electrical/calculation-runs",
     tags=["Electrical Calculation Runs"],

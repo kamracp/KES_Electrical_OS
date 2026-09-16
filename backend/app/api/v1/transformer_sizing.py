@@ -13,7 +13,6 @@ from app.services.transformer_sizing import (
     TransformerSizingService,
 )
 
-
 router = APIRouter(
     prefix="/electrical/transformer-sizing",
     tags=["Electrical Transformer Sizing"],

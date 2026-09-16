@@ -20,7 +20,6 @@ from app.domain.electrical.sources.generator_results import (
     GeneratorSizingWarningCode,
 )
 
-
 CAPACITY_QUANTUM = Decimal("0.0001")
 PERCENT_QUANTUM = Decimal("0.0001")
 

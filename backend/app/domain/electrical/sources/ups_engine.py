@@ -4,14 +4,13 @@ UPS source-sizing calculation engine.
 Mission: KESE-S2-M7
 """
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 from app.domain.electrical.sources.ups_models import UPSSizingInput
 from app.domain.electrical.sources.ups_results import (
     UPSSizingResult,
     UPSSizingStatus,
 )
-
 
 TWO_DECIMAL_PLACES = Decimal("0.01")
 

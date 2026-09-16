@@ -5,7 +5,7 @@ KESE-S2-M3
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -67,7 +67,7 @@ class LoadCalculationRunService:
             mode="json",
         )
 
-        calculated_at = datetime.now(timezone.utc)
+        calculated_at = datetime.now(UTC)
 
         completed_at = (
             calculated_at
@@ -165,7 +165,7 @@ class LoadCalculationRunService:
 
         calculation_run.approval_status = CalculationApprovalStatus.PENDING.value
         calculation_run.submitted_by = payload.submitted_by
-        calculation_run.submitted_at = datetime.now(timezone.utc)
+        calculation_run.submitted_at = datetime.now(UTC)
 
         return await self.repository.save(calculation_run)
 
@@ -189,7 +189,7 @@ class LoadCalculationRunService:
         if calculation_run.approval_status != CalculationApprovalStatus.PENDING.value:
             raise ValueError("only pending calculation runs can be approved")
 
-        approved_at = datetime.now(timezone.utc)
+        approved_at = datetime.now(UTC)
 
         calculation_run.approval_status = CalculationApprovalStatus.APPROVED.value
         calculation_run.approved_by = payload.approved_by
@@ -221,7 +221,7 @@ class LoadCalculationRunService:
 
         calculation_run.approval_status = CalculationApprovalStatus.REJECTED.value
         calculation_run.rejected_by = payload.rejected_by
-        calculation_run.rejected_at = datetime.now(timezone.utc)
+        calculation_run.rejected_at = datetime.now(UTC)
         calculation_run.rejection_reason = payload.rejection_reason
 
         return await self.repository.save(calculation_run)

@@ -6,7 +6,6 @@ KESE-S2-M7
 import pytest
 from httpx import AsyncClient
 
-
 GENERATOR_SIZING_URL = "/api/v1/electrical/generator-sizing/calculate"
 
 

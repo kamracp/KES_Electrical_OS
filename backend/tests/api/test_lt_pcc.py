@@ -6,7 +6,6 @@ KESE-S2-M10
 import pytest
 from httpx import AsyncClient
 
-
 LT_PCC_URL = "/api/v1/electrical/lt-pcc/calculate"
 
 

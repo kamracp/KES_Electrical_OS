@@ -4,7 +4,7 @@ KESE-S2-M8
 """
 
 from dataclasses import dataclass
-from decimal import Decimal, ROUND_HALF_UP, localcontext
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 
 from app.domain.electrical.sources.pv_models import (
     PVSizingInput,
@@ -15,7 +15,6 @@ from app.domain.electrical.sources.pv_results import (
     PVSizingWarning,
     PVSizingWarningCode,
 )
-
 
 CAPACITY_QUANTUM = Decimal("0.0001")
 VOLTAGE_QUANTUM = Decimal("0.0001")

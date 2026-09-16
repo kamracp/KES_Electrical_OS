@@ -6,7 +6,6 @@ KESE-S2-M9
 import pytest
 from httpx import AsyncClient
 
-
 HT_PANEL_URL = "/api/v1/electrical/ht-panel/calculate"
 
 

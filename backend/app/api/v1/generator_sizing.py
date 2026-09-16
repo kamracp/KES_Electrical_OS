@@ -13,7 +13,6 @@ from app.services.generator_sizing import (
     GeneratorSizingService,
 )
 
-
 router = APIRouter(
     prefix="/electrical/generator-sizing",
     tags=["Electrical Generator Sizing"],

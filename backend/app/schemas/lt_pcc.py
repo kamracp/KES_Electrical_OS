@@ -21,8 +21,8 @@ from app.domain.electrical.distribution.lt_pcc_models import (
     LTPanelFormOfSeparation,
     LTPanelInstallation,
     LTPCCSizingInput,
-    LTSystemVoltage,
     LTSwitchingDevice,
+    LTSystemVoltage,
     LTTripUnitType,
 )
 from app.domain.electrical.distribution.lt_pcc_results import (

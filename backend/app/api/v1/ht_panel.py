@@ -11,7 +11,6 @@ from app.schemas.ht_panel import (
 )
 from app.services.ht_panel import HTPanelService
 
-
 router = APIRouter(
     prefix="/electrical/ht-panel",
     tags=["Electrical HT Panel"],

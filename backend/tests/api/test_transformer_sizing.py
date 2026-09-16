@@ -6,7 +6,6 @@ KESE-S2-M5
 import pytest
 from httpx import AsyncClient
 
-
 TRANSFORMER_SIZING_URL = "/api/v1/electrical/transformer-sizing/calculate"
 
 

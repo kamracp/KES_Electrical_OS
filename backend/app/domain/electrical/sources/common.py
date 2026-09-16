@@ -6,7 +6,6 @@ KESE-S2-M8A
 from decimal import Decimal
 from typing import TypeVar
 
-
 RatingT = TypeVar("RatingT", bound=Decimal)
 
 

@@ -3,7 +3,7 @@ Pure domain engine for protection coordination studies.
 KESE-S2-M11 Phase-2
 """
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 from app.domain.electrical.protection.coordination_models import (
     CoordinationCatalogueEntry,
@@ -18,7 +18,6 @@ from app.domain.electrical.protection.coordination_results import (
     CoordinationWarning,
     CoordinationWarningCode,
 )
-
 
 DECIMAL_QUANTUM = Decimal("0.0001")
 

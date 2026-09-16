@@ -3,7 +3,7 @@ Pure domain engine for LT PCC / Main Panel engineering.
 KESE-S2-M10
 """
 
-from decimal import Decimal, ROUND_HALF_UP, localcontext
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 
 from app.domain.electrical.distribution.lt_pcc_models import (
     LTFeederInput,
@@ -19,7 +19,6 @@ from app.domain.electrical.distribution.lt_pcc_results import (
     LTPCCWarning,
     LTPCCWarningCode,
 )
-
 
 DECIMAL_QUANTUM = Decimal("0.0001")
 HIGH_LOADING_PERCENT = Decimal("90")

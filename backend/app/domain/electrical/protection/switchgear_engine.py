@@ -3,7 +3,7 @@ Pure domain engine for intelligent switchgear selection.
 KESE-S2-M11
 """
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 from app.domain.electrical.protection.switchgear_models import (
     CoordinationType,

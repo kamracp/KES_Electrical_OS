@@ -42,10 +42,7 @@ from .switchgear_results import (
     SwitchgearWarningCode,
 )
 
-
 __all__ = [
-    "calculate_coordination_study",
-    "calculate_switchgear_selection",
     "CoordinationCatalogueEntry",
     "CoordinationDeviceReference",
     "CoordinationEntryEvaluation",
@@ -70,4 +67,6 @@ __all__ = [
     "SwitchgearTripUnitType",
     "SwitchgearWarning",
     "SwitchgearWarningCode",
+    "calculate_coordination_study",
+    "calculate_switchgear_selection",
 ]

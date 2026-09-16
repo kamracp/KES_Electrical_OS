@@ -11,7 +11,6 @@ from app.schemas.lt_pcc import (
 )
 from app.services.lt_pcc import LTPCCService
 
-
 router = APIRouter(
     prefix="/electrical/lt-pcc",
     tags=["Electrical LT PCC"],

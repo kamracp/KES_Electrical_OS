@@ -3,7 +3,7 @@ Pure domain engine for protection relay and TCC calculations.
 KESE-S2-M12
 """
 
-from decimal import Decimal, ROUND_HALF_UP, localcontext
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 
 from app.domain.electrical.relay.relay_models import (
     ProtectionRelayInput,
@@ -19,7 +19,6 @@ from app.domain.electrical.relay.relay_results import (
     RelayWarning,
     RelayWarningCode,
 )
-
 
 DECIMAL_QUANTUM = Decimal("0.0001")
 

@@ -380,10 +380,10 @@ class LTPCCSizingInput:
 __all__ = [
     "LTFeederInput",
     "LTFeederType",
+    "LTPCCSizingInput",
     "LTPanelFormOfSeparation",
     "LTPanelInstallation",
-    "LTPCCSizingInput",
-    "LTSystemVoltage",
     "LTSwitchingDevice",
+    "LTSystemVoltage",
     "LTTripUnitType",
 ]

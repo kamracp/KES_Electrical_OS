@@ -10,7 +10,6 @@ from enum import StrEnum
 from app.domain.electrical.sources.common import (
     normalize_optional_text,
     normalize_required_text,
-    require_decimal,
     require_positive_decimal,
 )
 

@@ -3,7 +3,7 @@ Pure domain engine for HT panel engineering.
 KESE-S2-M9
 """
 
-from decimal import Decimal, ROUND_HALF_UP, localcontext
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 
 from app.domain.electrical.sources.ht_panel_models import (
     HTFeederInput,
@@ -19,7 +19,6 @@ from app.domain.electrical.sources.ht_panel_results import (
     HTPanelWarning,
     HTPanelWarningCode,
 )
-
 
 DECIMAL_QUANTUM = Decimal("0.0001")
 HIGH_LOADING_PERCENT = Decimal("90")
