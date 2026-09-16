@@ -397,6 +397,46 @@ class CableSizingEngine:
                     field_name="soil_thermal_resistivity_k_m_per_w",
                 )
             )
+        # Reference ambient temperatures are thresholds for flagging an
+        # unestablished factor only; the engine never derives a factor itself.
+        buried_methods = {
+            InstallationMethod.D1_GROUND_DUCT,
+            InstallationMethod.D2_DIRECT_BURIED,
+        }
+        reference_ambient_c = (
+            Decimal("20") if study.installation.method in buried_methods else Decimal("30")
+        )
+        if (
+            study.installation.ambient_derating_factor == Decimal("1")
+            and study.installation.ambient_temperature_c != reference_ambient_c
+        ):
+            warnings.append(
+                CableEngineeringWarning(
+                    code=CableWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED,
+                    message=(
+                        "Ambient derating factor is 1 while ambient temperature "
+                        f"{study.installation.ambient_temperature_c} degC differs from the "
+                        f"{reference_ambient_c} degC reference; establish the factor "
+                        "independently from the applicable standard"
+                    ),
+                    field_name="ambient_derating_factor",
+                )
+            )
+        if (
+            study.installation.grouping_derating_factor == Decimal("1")
+            and study.installation.grouped_circuits > 1
+        ):
+            warnings.append(
+                CableEngineeringWarning(
+                    code=CableWarningCode.GROUPING_DERATING_NOT_ESTABLISHED,
+                    message=(
+                        "Grouping derating factor is 1 while "
+                        f"{study.installation.grouped_circuits} circuits are grouped; "
+                        "establish the factor independently from the applicable standard"
+                    ),
+                    field_name="grouping_derating_factor",
+                )
+            )
         return tuple(warnings)
 
     @classmethod
