@@ -36,12 +36,18 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 | P8 Cable sizing | **First complete vertical slice** | Frontend slice `b7435b8`…`1312b57` (16 Sep), live smoke passed. Derating-not-established warnings `1ec83cb`…`4cddf3e`; smoke: ambient and grouping warnings confirmed in browser; negative case (30 °C, 1 circuit) not yet recorded |
 | P9 Panels / IEC 61439 | Foundation | lifecycle incomplete |
 | P10–P15 | Planned | no code |
-| P16 Hardening / deployment | Utilities complete, first release pending | `backend/.env.example`, `deployment/systemd`, `deployment/nginx`, `scripts/{check_backend,check_frontend,full_regression,healthcheck,deploy}.sh`, `Makefile`, `.github/workflows/ci.yml`, `docs/operations/deployment-runbook.md` (`fb74257`..`9b1ac55`). Ruff formatting/lint baselines applied repo-wide. Docker/compose deferred (shared systemd instance; see runbook §6). The `.gitignore` conflict noted earlier did not exist. Port 8040, subdomain electrical.kamraengineeringsolution.com |
+| P16 Hardening / deployment | First release live 17 Sep 2026 (`5ee3188`) | `backend/.env.example`, `deployment/systemd`, `deployment/nginx`, `scripts/{check_backend,check_frontend,full_regression,healthcheck,deploy}.sh`, `Makefile`, `.github/workflows/ci.yml`, `docs/operations/deployment-runbook.md` (`fb74257`..`9b1ac55`). Ruff formatting/lint baselines applied repo-wide. Docker/compose deferred (shared systemd instance; see runbook §6). The `.gitignore` conflict noted earlier did not exist. Port 8040, subdomain electrical.kamraengineeringsolution.com |
+
+## Releases
+
+| Date | Commit | Notes |
+|---|---|---|
+| 2026-09-17 | `5ee3188` | First release: https://electrical.kamraengineeringsolution.com — server prep per runbook §1, `scripts/deploy.sh` green (origin + public health), Certbot cert added after the zone SSL mode incident; nginx site recorded at `e47a9c7` |
 
 ## Active slice
 
-None. Item 12 deployment utilities closed at `9b1ac55`. Next action: first release per
-`docs/operations/deployment-runbook.md` §1–§3 (server prep, then `scripts/deploy.sh`).
+None. First release live. Next: navigation shell (the root route has no links, so `/cable-sizing` is URL-only),
+then public smoke record, then the items below.
 
 ## Next slices (in order)
 
