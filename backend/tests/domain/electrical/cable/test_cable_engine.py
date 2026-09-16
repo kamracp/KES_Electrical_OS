@@ -224,6 +224,110 @@ def test_confirmed_soil_value_suppresses_soil_warning() -> None:
 
 
 @pytest.mark.unit
+def test_established_derating_factors_emit_no_not_established_warnings() -> None:
+    result = CableSizingEngine.calculate(make_study())
+    warning_codes = {warning.code for warning in result.warnings}
+
+    assert CableWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED not in warning_codes
+    assert CableWarningCode.GROUPING_DERATING_NOT_ESTABLISHED not in warning_codes
+
+
+@pytest.mark.unit
+def test_unity_ambient_factor_away_from_reference_ambient_emits_warning() -> None:
+    result = CableSizingEngine.calculate(
+        make_study(
+            installation=make_installation(
+                ambient_temperature_c=Decimal("40"),
+                ambient_derating_factor=Decimal("1"),
+            ),
+        )
+    )
+    warnings = [
+        warning
+        for warning in result.warnings
+        if warning.code is CableWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED
+    ]
+
+    assert len(warnings) == 1
+    assert warnings[0].field_name == "ambient_derating_factor"
+    assert "40" in warnings[0].message
+    assert "30" in warnings[0].message
+
+
+@pytest.mark.unit
+def test_unity_ambient_factor_at_air_reference_ambient_is_accepted() -> None:
+    result = CableSizingEngine.calculate(
+        make_study(
+            installation=make_installation(
+                ambient_temperature_c=Decimal("30"),
+                ambient_derating_factor=Decimal("1"),
+            ),
+        )
+    )
+    warning_codes = {warning.code for warning in result.warnings}
+
+    assert CableWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED not in warning_codes
+
+
+@pytest.mark.unit
+def test_buried_methods_use_ground_reference_ambient() -> None:
+    at_reference = CableSizingEngine.calculate(
+        make_study(
+            installation=make_installation(
+                method=InstallationMethod.D2_DIRECT_BURIED,
+                ambient_temperature_c=Decimal("20"),
+                ambient_derating_factor=Decimal("1"),
+            ),
+        )
+    )
+    off_reference = CableSizingEngine.calculate(
+        make_study(
+            installation=make_installation(
+                method=InstallationMethod.D2_DIRECT_BURIED,
+                ambient_temperature_c=Decimal("30"),
+                ambient_derating_factor=Decimal("1"),
+            ),
+        )
+    )
+
+    at_codes = {warning.code for warning in at_reference.warnings}
+    off_codes = {warning.code for warning in off_reference.warnings}
+    assert CableWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED not in at_codes
+    assert CableWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED in off_codes
+
+
+@pytest.mark.unit
+def test_unity_grouping_factor_with_grouped_circuits_emits_warning() -> None:
+    grouped = CableSizingEngine.calculate(
+        make_study(
+            installation=make_installation(
+                grouping_derating_factor=Decimal("1"),
+                grouped_circuits=3,
+            ),
+        )
+    )
+    single = CableSizingEngine.calculate(
+        make_study(
+            installation=make_installation(
+                grouping_derating_factor=Decimal("1"),
+                grouped_circuits=1,
+            ),
+        )
+    )
+
+    grouped_warnings = [
+        warning
+        for warning in grouped.warnings
+        if warning.code is CableWarningCode.GROUPING_DERATING_NOT_ESTABLISHED
+    ]
+    single_codes = {warning.code for warning in single.warnings}
+    assert len(grouped_warnings) == 1
+    assert grouped_warnings[0].field_name == "grouping_derating_factor"
+    assert "3 circuits" in grouped_warnings[0].message
+    assert CableWarningCode.GROUPING_DERATING_NOT_ESTABLISHED not in single_codes
+
+
+@pytest.mark.unit
 def test_metallic_armour_protective_path_is_not_applicable() -> None:
     result = CableSizingEngine.calculate(
         make_study(
