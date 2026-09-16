@@ -7,6 +7,10 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
 
+from app.domain.electrical.jurisdiction.jurisdiction_models import (
+    JurisdictionProfile,
+    ReferenceVerificationStatus,
+)
 from app.domain.electrical.sources.common import (
     normalize_optional_text,
     normalize_required_text,
@@ -272,6 +276,10 @@ class CableSizingResult:
     governing_criterion: str | None = None
     standard_reference: str = "IEC 60364-5-52"
     ampacity_reference: str = "IEC 60287"
+    jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
+    reference_verification_status: ReferenceVerificationStatus = (
+        ReferenceVerificationStatus.UNVERIFIED
+    )
     notes: str | None = None
 
     def __post_init__(self) -> None:

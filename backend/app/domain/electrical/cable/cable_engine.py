@@ -27,6 +27,7 @@ from app.domain.electrical.cable.cable_results import (
     CableVoltageDropResult,
     CableWarningCode,
 )
+from app.domain.electrical.jurisdiction.jurisdiction_profiles import get_profile
 
 
 class CableSizingEngine:
@@ -144,6 +145,10 @@ class CableSizingEngine:
                 ),
                 standard_reference=study.standard_reference,
                 ampacity_reference=study.ampacity_reference,
+                jurisdiction_profile=study.jurisdiction_profile,
+                reference_verification_status=get_profile(
+                    study.jurisdiction_profile
+                ).reference_data_status,
                 notes=study.notes,
             )
 
@@ -162,6 +167,10 @@ class CableSizingEngine:
             warnings=cls._deduplicate_warnings((*base_warnings, warning)),
             standard_reference=study.standard_reference,
             ampacity_reference=study.ampacity_reference,
+            jurisdiction_profile=study.jurisdiction_profile,
+            reference_verification_status=get_profile(
+                study.jurisdiction_profile
+            ).reference_data_status,
             notes=study.notes,
         )
 
@@ -397,28 +406,41 @@ class CableSizingEngine:
                     field_name="soil_thermal_resistivity_k_m_per_w",
                 )
             )
-        # Reference ambient temperatures are thresholds for flagging an
-        # unestablished factor only; the engine never derives a factor itself.
+        # Reference ambient temperatures come from the jurisdiction profile and are
+        # thresholds for flagging an unestablished factor only; the engine never
+        # derives a factor itself. An unresolved profile cannot confirm the ambient,
+        # so a unity factor is flagged regardless of the entered temperature.
+        profile = get_profile(study.jurisdiction_profile)
         buried_methods = {
             InstallationMethod.D1_GROUND_DUCT,
             InstallationMethod.D2_DIRECT_BURIED,
         }
         reference_ambient_c = (
-            Decimal("20") if study.installation.method in buried_methods else Decimal("30")
+            profile.reference_ambient_ground_c
+            if study.installation.method in buried_methods
+            else profile.reference_ambient_air_c
         )
-        if (
-            study.installation.ambient_derating_factor == Decimal("1")
-            and study.installation.ambient_temperature_c != reference_ambient_c
+        if study.installation.ambient_derating_factor == Decimal("1") and (
+            reference_ambient_c is None
+            or study.installation.ambient_temperature_c != reference_ambient_c
         ):
+            if reference_ambient_c is None:
+                message = (
+                    "Ambient derating factor is 1 and the reference ambient temperature for "
+                    f"jurisdiction profile {profile.profile.value} is not resolved; establish "
+                    "the factor independently from the applicable standard"
+                )
+            else:
+                message = (
+                    "Ambient derating factor is 1 while ambient temperature "
+                    f"{study.installation.ambient_temperature_c} degC differs from the "
+                    f"{reference_ambient_c} degC reference; establish the factor "
+                    "independently from the applicable standard"
+                )
             warnings.append(
                 CableEngineeringWarning(
                     code=CableWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED,
-                    message=(
-                        "Ambient derating factor is 1 while ambient temperature "
-                        f"{study.installation.ambient_temperature_c} degC differs from the "
-                        f"{reference_ambient_c} degC reference; establish the factor "
-                        "independently from the applicable standard"
-                    ),
+                    message=message,
                     field_name="ambient_derating_factor",
                 )
             )
