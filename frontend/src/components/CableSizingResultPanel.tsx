@@ -1,3 +1,7 @@
+import type {
+  JurisdictionProfile,
+  ReferenceVerificationStatus,
+} from "../services/cableContract";
 import type { CableSizingResponse } from "../services/cable";
 
 // Derive nested types from the contract so schema drift fails typecheck here.
@@ -198,6 +202,24 @@ function CheckTable({ title, rows }: CheckTableProps) {
   );
 }
 
+// Exhaustive maps: a new profile or status without a label is a compile error.
+const JURISDICTION_LABELS: Record<JurisdictionProfile, string> = {
+  IN: "India (CEA Regulations, IS, CPWD)",
+  IEC: "IEC (international)",
+  US: "United States (NEC / NFPA 70)",
+  UK: "United Kingdom (BS 7671)",
+  AU_NZ: "Australia / New Zealand (AS/NZS 3000)",
+  EU: "European Union (HD 60364)",
+};
+
+const VERIFICATION_LABELS: Record<ReferenceVerificationStatus, string> = {
+  VERIFIED: "Verified",
+  UNVERIFIED: "Unverified",
+  LEGACY: "Legacy",
+  REFERENCE_ONLY: "Reference only",
+  UNRESOLVED: "Unresolved - reference data pending",
+};
+
 export function CableSizingResultPanel({ result }: CableSizingResultPanelProps) {
   return (
     <article aria-label="Cable sizing result">
@@ -236,6 +258,14 @@ export function CableSizingResultPanel({ result }: CableSizingResultPanelProps) 
           <dd>{result.standard_reference}</dd>
           <dt>Ampacity data</dt>
           <dd>{result.ampacity_reference}</dd>
+          <dt>Jurisdiction profile</dt>
+          <dd data-jurisdiction-profile={result.jurisdiction_profile}>
+            {JURISDICTION_LABELS[result.jurisdiction_profile]}
+          </dd>
+          <dt>Reference data status</dt>
+          <dd data-reference-verification-status={result.reference_verification_status}>
+            {VERIFICATION_LABELS[result.reference_verification_status]}
+          </dd>
         </dl>
         {result.notes ? <p data-notes="true">{result.notes}</p> : null}
       </section>

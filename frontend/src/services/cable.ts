@@ -11,7 +11,9 @@ import {
   exactDecimalSchema,
   installationMethodSchema,
   insulationMaterialSchema,
+  jurisdictionProfileSchema,
   protectiveConductorTypeSchema,
+  referenceVerificationStatusSchema,
 } from "./cableContract";
 
 const optionalRequestText = (maxLength: number) =>
@@ -100,6 +102,7 @@ export const cableSizingRequestSchema = z
     size_schedule: cableSizeScheduleRequestSchema,
     standard_reference: z.string().trim().min(1).max(80).optional(),
     ampacity_reference: z.string().trim().min(1).max(80).optional(),
+    jurisdiction_profile: jurisdictionProfileSchema.optional(),
     notes: optionalRequestText(1000),
   })
   .strict();
@@ -172,6 +175,8 @@ export const cableSizingResponseSchema = z
     warnings: z.array(cableEngineeringWarningResponseSchema),
     standard_reference: z.string().min(1),
     ampacity_reference: z.string().min(1),
+    jurisdiction_profile: jurisdictionProfileSchema,
+    reference_verification_status: referenceVerificationStatusSchema,
     notes: z.string().nullable(),
   })
   .strict();

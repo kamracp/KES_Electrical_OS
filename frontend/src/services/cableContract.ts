@@ -88,6 +88,23 @@ export const cableWarningCodeSchema = z.enum([
   "NO_STANDARD_SIZE_AVAILABLE",
 ]);
 
+export const jurisdictionProfileSchema = z.enum([
+  "IN",
+  "IEC",
+  "US",
+  "UK",
+  "AU_NZ",
+  "EU",
+]);
+
+export const referenceVerificationStatusSchema = z.enum([
+  "VERIFIED",
+  "UNVERIFIED",
+  "LEGACY",
+  "REFERENCE_ONLY",
+  "UNRESOLVED",
+]);
+
 export type ConductorMaterial = z.infer<typeof conductorMaterialSchema>;
 export type InsulationMaterial = z.infer<typeof insulationMaterialSchema>;
 export type CableConstruction = z.infer<typeof cableConstructionSchema>;
@@ -102,3 +119,7 @@ export type ProtectiveConductorType = z.infer<
 export type CableCheckStatus = z.infer<typeof cableCheckStatusSchema>;
 export type CableSizingStatus = z.infer<typeof cableSizingStatusSchema>;
 export type CableWarningCode = z.infer<typeof cableWarningCodeSchema>;
+export type JurisdictionProfile = z.infer<typeof jurisdictionProfileSchema>;
+export type ReferenceVerificationStatus = z.infer<
+  typeof referenceVerificationStatusSchema
+>;

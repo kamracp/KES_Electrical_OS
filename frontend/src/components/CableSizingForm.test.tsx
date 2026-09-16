@@ -71,6 +71,7 @@ describe("CableSizingForm", () => {
     expect(payload).toEqual({
       code: "CBL-001",
       name: "Feeder to MCC-1",
+      jurisdiction_profile: "IN",
       circuit: {
         design_current_a: "250",
         nominal_voltage_v: "415",

@@ -18,6 +18,7 @@ type CableSizingDraft = {
   nominalVoltageV: string;
   routeLengthM: string;
   system: string;
+  jurisdictionProfile: string;
   powerFactor: string;
   allowableVoltageDropPercent: string;
   faultCurrentKa: string;
@@ -57,6 +58,7 @@ const initialDraft: CableSizingDraft = {
   nominalVoltageV: "",
   routeLengthM: "",
   system: "",
+  jurisdictionProfile: "IN",
   powerFactor: "",
   allowableVoltageDropPercent: "",
   faultCurrentKa: "",
@@ -132,6 +134,7 @@ export function CableSizingForm({ disabled = false, onSubmit }: CableSizingFormP
     const payload = compact({
       code: draft.studyCode,
       name: draft.studyName,
+      jurisdiction_profile: draft.jurisdictionProfile,
       circuit: compact({
         design_current_a: draft.designCurrentA,
         nominal_voltage_v: draft.nominalVoltageV,
@@ -225,6 +228,25 @@ export function CableSizingForm({ disabled = false, onSubmit }: CableSizingFormP
         {text("Study code", "studyCode")}
         {text("Study name", "studyName")}
         {text("Notes", "notes")}
+        <label>
+          Jurisdiction profile
+          <select
+            name="jurisdictionProfile"
+            value={draft.jurisdictionProfile}
+            onChange={(event) => updateField("jurisdictionProfile", event.target.value)}
+          >
+            <option value="IN">India (CEA Regulations, IS, CPWD)</option>
+            <option value="IEC">IEC (international, no national layer)</option>
+            <option value="UK">United Kingdom (BS 7671) - reference data pending</option>
+            <option value="EU">European Union (HD 60364) - reference data pending</option>
+            <option value="US">United States (NEC / NFPA 70) - reference data pending</option>
+            <option value="AU_NZ">Australia / New Zealand (AS/NZS 3000) - reference data pending</option>
+          </select>
+        </label>
+        <p>
+          The jurisdiction profile governs reference precedence and ambient
+          conventions; engine physics does not change with the profile.
+        </p>
         <p>
           References: IEC 60364-5-52 (selection) and IEC 60287 (ampacity) as
           registered in the reference register; editions are unverified until

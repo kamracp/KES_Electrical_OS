@@ -31,6 +31,8 @@ const response = {
   warnings: [],
   standard_reference: "IEC 60364-5-52",
   ampacity_reference: "IEC 60287",
+  jurisdiction_profile: "IN",
+  reference_verification_status: "UNVERIFIED",
   notes: null,
 } as CableSizingResponse;
 

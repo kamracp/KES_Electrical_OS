@@ -92,6 +92,8 @@ const validResponse = {
   ],
   standard_reference: "IEC 60364-5-52",
   ampacity_reference: "IEC 60287",
+  jurisdiction_profile: "IN",
+  reference_verification_status: "UNVERIFIED",
   notes: "Feeder route via cable tray CT-01.",
 };
 
