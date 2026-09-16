@@ -88,6 +88,12 @@ select = [
     "RUF",
 ]
 ignore = []
+# Engineering docstrings legitimately use the multiplication sign and degree symbol.
+allowed-confusables = ["×", "°", "−"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI dependency and parameter markers are immutable by design.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path", "fastapi.Body", "fastapi.Header"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
