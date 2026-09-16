@@ -70,6 +70,15 @@ __all__ = [
     "GeneratorSizingStatus",
     "GeneratorSizingWarning",
     "GeneratorSizingWarningCode",
+    "PVBatteryConfiguration",
+    "PVInverterRedundancyMode",
+    "PVPhaseConfiguration",
+    "PVSizingInput",
+    "PVSizingResult",
+    "PVSizingStatus",
+    "PVSizingWarning",
+    "PVSizingWarningCode",
+    "PVSystemType",
     "TransformerRedundancyMode",
     "TransformerSizingInput",
     "TransformerSizingResult",
@@ -84,16 +93,7 @@ __all__ = [
     "UPSSizingStatus",
     "UPSTopology",
     "calculate_generator_sizing",
+    "calculate_pv_sizing",
     "calculate_transformer_sizing",
     "calculate_ups_sizing",
 ]
-("PVBatteryConfiguration",)
-("PVInverterRedundancyMode",)
-("PVPhaseConfiguration",)
-("PVSizingInput",)
-("PVSizingResult",)
-("PVSizingStatus",)
-("PVSizingWarning",)
-("PVSizingWarningCode",)
-("PVSystemType",)
-("calculate_pv_sizing",)
