@@ -214,3 +214,42 @@ async def test_cable_no_standard_size_returns_explicit_status(
     assert data["status"] == "NO_STANDARD_SIZE_AVAILABLE"
     assert data["notes"] == "Main LT Feeder Cable sizing study."
     assert len(data["warnings"]) > 0
+
+
+@pytest.mark.api
+async def test_cable_defaults_to_india_profile_with_unverified_references(
+    client: AsyncClient,
+) -> None:
+    response = await client.post(CABLE_SIZING_URL, json=cable_payload())
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["jurisdiction_profile"] == "IN"
+    assert data["reference_verification_status"] == "UNVERIFIED"
+
+
+@pytest.mark.api
+async def test_cable_unresolved_profile_is_echoed_with_unresolved_status(
+    client: AsyncClient,
+) -> None:
+    payload = cable_payload()
+    payload["jurisdiction_profile"] = "US"
+
+    response = await client.post(CABLE_SIZING_URL, json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["jurisdiction_profile"] == "US"
+    assert data["reference_verification_status"] == "UNRESOLVED"
+
+
+@pytest.mark.api
+async def test_cable_unknown_profile_is_rejected(
+    client: AsyncClient,
+) -> None:
+    payload = cable_payload()
+    payload["jurisdiction_profile"] = "MARS"
+
+    response = await client.post(CABLE_SIZING_URL, json=payload)
+
+    assert response.status_code == 422
