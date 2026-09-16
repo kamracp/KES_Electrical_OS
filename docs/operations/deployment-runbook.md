@@ -1,7 +1,8 @@
 # Deployment runbook — KES Electrical OS
 
 Target: single AWS Lightsail instance (Ubuntu) shared with other KES products; nginx + Cloudflare
-(Flexible SSL, origin on port 80); PostgreSQL local to the instance. This product uses port **8040**,
+(zone SSL/TLS mode "Automatic", effectively Full: the origin serves 443 with Let's Encrypt certificates);
+PostgreSQL local to the instance. This product uses port **8040**,
 subdomain **electrical.kamraengineeringsolution.com**, checkout `/opt/kes-electrical-os`, web root
 `/var/www/kes-electrical-os`, systemd unit `kes-electrical-os.service`.
 
@@ -25,10 +26,14 @@ sudo -u postgres psql -c "CREATE ROLE keos LOGIN PASSWORD '<password>';"
 sudo -u postgres psql -c "CREATE DATABASE kes_electrical_os OWNER keos;"
 
 # 1.3 Environment file (from the template; production values; mode 600)
+#   Every key carries the KES_ prefix (settings env_prefix); unprefixed keys are silently ignored
+#   and the API would start with development defaults.
 cp backend/.env.example backend/.env && chmod 600 backend/.env && nano backend/.env
-#   ENVIRONMENT=production, DEBUG=false, DATABASE_URL with the keos role,
-#   BACKEND_CORS_ORIGINS=["https://electrical.kamraengineeringsolution.com"],
-#   ALLOWED_HOSTS=["electrical.kamraengineeringsolution.com","127.0.0.1"]
+#   KES_ENVIRONMENT=production, KES_DEBUG=false, KES_DATABASE_URL=postgresql+psycopg://keos:...@127.0.0.1:5432/kes_electrical_os,
+#   KES_BACKEND_CORS_ORIGINS=["https://electrical.kamraengineeringsolution.com"],
+#   KES_ALLOWED_HOSTS=["electrical.kamraengineeringsolution.com","127.0.0.1"]
+# Verify before migrating (must print 127.0.0.1 and production):
+#   cd backend && ../.venv/bin/python -c "from app.core.config import settings as s; print(s.DATABASE_URL.split('@')[-1], s.ENVIRONMENT)" && cd ..
 
 # 1.4 Schema
 cd backend && ../.venv/bin/alembic upgrade head && cd ..
@@ -40,10 +45,16 @@ sudo cp deployment/nginx/electrical.kamraengineeringsolution.com.conf /etc/nginx
 sudo ln -sf /etc/nginx/sites-available/electrical.kamraengineeringsolution.com.conf /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 curl -s http://127.0.0.1:8040/api/v1/health
+
+# 1.6 TLS certificate (required: Cloudflare connects to the origin on 443; without it another
+#     site's 443 block answers for this host). Adds the 443 block and 80->443 redirect to the site file.
+sudo certbot --nginx -d electrical.kamraengineeringsolution.com --redirect
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Cloudflare: add an `A` record `electrical` → instance public IP, proxied (orange cloud). SSL mode stays
-Flexible (Full Strict loops with the current nginx configuration).
+Cloudflare: add an `A` record `electrical` → instance public IP, proxied (orange cloud). **Never change the
+zone SSL/TLS mode** — it is shared by every product on this instance; switching it to Flexible on 17 Sep 2026
+broke kamraengineeringsolution.com with a redirect loop until it was set back to Automatic.
 
 ## 2. Developer machine preparation (once)
 
