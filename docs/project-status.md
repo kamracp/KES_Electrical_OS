@@ -4,8 +4,8 @@ Authoritative status record. Updated at the close of every slice; chat history i
 source of truth. Read with `AGENTS.md`, `docs/references/electrical-master-reference-register.md`
 and `docs/references/reference-gap-register.md`.
 
-Baseline: `master` = `origin/master` at `59b9e4c` (2026-09-17). Backend regression 892 passed;
-frontend 74 tests, typecheck, oxlint and Vite build passed; jurisdiction-profile live smoke passed (IN, US, IEC).
+Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_regression.sh` PASS end-to-end
+(backend ruff format + lint clean repo-wide, 892 tests; frontend typecheck, oxlint, 74 tests, build); GitHub Actions CI green.
 
 ## Product direction (decided 2026-09-16)
 
@@ -36,12 +36,12 @@ frontend 74 tests, typecheck, oxlint and Vite build passed; jurisdiction-profile
 | P8 Cable sizing | **First complete vertical slice** | Frontend slice `b7435b8`…`1312b57` (16 Sep), live smoke passed. Derating-not-established warnings `1ec83cb`…`4cddf3e`; smoke: ambient and grouping warnings confirmed in browser; negative case (30 °C, 1 circuit) not yet recorded |
 | P9 Panels / IEC 61439 | Foundation | lifecycle incomplete |
 | P10–P15 | Planned | no code |
-| P16 Hardening / deployment | Planned | `.gitignore` currently ignores `deployment/`, which the target structure tracks — resolve first |
+| P16 Hardening / deployment | Utilities complete, first release pending | `backend/.env.example`, `deployment/systemd`, `deployment/nginx`, `scripts/{check_backend,check_frontend,full_regression,healthcheck,deploy}.sh`, `Makefile`, `.github/workflows/ci.yml`, `docs/operations/deployment-runbook.md` (`fb74257`..`9b1ac55`). Ruff formatting/lint baselines applied repo-wide. Docker/compose deferred (shared systemd instance; see runbook §6). The `.gitignore` conflict noted earlier did not exist. Port 8040, subdomain electrical.kamraengineeringsolution.com |
 
 ## Active slice
 
-None. Slice E (jurisdiction profile, GAP-012 first step + GAP-010) closed at `59b9e4c`; derating-warning
-slice negative case confirmed in the same smoke.
+None. Item 12 deployment utilities closed at `9b1ac55`. Next action: first release per
+`docs/operations/deployment-runbook.md` §1–§3 (server prep, then `scripts/deploy.sh`).
 
 ## Next slices (in order)
 
