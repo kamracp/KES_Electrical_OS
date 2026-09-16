@@ -143,7 +143,7 @@ def validate_positive_rating_schedule(
         raise ValueError(order_message)
 
 
-def select_smallest_adequate_rating(
+def select_smallest_adequate_rating[RatingT: Decimal](
     required_rating: Decimal,
     available_ratings: tuple[RatingT, ...],
 ) -> RatingT | None:
