@@ -41,6 +41,10 @@ from app.domain.electrical.cable.cable_results import (
     CableVoltageDropResult,
     CableWarningCode,
 )
+from app.domain.electrical.jurisdiction.jurisdiction_models import (
+    JurisdictionProfile,
+    ReferenceVerificationStatus,
+)
 
 
 def _reject_float(value: object) -> object:
@@ -48,8 +52,7 @@ def _reject_float(value: object) -> object:
 
     if isinstance(value, float):
         raise ValueError(
-            "engineering decimal values must be provided as strings, "
-            "integers, or Decimal values"
+            "engineering decimal values must be provided as strings, integers, or Decimal values"
         )
 
     return value
@@ -111,9 +114,7 @@ class CableCircuitInputSchema(BaseModel):
     route_length_m: NonNegativeExactDecimal
     system: CircuitSystem
     power_factor: RatioExactDecimal = Field(default=Decimal("1"))
-    allowable_voltage_drop_percent: PercentExactDecimal = Field(
-        default=Decimal("5")
-    )
+    allowable_voltage_drop_percent: PercentExactDecimal = Field(default=Decimal("5"))
     fault_current_ka: PositiveExactDecimal | None = None
     fault_duration_s: PositiveExactDecimal | None = None
     harmonic_neutral_factor: PositiveExactDecimal = Field(default=Decimal("1"))
@@ -123,9 +124,7 @@ class CableCircuitInputSchema(BaseModel):
         """Ensure fault current and duration are provided together."""
 
         if (self.fault_current_ka is None) != (self.fault_duration_s is None):
-            raise ValueError(
-                "fault_current_ka and fault_duration_s must be provided together"
-            )
+            raise ValueError("fault_current_ka and fault_duration_s must be provided together")
 
         return self
 
@@ -161,9 +160,7 @@ class CableConstructionInputSchema(BaseModel):
     parallel_runs: StrictInt = Field(default=1, ge=1)
     neutral_required: StrictBool = True
     reduced_neutral_permitted: StrictBool = False
-    protective_conductor_type: ProtectiveConductorType = (
-        ProtectiveConductorType.INTEGRAL_CORE
-    )
+    protective_conductor_type: ProtectiveConductorType = ProtectiveConductorType.INTEGRAL_CORE
     armoured: StrictBool = False
 
     @model_validator(mode="after")
@@ -227,8 +224,7 @@ class CableInstallationInputSchema(BaseModel):
             InstallationMethod.D2_DIRECT_BURIED,
         }
         has_soil_data = (
-            self.burial_depth_m is not None
-            or self.soil_thermal_resistivity_k_m_per_w is not None
+            self.burial_depth_m is not None or self.soil_thermal_resistivity_k_m_per_w is not None
         )
         if has_soil_data and self.method not in buried_methods:
             raise ValueError("burial and soil data require a D1 or D2 installation method")
@@ -289,14 +285,10 @@ class CableSizeScheduleSchema(BaseModel):
         return CableSizeSchedule(
             phase_sizes_mm2=tuple(self.phase_sizes_mm2),
             neutral_sizes_mm2=(
-                tuple(self.neutral_sizes_mm2)
-                if self.neutral_sizes_mm2 is not None
-                else None
+                tuple(self.neutral_sizes_mm2) if self.neutral_sizes_mm2 is not None else None
             ),
             protective_sizes_mm2=(
-                tuple(self.protective_sizes_mm2)
-                if self.protective_sizes_mm2 is not None
-                else None
+                tuple(self.protective_sizes_mm2) if self.protective_sizes_mm2 is not None else None
             ),
         )
 
@@ -325,6 +317,7 @@ class CableSizingRequest(BaseModel):
         min_length=1,
         max_length=80,
     )
+    jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
     notes: str | None = Field(default=None, max_length=1000)
 
     @model_validator(mode="after")
@@ -343,9 +336,8 @@ class CableSizingRequest(BaseModel):
         ):
             raise ValueError("THREE_PHASE_FOUR_WIRE circuit requires a neutral conductor")
 
-        if (
-            self.cable.reduced_neutral_permitted
-            and self.circuit.harmonic_neutral_factor > Decimal("1")
+        if self.cable.reduced_neutral_permitted and self.circuit.harmonic_neutral_factor > Decimal(
+            "1"
         ):
             raise ValueError(
                 "reduced neutral is not permitted when harmonic neutral factor exceeds 1"
@@ -365,6 +357,7 @@ class CableSizingRequest(BaseModel):
             size_schedule=self.size_schedule.to_domain(),
             standard_reference=self.standard_reference,
             ampacity_reference=self.ampacity_reference,
+            jurisdiction_profile=self.jurisdiction_profile,
             notes=self.notes,
         )
 
@@ -507,6 +500,8 @@ class CableSizingResponse(BaseModel):
     warnings: list[CableEngineeringWarningSchema] = Field(default_factory=list)
     standard_reference: str
     ampacity_reference: str
+    jurisdiction_profile: JurisdictionProfile
+    reference_verification_status: ReferenceVerificationStatus
     notes: str | None = None
 
     @classmethod
@@ -536,12 +531,11 @@ class CableSizingResponse(BaseModel):
                 if result.short_circuit is not None
                 else None
             ),
-            warnings=[
-                CableEngineeringWarningSchema.from_domain(w)
-                for w in result.warnings
-            ],
+            warnings=[CableEngineeringWarningSchema.from_domain(w) for w in result.warnings],
             standard_reference=result.standard_reference,
             ampacity_reference=result.ampacity_reference,
+            jurisdiction_profile=result.jurisdiction_profile,
+            reference_verification_status=result.reference_verification_status,
             notes=result.notes,
         )
 
