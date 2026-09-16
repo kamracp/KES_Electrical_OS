@@ -27,6 +27,10 @@ from app.domain.electrical.cable.cable_results import (
     CableSizingStatus,
     CableWarningCode,
 )
+from app.domain.electrical.jurisdiction import (
+    JurisdictionProfile,
+    ReferenceVerificationStatus,
+)
 
 STANDARD_PHASE_SIZES = tuple(
     Decimal(value) for value in ("35", "50", "70", "95", "120", "150", "185", "240", "300")
@@ -325,6 +329,64 @@ def test_unity_grouping_factor_with_grouped_circuits_emits_warning() -> None:
     assert grouped_warnings[0].field_name == "grouping_derating_factor"
     assert "3 circuits" in grouped_warnings[0].message
     assert CableWarningCode.GROUPING_DERATING_NOT_ESTABLISHED not in single_codes
+
+
+@pytest.mark.unit
+def test_result_echoes_default_jurisdiction_profile_and_verification_status() -> None:
+    result = CableSizingEngine.calculate(make_study())
+
+    assert result.jurisdiction_profile is JurisdictionProfile.IN
+    assert result.reference_verification_status is ReferenceVerificationStatus.UNVERIFIED
+
+
+@pytest.mark.unit
+def test_unresolved_profile_is_reported_and_flags_unity_ambient_factor() -> None:
+    result = CableSizingEngine.calculate(
+        make_study(
+            jurisdiction_profile=JurisdictionProfile.US,
+            installation=make_installation(
+                ambient_temperature_c=Decimal("30"),
+                ambient_derating_factor=Decimal("1"),
+            ),
+        )
+    )
+    ambient_warnings = [
+        warning
+        for warning in result.warnings
+        if warning.code is CableWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED
+    ]
+
+    assert result.jurisdiction_profile is JurisdictionProfile.US
+    assert result.reference_verification_status is ReferenceVerificationStatus.UNRESOLVED
+    assert len(ambient_warnings) == 1
+    assert "not resolved" in ambient_warnings[0].message
+    assert "US" in ambient_warnings[0].message
+
+
+@pytest.mark.unit
+def test_unresolved_profile_with_established_ambient_factor_emits_no_ambient_warning() -> None:
+    result = CableSizingEngine.calculate(make_study(jurisdiction_profile=JurisdictionProfile.AU_NZ))
+    warning_codes = {warning.code for warning in result.warnings}
+
+    assert CableWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED not in warning_codes
+    assert result.reference_verification_status is ReferenceVerificationStatus.UNRESOLVED
+
+
+@pytest.mark.unit
+def test_iec_profile_uses_same_reference_ambient_as_india() -> None:
+    result = CableSizingEngine.calculate(
+        make_study(
+            jurisdiction_profile=JurisdictionProfile.IEC,
+            installation=make_installation(
+                ambient_temperature_c=Decimal("30"),
+                ambient_derating_factor=Decimal("1"),
+            ),
+        )
+    )
+    warning_codes = {warning.code for warning in result.warnings}
+
+    assert CableWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED not in warning_codes
+    assert result.jurisdiction_profile is JurisdictionProfile.IEC
 
 
 @pytest.mark.unit
