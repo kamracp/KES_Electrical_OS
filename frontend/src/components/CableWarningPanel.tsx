@@ -18,6 +18,8 @@ const WARNING_CODE_LABELS: Record<WarningCode, string> = {
   HIGH_TOTAL_DERATING: "High total derating",
   PARALLEL_CABLE_CURRENT_SHARING: "Parallel cable current sharing",
   SOIL_DATA_REQUIRED: "Soil data required",
+  AMBIENT_DERATING_NOT_ESTABLISHED: "Ambient derating factor not established",
+  GROUPING_DERATING_NOT_ESTABLISHED: "Grouping derating factor not established",
   NO_STANDARD_SIZE_AVAILABLE: "No standard size available",
 };
 
