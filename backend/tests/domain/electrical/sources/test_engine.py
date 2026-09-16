@@ -60,10 +60,7 @@ def warning_codes(
 ) -> set[TransformerSizingWarningCode]:
     """Return controlled warning codes from a result."""
 
-    return {
-        warning.code
-        for warning in result.warnings
-    }
+    return {warning.code for warning in result.warnings}
 
 
 @pytest.mark.unit
@@ -77,23 +74,11 @@ def test_selects_smallest_adequate_rating() -> None:
     assert result.base_demand_kva == Decimal("1000.0000")
     assert result.future_demand_kva == Decimal("1000.0000")
     assert result.design_required_kva == Decimal("1100.0000")
-    assert (
-        result.required_unit_rating_kva
-        == Decimal("1100.0000")
-    )
+    assert result.required_unit_rating_kva == Decimal("1100.0000")
     assert result.selected_unit_rating_kva == Decimal("1250")
-    assert (
-        result.installed_nameplate_capacity_kva
-        == Decimal("1250.0000")
-    )
-    assert (
-        result.derated_duty_capacity_kva
-        == Decimal("1250.0000")
-    )
-    assert (
-        result.spare_derated_capacity_kva
-        == Decimal("150.0000")
-    )
+    assert result.installed_nameplate_capacity_kva == Decimal("1250.0000")
+    assert result.derated_duty_capacity_kva == Decimal("1250.0000")
+    assert result.spare_derated_capacity_kva == Decimal("150.0000")
     assert result.loading_percent == Decimal("88.0000")
     assert result.status is TransformerSizingStatus.VALID
     assert result.warnings == ()
@@ -133,10 +118,7 @@ def test_rating_selection_uses_unrounded_requirement() -> None:
         ),
     )
 
-    assert (
-        result.required_unit_rating_kva
-        == Decimal("1100.0000")
-    )
+    assert result.required_unit_rating_kva == Decimal("1100.0000")
     assert result.selected_unit_rating_kva == Decimal("1250")
 
 
@@ -162,16 +144,10 @@ def test_growth_margin_and_derating_are_applied() -> None:
     assert result.base_demand_kva == Decimal("1000.0000")
     assert result.future_demand_kva == Decimal("1200.0000")
     assert result.design_required_kva == Decimal("1320.0000")
-    assert (
-        result.combined_derating_factor
-        == Decimal("0.8379")
-    )
+    assert result.combined_derating_factor == Decimal("0.8379")
     assert result.selected_unit_rating_kva == Decimal("1600")
     assert result.status is TransformerSizingStatus.WARNING
-    assert (
-        TransformerSizingWarningCode.DERATING_APPLIED
-        in warning_codes(result)
-    )
+    assert TransformerSizingWarningCode.DERATING_APPLIED in warning_codes(result)
 
 
 @pytest.mark.unit
@@ -249,8 +225,7 @@ def test_no_solution_for_inadequate_rating_schedule() -> None:
     assert result.spare_derated_capacity_kva is None
     assert result.loading_percent is None
     assert warning_codes(result) == {
-        TransformerSizingWarningCode
-        .NO_STANDARD_RATING_AVAILABLE,
+        TransformerSizingWarningCode.NO_STANDARD_RATING_AVAILABLE,
     }
 
 
@@ -268,8 +243,7 @@ def test_no_solution_preserves_derating_warning() -> None:
     assert result.status is TransformerSizingStatus.NO_SOLUTION
     assert warning_codes(result) == {
         TransformerSizingWarningCode.DERATING_APPLIED,
-        TransformerSizingWarningCode
-        .NO_STANDARD_RATING_AVAILABLE,
+        TransformerSizingWarningCode.NO_STANDARD_RATING_AVAILABLE,
     }
 
 
@@ -288,9 +262,7 @@ def test_n_plus_one_arrangement_capacity() -> None:
             ),
             duty_units=2,
             standby_units=1,
-            redundancy_mode=(
-                TransformerRedundancyMode.N_PLUS_1
-            ),
+            redundancy_mode=(TransformerRedundancyMode.N_PLUS_1),
         ),
     )
 
@@ -298,18 +270,9 @@ def test_n_plus_one_arrangement_capacity() -> None:
     assert result.duty_units == 2
     assert result.standby_units == 1
     assert result.total_units == 3
-    assert (
-        result.installed_nameplate_capacity_kva
-        == Decimal("3000.0000")
-    )
-    assert (
-        result.derated_duty_capacity_kva
-        == Decimal("2000.0000")
-    )
-    assert (
-        result.spare_derated_capacity_kva
-        == Decimal("0.0000")
-    )
+    assert result.installed_nameplate_capacity_kva == Decimal("3000.0000")
+    assert result.derated_duty_capacity_kva == Decimal("2000.0000")
+    assert result.spare_derated_capacity_kva == Decimal("0.0000")
 
 
 @pytest.mark.unit
@@ -334,14 +297,8 @@ def test_two_n_arrangement_capacity() -> None:
 
     assert result.selected_unit_rating_kva == Decimal("500")
     assert result.total_units == 4
-    assert (
-        result.installed_nameplate_capacity_kva
-        == Decimal("2000.0000")
-    )
-    assert (
-        result.derated_duty_capacity_kva
-        == Decimal("1000.0000")
-    )
+    assert result.installed_nameplate_capacity_kva == Decimal("2000.0000")
+    assert result.derated_duty_capacity_kva == Decimal("1000.0000")
 
 
 @pytest.mark.unit
@@ -380,10 +337,7 @@ def test_invalid_engine_input_is_rejected() -> None:
 
     with pytest.raises(
         TypeError,
-        match=(
-            "sizing_input must be a "
-            "TransformerSizingInput record"
-        ),
+        match=("sizing_input must be a TransformerSizingInput record"),
     ):
         calculate_transformer_sizing(
             "invalid",  # type: ignore[arg-type]

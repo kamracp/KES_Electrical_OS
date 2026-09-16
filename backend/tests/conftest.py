@@ -89,10 +89,7 @@ def standard_payload() -> dict[str, object]:
 
     return {
         "code": "IEC 60364-1:2025",
-        "title": (
-            "Low-voltage electrical installations — "
-            "Fundamental principles"
-        ),
+        "title": ("Low-voltage electrical installations — Fundamental principles"),
         "issuing_organization": "IEC",
         "category": "Electrical Installations",
         "edition": "2025 Edition",
@@ -102,12 +99,10 @@ def standard_payload() -> dict[str, object]:
         "effective_date": "2025-01-01",
         "withdrawn_date": None,
         "scope": (
-            "Fundamental principles and requirements for "
-            "low-voltage electrical installations."
+            "Fundamental principles and requirements for low-voltage electrical installations."
         ),
         "description": (
-            "Engineering standard used for electrical "
-            "installation design and compliance."
+            "Engineering standard used for electrical installation design and compliance."
         ),
         "reference_url": "https://www.iec.ch",
         "remarks": "KESE-S1-M3 automated test record.",

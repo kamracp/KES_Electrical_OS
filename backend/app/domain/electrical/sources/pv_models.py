@@ -3,7 +3,6 @@ Domain input models for Solar PV source sizing.
 KESE-S2-M8
 """
 
-
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
@@ -47,10 +46,7 @@ def _require_decimal(
     value: Decimal,
 ) -> None:
     if not isinstance(value, Decimal):
-        raise TypeError(
-            f"{field_name} must be a Decimal; "
-            "float values are not permitted"
-        )
+        raise TypeError(f"{field_name} must be a Decimal; float values are not permitted")
 
     if not value.is_finite():
         raise ValueError(f"{field_name} must be finite")
@@ -63,9 +59,7 @@ def _require_positive_decimal(
     _require_decimal(field_name, value)
 
     if value <= Decimal("0"):
-        raise ValueError(
-            f"{field_name} must be greater than zero"
-        )
+        raise ValueError(f"{field_name} must be greater than zero")
 
 
 def _require_non_negative_decimal(
@@ -75,9 +69,7 @@ def _require_non_negative_decimal(
     _require_decimal(field_name, value)
 
     if value < Decimal("0"):
-        raise ValueError(
-            f"{field_name} must not be negative"
-        )
+        raise ValueError(f"{field_name} must not be negative")
 
 
 def _require_ratio(
@@ -87,10 +79,7 @@ def _require_ratio(
     _require_decimal(field_name, value)
 
     if not Decimal("0") < value <= Decimal("1"):
-        raise ValueError(
-            f"{field_name} must be greater than 0 "
-            "and not greater than 1"
-        )
+        raise ValueError(f"{field_name} must be greater than 0 and not greater than 1")
 
 
 def _require_factor_not_below_one(
@@ -100,9 +89,7 @@ def _require_factor_not_below_one(
     _require_decimal(field_name, value)
 
     if value < Decimal("1"):
-        raise ValueError(
-            f"{field_name} must not be less than 1"
-        )
+        raise ValueError(f"{field_name} must not be less than 1")
 
 
 def _require_non_positive_decimal(
@@ -112,9 +99,7 @@ def _require_non_positive_decimal(
     _require_decimal(field_name, value)
 
     if value > Decimal("0"):
-        raise ValueError(
-            f"{field_name} must not be positive"
-        )
+        raise ValueError(f"{field_name} must not be positive")
 
 
 def _normalize_required_text(
@@ -122,16 +107,12 @@ def _normalize_required_text(
     value: str,
 ) -> str:
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field_name} must be a string"
-        )
+        raise TypeError(f"{field_name} must be a string")
 
     normalized_value = value.strip()
 
     if not normalized_value:
-        raise ValueError(
-            f"{field_name} must not be empty"
-        )
+        raise ValueError(f"{field_name} must not be empty")
 
     return normalized_value
 
@@ -144,17 +125,13 @@ def _normalize_optional_text(
         return None
 
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field_name} must be a string or None"
-        )
+        raise TypeError(f"{field_name} must be a string or None")
 
     return value.strip() or None
 
 
 @dataclass(frozen=True, slots=True)
 class PVSizingInput:
-   
-
     code: str
     name: str
 
@@ -195,15 +172,9 @@ class PVSizingInput:
     redundant_inverters: int = 0
 
     system_type: PVSystemType = PVSystemType.GRID_TIED
-    phase_configuration: PVPhaseConfiguration = (
-        PVPhaseConfiguration.THREE_PHASE
-    )
-    redundancy_mode: PVInverterRedundancyMode = (
-        PVInverterRedundancyMode.NONE
-    )
-    battery_configuration: PVBatteryConfiguration = (
-        PVBatteryConfiguration.NONE
-    )
+    phase_configuration: PVPhaseConfiguration = PVPhaseConfiguration.THREE_PHASE
+    redundancy_mode: PVInverterRedundancyMode = PVInverterRedundancyMode.NONE
+    battery_configuration: PVBatteryConfiguration = PVBatteryConfiguration.NONE
 
     export_limit_kw: Decimal | None = None
     dg_coexistence: bool = False
@@ -228,34 +199,16 @@ class PVSizingInput:
         for field_name, value in {
             "required_ac_output_kw": self.required_ac_output_kw,
             "module_rated_power_wp": self.module_rated_power_wp,
-            "module_open_circuit_voltage_v": (
-                self.module_open_circuit_voltage_v
-            ),
-            "module_maximum_power_voltage_v": (
-                self.module_maximum_power_voltage_v
-            ),
-            "module_short_circuit_current_a": (
-                self.module_short_circuit_current_a
-            ),
-            "module_maximum_power_current_a": (
-                self.module_maximum_power_current_a
-            ),
-            "inverter_max_dc_voltage_v": (
-                self.inverter_max_dc_voltage_v
-            ),
-            "inverter_mppt_min_voltage_v": (
-                self.inverter_mppt_min_voltage_v
-            ),
-            "inverter_mppt_max_voltage_v": (
-                self.inverter_mppt_max_voltage_v
-            ),
-            "inverter_max_input_current_per_mppt_a": (
-                self.inverter_max_input_current_per_mppt_a
-            ),
+            "module_open_circuit_voltage_v": (self.module_open_circuit_voltage_v),
+            "module_maximum_power_voltage_v": (self.module_maximum_power_voltage_v),
+            "module_short_circuit_current_a": (self.module_short_circuit_current_a),
+            "module_maximum_power_current_a": (self.module_maximum_power_current_a),
+            "inverter_max_dc_voltage_v": (self.inverter_max_dc_voltage_v),
+            "inverter_mppt_min_voltage_v": (self.inverter_mppt_min_voltage_v),
+            "inverter_mppt_max_voltage_v": (self.inverter_mppt_max_voltage_v),
+            "inverter_max_input_current_per_mppt_a": (self.inverter_max_input_current_per_mppt_a),
             "target_dc_ac_ratio": self.target_dc_ac_ratio,
-            "design_irradiance_w_per_m2": (
-                self.design_irradiance_w_per_m2
-            ),
+            "design_irradiance_w_per_m2": (self.design_irradiance_w_per_m2),
         }.items():
             _require_positive_decimal(field_name, value)
 
@@ -277,13 +230,9 @@ class PVSizingInput:
             self.maximum_cell_temperature_c,
         )
 
-        if (
-            self.minimum_design_temperature_c
-            >= self.maximum_cell_temperature_c
-        ):
+        if self.minimum_design_temperature_c >= self.maximum_cell_temperature_c:
             raise ValueError(
-                "minimum_design_temperature_c must be below "
-                "maximum_cell_temperature_c"
+                "minimum_design_temperature_c must be below maximum_cell_temperature_c"
             )
 
         for field_name, value in {
@@ -303,49 +252,33 @@ class PVSizingInput:
 
         for field_name, value in {
             "mppt_count": self.mppt_count,
-            "maximum_strings_per_mppt": (
-                self.maximum_strings_per_mppt
-            ),
+            "maximum_strings_per_mppt": (self.maximum_strings_per_mppt),
             "duty_inverters": self.duty_inverters,
             "redundant_inverters": self.redundant_inverters,
         }.items():
             if isinstance(value, bool) or not isinstance(value, int):
-                raise TypeError(
-                    f"{field_name} must be an integer"
-                )
+                raise TypeError(f"{field_name} must be an integer")
 
         if self.mppt_count <= 0:
-            raise ValueError(
-                "mppt_count must be greater than zero"
-            )
+            raise ValueError("mppt_count must be greater than zero")
 
         if self.maximum_strings_per_mppt <= 0:
-            raise ValueError(
-                "maximum_strings_per_mppt must be greater than zero"
-            )
+            raise ValueError("maximum_strings_per_mppt must be greater than zero")
 
         if self.duty_inverters <= 0:
-            raise ValueError(
-                "duty_inverters must be greater than zero"
-            )
+            raise ValueError("duty_inverters must be greater than zero")
 
         if self.redundant_inverters < 0:
-            raise ValueError(
-                "redundant_inverters must not be negative"
-            )
+            raise ValueError("redundant_inverters must not be negative")
 
         if not isinstance(
             self.available_inverter_ratings_kw,
             tuple,
         ):
-            raise TypeError(
-                "available_inverter_ratings_kw must be a tuple"
-            )
+            raise TypeError("available_inverter_ratings_kw must be a tuple")
 
         if not self.available_inverter_ratings_kw:
-            raise ValueError(
-                "at least one available inverter rating is required"
-            )
+            raise ValueError("at least one available inverter rating is required")
 
         for rating in self.available_inverter_ratings_kw:
             _require_positive_decimal(
@@ -353,42 +286,24 @@ class PVSizingInput:
                 rating,
             )
 
-        if len(
-            self.available_inverter_ratings_kw
-        ) != len(set(self.available_inverter_ratings_kw)):
+        if len(self.available_inverter_ratings_kw) != len(set(self.available_inverter_ratings_kw)):
+            raise ValueError("available inverter ratings must be unique")
+
+        if self.available_inverter_ratings_kw != tuple(sorted(self.available_inverter_ratings_kw)):
+            raise ValueError("available inverter ratings must be in ascending order")
+
+        if self.inverter_mppt_min_voltage_v >= self.inverter_mppt_max_voltage_v:
             raise ValueError(
-                "available inverter ratings must be unique"
+                "inverter_mppt_min_voltage_v must be below inverter_mppt_max_voltage_v"
             )
 
-        if self.available_inverter_ratings_kw != tuple(
-            sorted(self.available_inverter_ratings_kw)
-        ):
+        if self.inverter_mppt_max_voltage_v > self.inverter_max_dc_voltage_v:
             raise ValueError(
-                "available inverter ratings must be in ascending order"
-            )
-
-        if (
-            self.inverter_mppt_min_voltage_v
-            >= self.inverter_mppt_max_voltage_v
-        ):
-            raise ValueError(
-                "inverter_mppt_min_voltage_v must be below "
-                "inverter_mppt_max_voltage_v"
-            )
-
-        if (
-            self.inverter_mppt_max_voltage_v
-            > self.inverter_max_dc_voltage_v
-        ):
-            raise ValueError(
-                "inverter MPPT maximum voltage must not exceed "
-                "inverter maximum DC voltage"
+                "inverter MPPT maximum voltage must not exceed inverter maximum DC voltage"
             )
 
         if not isinstance(self.dg_coexistence, bool):
-            raise TypeError(
-                "dg_coexistence must be a boolean"
-            )
+            raise TypeError("dg_coexistence must be a boolean")
 
         if self.export_limit_kw is not None:
             _require_non_negative_decimal(
@@ -397,71 +312,44 @@ class PVSizingInput:
             )
 
         if not isinstance(self.system_type, PVSystemType):
-            raise TypeError(
-                "system_type must be a PVSystemType value"
-            )
+            raise TypeError("system_type must be a PVSystemType value")
 
         if not isinstance(
             self.phase_configuration,
             PVPhaseConfiguration,
         ):
-            raise TypeError(
-                "phase_configuration must be a "
-                "PVPhaseConfiguration value"
-            )
+            raise TypeError("phase_configuration must be a PVPhaseConfiguration value")
 
         if not isinstance(
             self.redundancy_mode,
             PVInverterRedundancyMode,
         ):
-            raise TypeError(
-                "redundancy_mode must be a "
-                "PVInverterRedundancyMode value"
-            )
+            raise TypeError("redundancy_mode must be a PVInverterRedundancyMode value")
 
         if not isinstance(
             self.battery_configuration,
             PVBatteryConfiguration,
         ):
-            raise TypeError(
-                "battery_configuration must be a "
-                "PVBatteryConfiguration value"
-            )
+            raise TypeError("battery_configuration must be a PVBatteryConfiguration value")
 
         if not isinstance(self.scenario, LoadScenario):
-            raise TypeError(
-                "scenario must be a LoadScenario value"
-            )
+            raise TypeError("scenario must be a LoadScenario value")
+
+        if self.redundancy_mode is PVInverterRedundancyMode.NONE and self.redundant_inverters != 0:
+            raise ValueError("NONE redundancy requires redundant_inverters to be 0")
 
         if (
-            self.redundancy_mode
-            is PVInverterRedundancyMode.NONE
-            and self.redundant_inverters != 0
-        ):
-            raise ValueError(
-                "NONE redundancy requires "
-                "redundant_inverters to be 0"
-            )
-
-        if (
-            self.redundancy_mode
-            is PVInverterRedundancyMode.N_PLUS_1
+            self.redundancy_mode is PVInverterRedundancyMode.N_PLUS_1
             and self.redundant_inverters != 1
         ):
-            raise ValueError(
-                "N_PLUS_1 redundancy requires exactly "
-                "one redundant inverter"
-            )
+            raise ValueError("N_PLUS_1 redundancy requires exactly one redundant inverter")
 
         if (
-            self.redundancy_mode
-            is PVInverterRedundancyMode.TWO_N
-            and self.redundant_inverters
-            != self.duty_inverters
+            self.redundancy_mode is PVInverterRedundancyMode.TWO_N
+            and self.redundant_inverters != self.duty_inverters
         ):
             raise ValueError(
-                "TWO_N redundancy requires redundant_inverters "
-                "to equal duty_inverters"
+                "TWO_N redundancy requires redundant_inverters to equal duty_inverters"
             )
 
         object.__setattr__(self, "code", normalized_code)

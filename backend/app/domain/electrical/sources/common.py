@@ -17,15 +17,10 @@ def require_decimal(
     """Require an exact finite Decimal value."""
 
     if not isinstance(value, Decimal):
-        raise TypeError(
-            f"{field_name} must be a Decimal; "
-            "float values are not permitted"
-        )
+        raise TypeError(f"{field_name} must be a Decimal; float values are not permitted")
 
     if not value.is_finite():
-        raise ValueError(
-            f"{field_name} must be finite"
-        )
+        raise ValueError(f"{field_name} must be finite")
 
 
 def require_positive_decimal(
@@ -37,9 +32,7 @@ def require_positive_decimal(
     require_decimal(field_name, value)
 
     if value <= Decimal("0"):
-        raise ValueError(
-            f"{field_name} must be greater than zero"
-        )
+        raise ValueError(f"{field_name} must be greater than zero")
 
 
 def require_non_negative_decimal(
@@ -51,9 +44,7 @@ def require_non_negative_decimal(
     require_decimal(field_name, value)
 
     if value < Decimal("0"):
-        raise ValueError(
-            f"{field_name} must not be negative"
-        )
+        raise ValueError(f"{field_name} must not be negative")
 
 
 def require_non_positive_decimal(
@@ -65,9 +56,7 @@ def require_non_positive_decimal(
     require_decimal(field_name, value)
 
     if value > Decimal("0"):
-        raise ValueError(
-            f"{field_name} must not be positive"
-        )
+        raise ValueError(f"{field_name} must not be positive")
 
 
 def require_ratio(
@@ -79,10 +68,7 @@ def require_ratio(
     require_decimal(field_name, value)
 
     if not Decimal("0") < value <= Decimal("1"):
-        raise ValueError(
-            f"{field_name} must be greater than 0 "
-            "and not greater than 1"
-        )
+        raise ValueError(f"{field_name} must be greater than 0 and not greater than 1")
 
 
 def require_factor_not_below_one(
@@ -94,9 +80,7 @@ def require_factor_not_below_one(
     require_decimal(field_name, value)
 
     if value < Decimal("1"):
-        raise ValueError(
-            f"{field_name} must not be less than 1"
-        )
+        raise ValueError(f"{field_name} must not be less than 1")
 
 
 def normalize_required_text(
@@ -106,16 +90,12 @@ def normalize_required_text(
     """Validate and normalize required text."""
 
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field_name} must be a string"
-        )
+        raise TypeError(f"{field_name} must be a string")
 
     normalized_value = value.strip()
 
     if not normalized_value:
-        raise ValueError(
-            f"{field_name} must not be empty"
-        )
+        raise ValueError(f"{field_name} must not be empty")
 
     return normalized_value
 
@@ -130,9 +110,7 @@ def normalize_optional_text(
         return None
 
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field_name} must be a string or None"
-        )
+        raise TypeError(f"{field_name} must be a string or None")
 
     return value.strip() or None
 
@@ -148,9 +126,7 @@ def validate_positive_rating_schedule(
     """Validate a positive, unique, ascending rating schedule."""
 
     if not isinstance(ratings, tuple):
-        raise TypeError(
-            f"{field_name} must be a tuple"
-        )
+        raise TypeError(f"{field_name} must be a tuple")
 
     if not ratings:
         raise ValueError(empty_message)
@@ -180,11 +156,7 @@ def select_smallest_adequate_rating(
     )
 
     return next(
-        (
-            rating
-            for rating in available_ratings
-            if rating >= required_rating
-        ),
+        (rating for rating in available_ratings if rating >= required_rating),
         None,
     )
 

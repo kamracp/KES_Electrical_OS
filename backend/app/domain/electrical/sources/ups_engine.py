@@ -71,14 +71,9 @@ def calculate_ups_sizing(
     """
 
     if not isinstance(sizing_input, UPSSizingInput):
-        raise TypeError(
-            "sizing_input must be a UPSSizingInput instance"
-        )
+        raise TypeError("sizing_input must be a UPSSizingInput instance")
 
-    base_load_kva = (
-        sizing_input.critical_load_kw
-        / sizing_input.load_power_factor
-    )
+    base_load_kva = sizing_input.critical_load_kw / sizing_input.load_power_factor
 
     design_load_kva = (
         base_load_kva
@@ -88,18 +83,13 @@ def calculate_ups_sizing(
     )
 
     combined_derating_factor = (
-        sizing_input.ambient_derating_factor
-        * sizing_input.altitude_derating_factor
+        sizing_input.ambient_derating_factor * sizing_input.altitude_derating_factor
     )
 
-    derated_required_capacity_kva = (
-        design_load_kva
-        / combined_derating_factor
-    )
+    derated_required_capacity_kva = design_load_kva / combined_derating_factor
 
-    required_capacity_per_duty_module_kva = (
-        derated_required_capacity_kva
-        / Decimal(sizing_input.duty_modules)
+    required_capacity_per_duty_module_kva = derated_required_capacity_kva / Decimal(
+        sizing_input.duty_modules
     )
 
     selected_unit_rating_kva = _select_standard_rating(
@@ -107,42 +97,22 @@ def calculate_ups_sizing(
         sizing_input.available_unit_ratings_kva,
     )
 
-    total_installed_modules = (
-        sizing_input.duty_modules
-        + sizing_input.redundant_modules
-    )
+    total_installed_modules = sizing_input.duty_modules + sizing_input.redundant_modules
 
-    runtime_hours = (
-        sizing_input.required_runtime_minutes
-        / Decimal("60")
-    )
+    runtime_hours = sizing_input.required_runtime_minutes / Decimal("60")
 
-    estimated_output_energy_kwh = (
-        sizing_input.critical_load_kw
-        * runtime_hours
-    )
+    estimated_output_energy_kwh = sizing_input.critical_load_kw * runtime_hours
 
-    estimated_dc_energy_kwh = (
-        estimated_output_energy_kwh
-        / sizing_input.ups_efficiency
-    )
+    estimated_dc_energy_kwh = estimated_output_energy_kwh / sizing_input.ups_efficiency
 
     if selected_unit_rating_kva is None:
         return UPSSizingResult(
             code=sizing_input.code,
             name=sizing_input.name,
-            critical_load_kw=_round_decimal(
-                sizing_input.critical_load_kw
-            ),
-            base_load_kva=_round_decimal(
-                base_load_kva
-            ),
-            design_load_kva=_round_decimal(
-                design_load_kva
-            ),
-            derated_required_capacity_kva=_round_decimal(
-                derated_required_capacity_kva
-            ),
+            critical_load_kw=_round_decimal(sizing_input.critical_load_kw),
+            base_load_kva=_round_decimal(base_load_kva),
+            design_load_kva=_round_decimal(design_load_kva),
+            derated_required_capacity_kva=_round_decimal(derated_required_capacity_kva),
             required_capacity_per_duty_module_kva=_round_decimal(
                 required_capacity_per_duty_module_kva
             ),
@@ -154,91 +124,44 @@ def calculate_ups_sizing(
             total_installed_capacity_kva=None,
             spare_capacity_kva=None,
             loading_percent=None,
-            required_runtime_minutes=_round_decimal(
-                sizing_input.required_runtime_minutes
-            ),
-            estimated_output_energy_kwh=_round_decimal(
-                estimated_output_energy_kwh
-            ),
-            estimated_dc_energy_kwh=_round_decimal(
-                estimated_dc_energy_kwh
-            ),
+            required_runtime_minutes=_round_decimal(sizing_input.required_runtime_minutes),
+            estimated_output_energy_kwh=_round_decimal(estimated_output_energy_kwh),
+            estimated_dc_energy_kwh=_round_decimal(estimated_dc_energy_kwh),
             topology=sizing_input.topology,
             phase_configuration=sizing_input.phase_configuration,
             redundancy_mode=sizing_input.redundancy_mode,
             battery_technology=sizing_input.battery_technology,
-            status=(
-                UPSSizingStatus.NO_STANDARD_RATING_AVAILABLE
-            ),
+            status=(UPSSizingStatus.NO_STANDARD_RATING_AVAILABLE),
             notes=sizing_input.notes,
         )
 
-    duty_capacity_kva = (
-        selected_unit_rating_kva
-        * Decimal(sizing_input.duty_modules)
-    )
+    duty_capacity_kva = selected_unit_rating_kva * Decimal(sizing_input.duty_modules)
 
-    total_installed_capacity_kva = (
-        selected_unit_rating_kva
-        * Decimal(total_installed_modules)
-    )
+    total_installed_capacity_kva = selected_unit_rating_kva * Decimal(total_installed_modules)
 
-    spare_capacity_kva = (
-        duty_capacity_kva
-        - derated_required_capacity_kva
-    )
+    spare_capacity_kva = duty_capacity_kva - derated_required_capacity_kva
 
-    loading_percent = (
-        derated_required_capacity_kva
-        / duty_capacity_kva
-        * Decimal("100")
-    )
+    loading_percent = derated_required_capacity_kva / duty_capacity_kva * Decimal("100")
 
     return UPSSizingResult(
         code=sizing_input.code,
         name=sizing_input.name,
-        critical_load_kw=_round_decimal(
-            sizing_input.critical_load_kw
-        ),
-        base_load_kva=_round_decimal(
-            base_load_kva
-        ),
-        design_load_kva=_round_decimal(
-            design_load_kva
-        ),
-        derated_required_capacity_kva=_round_decimal(
-            derated_required_capacity_kva
-        ),
-        required_capacity_per_duty_module_kva=_round_decimal(
-            required_capacity_per_duty_module_kva
-        ),
-        selected_unit_rating_kva=_round_decimal(
-            selected_unit_rating_kva
-        ),
+        critical_load_kw=_round_decimal(sizing_input.critical_load_kw),
+        base_load_kva=_round_decimal(base_load_kva),
+        design_load_kva=_round_decimal(design_load_kva),
+        derated_required_capacity_kva=_round_decimal(derated_required_capacity_kva),
+        required_capacity_per_duty_module_kva=_round_decimal(required_capacity_per_duty_module_kva),
+        selected_unit_rating_kva=_round_decimal(selected_unit_rating_kva),
         duty_modules=sizing_input.duty_modules,
         redundant_modules=sizing_input.redundant_modules,
         total_installed_modules=total_installed_modules,
-        duty_capacity_kva=_round_decimal(
-            duty_capacity_kva
-        ),
-        total_installed_capacity_kva=_round_decimal(
-            total_installed_capacity_kva
-        ),
-        spare_capacity_kva=_round_decimal(
-            spare_capacity_kva
-        ),
-        loading_percent=_round_decimal(
-            loading_percent
-        ),
-        required_runtime_minutes=_round_decimal(
-            sizing_input.required_runtime_minutes
-        ),
-        estimated_output_energy_kwh=_round_decimal(
-            estimated_output_energy_kwh
-        ),
-        estimated_dc_energy_kwh=_round_decimal(
-            estimated_dc_energy_kwh
-        ),
+        duty_capacity_kva=_round_decimal(duty_capacity_kva),
+        total_installed_capacity_kva=_round_decimal(total_installed_capacity_kva),
+        spare_capacity_kva=_round_decimal(spare_capacity_kva),
+        loading_percent=_round_decimal(loading_percent),
+        required_runtime_minutes=_round_decimal(sizing_input.required_runtime_minutes),
+        estimated_output_energy_kwh=_round_decimal(estimated_output_energy_kwh),
+        estimated_dc_energy_kwh=_round_decimal(estimated_dc_energy_kwh),
         topology=sizing_input.topology,
         phase_configuration=sizing_input.phase_configuration,
         redundancy_mode=sizing_input.redundancy_mode,

@@ -1,4 +1,3 @@
-
 """
 Domain models for protection coordination studies.
 KESE-S2-M11 Phase-2
@@ -107,6 +106,8 @@ class CoordinationDeviceReference:
             "breaking_capacity_ka",
             self.breaking_capacity_ka,
         )
+
+
 @dataclass(frozen=True, slots=True)
 class CoordinationCatalogueEntry:
     """One coordination catalogue record."""
@@ -157,101 +158,68 @@ class CoordinationCatalogueEntry:
             self.objective,
             CoordinationObjective,
         ):
-            raise TypeError(
-                "objective must be a CoordinationObjective value"
-            )
+            raise TypeError("objective must be a CoordinationObjective value")
 
         if not isinstance(
             self.verification_status,
             CoordinationVerificationStatus,
         ):
-            raise TypeError(
-                "verification_status must be a "
-                "CoordinationVerificationStatus value"
-            )
+            raise TypeError("verification_status must be a CoordinationVerificationStatus value")
 
         if not isinstance(
             self.upstream_device,
             CoordinationDeviceReference,
         ):
-            raise TypeError(
-                "upstream_device must be a "
-                "CoordinationDeviceReference record"
-            )
+            raise TypeError("upstream_device must be a CoordinationDeviceReference record")
 
         if not isinstance(
             self.downstream_device,
             CoordinationDeviceReference,
         ):
-            raise TypeError(
-                "downstream_device must be a "
-                "CoordinationDeviceReference record"
-            )
+            raise TypeError("downstream_device must be a CoordinationDeviceReference record")
 
         for field_name, value in {
-            "maximum_selective_current_ka": (
-                self.maximum_selective_current_ka
-            ),
-            "maximum_cascading_fault_level_ka": (
-                self.maximum_cascading_fault_level_ka
-            ),
+            "maximum_selective_current_ka": (self.maximum_selective_current_ka),
+            "maximum_cascading_fault_level_ka": (self.maximum_cascading_fault_level_ka),
             "motor_power_kw": self.motor_power_kw,
         }.items():
             if value is not None:
                 require_positive_decimal(field_name, value)
 
-        if (
-            self.starter_method is not None
-            and not isinstance(
-                self.starter_method,
-                StarterMethod,
-            )
+        if self.starter_method is not None and not isinstance(
+            self.starter_method,
+            StarterMethod,
         ):
-            raise TypeError(
-                "starter_method must be a StarterMethod value or None"
-            )
+            raise TypeError("starter_method must be a StarterMethod value or None")
 
         if (
             self.objective is CoordinationObjective.SELECTIVITY
             and self.maximum_selective_current_ka is None
         ):
-            raise ValueError(
-                "SELECTIVITY requires "
-                "maximum_selective_current_ka"
-            )
+            raise ValueError("SELECTIVITY requires maximum_selective_current_ka")
 
         if (
             self.objective is CoordinationObjective.CASCADING
             and self.maximum_cascading_fault_level_ka is None
         ):
-            raise ValueError(
-                "CASCADING requires "
-                "maximum_cascading_fault_level_ka"
-            )
+            raise ValueError("CASCADING requires maximum_cascading_fault_level_ka")
 
         if self.objective in {
             CoordinationObjective.TYPE_1,
             CoordinationObjective.TYPE_2,
         }:
             if self.starter_method is None:
-                raise ValueError(
-                    "TYPE_1 and TYPE_2 require starter_method"
-                )
+                raise ValueError("TYPE_1 and TYPE_2 require starter_method")
 
             if self.motor_power_kw is None:
-                raise ValueError(
-                    "TYPE_1 and TYPE_2 require motor_power_kw"
-                )
+                raise ValueError("TYPE_1 and TYPE_2 require motor_power_kw")
 
         if (
-            self.verification_status
-            is CoordinationVerificationStatus.VERIFIED
+            self.verification_status is CoordinationVerificationStatus.VERIFIED
             and self.manufacturer_document is None
         ):
-            raise ValueError(
-                "VERIFIED coordination requires "
-                "manufacturer_document"
-            )
+            raise ValueError("VERIFIED coordination requires manufacturer_document")
+
 
 @dataclass(frozen=True, slots=True)
 class CoordinationStudyInput:
@@ -318,9 +286,7 @@ class CoordinationStudyInput:
             self.objective,
             CoordinationObjective,
         ):
-            raise TypeError(
-                "objective must be a CoordinationObjective value"
-            )
+            raise TypeError("objective must be a CoordinationObjective value")
 
         require_positive_decimal(
             "prospective_fault_current_ka",
@@ -331,33 +297,22 @@ class CoordinationStudyInput:
             self.upstream_device,
             CoordinationDeviceReference,
         ):
-            raise TypeError(
-                "upstream_device must be a "
-                "CoordinationDeviceReference record"
-            )
+            raise TypeError("upstream_device must be a CoordinationDeviceReference record")
 
         if not isinstance(
             self.downstream_device,
             CoordinationDeviceReference,
         ):
-            raise TypeError(
-                "downstream_device must be a "
-                "CoordinationDeviceReference record"
-            )
+            raise TypeError("downstream_device must be a CoordinationDeviceReference record")
 
         if not isinstance(
             self.catalogue_entries,
             tuple,
         ):
-            raise TypeError(
-                "catalogue_entries must be a tuple"
-            )
+            raise TypeError("catalogue_entries must be a tuple")
 
         if not self.catalogue_entries:
-            raise ValueError(
-                "at least one coordination catalogue entry "
-                "is required"
-            )
+            raise ValueError("at least one coordination catalogue entry is required")
 
         if not all(
             isinstance(
@@ -367,20 +322,13 @@ class CoordinationStudyInput:
             for entry in self.catalogue_entries
         ):
             raise TypeError(
-                "catalogue_entries must contain only "
-                "CoordinationCatalogueEntry records"
+                "catalogue_entries must contain only CoordinationCatalogueEntry records"
             )
 
-        entry_codes = tuple(
-            entry.code
-            for entry in self.catalogue_entries
-        )
+        entry_codes = tuple(entry.code for entry in self.catalogue_entries)
 
         if len(entry_codes) != len(set(entry_codes)):
-            raise ValueError(
-                "coordination catalogue entry codes "
-                "must be unique"
-            )
+            raise ValueError("coordination catalogue entry codes must be unique")
 
         if self.required_motor_power_kw is not None:
             require_positive_decimal(
@@ -388,41 +336,27 @@ class CoordinationStudyInput:
                 self.required_motor_power_kw,
             )
 
-        if (
-            self.required_starter_method is not None
-            and not isinstance(
-                self.required_starter_method,
-                StarterMethod,
-            )
+        if self.required_starter_method is not None and not isinstance(
+            self.required_starter_method,
+            StarterMethod,
         ):
-            raise TypeError(
-                "required_starter_method must be a "
-                "StarterMethod value or None"
-            )
+            raise TypeError("required_starter_method must be a StarterMethod value or None")
 
         if self.objective in {
             CoordinationObjective.TYPE_1,
             CoordinationObjective.TYPE_2,
         }:
             if self.required_motor_power_kw is None:
-                raise ValueError(
-                    "TYPE_1 and TYPE_2 studies require "
-                    "required_motor_power_kw"
-                )
+                raise ValueError("TYPE_1 and TYPE_2 studies require required_motor_power_kw")
 
             if self.required_starter_method is None:
-                raise ValueError(
-                    "TYPE_1 and TYPE_2 studies require "
-                    "required_starter_method"
-                )
+                raise ValueError("TYPE_1 and TYPE_2 studies require required_starter_method")
 
         if not isinstance(
             self.require_verified_entry,
             bool,
         ):
-            raise TypeError(
-                "require_verified_entry must be a boolean"
-            )
+            raise TypeError("require_verified_entry must be a boolean")
 
 
 __all__ = [

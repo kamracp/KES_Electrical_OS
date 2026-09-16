@@ -38,10 +38,7 @@ class Standard(
 
     __table_args__ = (
         CheckConstraint(
-            (
-                "publication_year IS NULL "
-                "OR publication_year BETWEEN 1800 AND 2100"
-            ),
+            ("publication_year IS NULL OR publication_year BETWEEN 1800 AND 2100"),
             name="publication_year_range",
         ),
         CheckConstraint(

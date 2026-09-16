@@ -36,8 +36,7 @@ def _reject_float(value: object) -> object:
 
     if isinstance(value, float):
         raise ValueError(
-            "engineering decimal values must be provided as "
-            "strings, integers, or Decimal values"
+            "engineering decimal values must be provided as strings, integers, or Decimal values"
         )
 
     return value
@@ -147,22 +146,12 @@ class HTFeederRequest(_RequestBase):
             feeder_type=self.feeder_type,
             switching_device=self.switching_device,
             design_current_a=self.design_current_a,
-            prospective_short_circuit_current_ka=(
-                self.prospective_short_circuit_current_ka
-            ),
+            prospective_short_circuit_current_ka=(self.prospective_short_circuit_current_ka),
             rated_normal_current_a=self.rated_normal_current_a,
-            rated_short_circuit_breaking_current_ka=(
-                self.rated_short_circuit_breaking_current_ka
-            ),
-            rated_short_time_withstand_current_ka=(
-                self.rated_short_time_withstand_current_ka
-            ),
-            short_time_withstand_duration_s=(
-                self.short_time_withstand_duration_s
-            ),
-            rated_peak_withstand_current_ka=(
-                self.rated_peak_withstand_current_ka
-            ),
+            rated_short_circuit_breaking_current_ka=(self.rated_short_circuit_breaking_current_ka),
+            rated_short_time_withstand_current_ka=(self.rated_short_time_withstand_current_ka),
+            short_time_withstand_duration_s=(self.short_time_withstand_duration_s),
+            rated_peak_withstand_current_ka=(self.rated_peak_withstand_current_ka),
             ct_primary_current_a=self.ct_primary_current_a,
             ct_secondary_current_a=self.ct_secondary_current_a,
             ct_protection_class=self.ct_protection_class,
@@ -258,46 +247,25 @@ class HTPanelSizingRequest(_RequestBase):
             code=self.code,
             name=self.name,
             system_voltage=self.system_voltage,
-            highest_system_voltage_kv=(
-                self.highest_system_voltage_kv
-            ),
+            highest_system_voltage_kv=(self.highest_system_voltage_kv),
             frequency_hz=self.frequency_hz,
             installation=self.installation,
             construction=self.construction,
             busbar_rated_current_a=self.busbar_rated_current_a,
-            busbar_short_time_withstand_current_ka=(
-                self.busbar_short_time_withstand_current_ka
-            ),
-            busbar_short_time_duration_s=(
-                self.busbar_short_time_duration_s
-            ),
-            busbar_peak_withstand_current_ka=(
-                self.busbar_peak_withstand_current_ka
-            ),
-            rated_insulation_level_kv=(
-                self.rated_insulation_level_kv
-            ),
-            lightning_impulse_withstand_voltage_kvp=(
-                self.lightning_impulse_withstand_voltage_kvp
-            ),
-            feeders=tuple(
-                feeder.to_domain()
-                for feeder in self.feeders
-            ),
+            busbar_short_time_withstand_current_ka=(self.busbar_short_time_withstand_current_ka),
+            busbar_short_time_duration_s=(self.busbar_short_time_duration_s),
+            busbar_peak_withstand_current_ka=(self.busbar_peak_withstand_current_ka),
+            rated_insulation_level_kv=(self.rated_insulation_level_kv),
+            lightning_impulse_withstand_voltage_kvp=(self.lightning_impulse_withstand_voltage_kvp),
+            feeders=tuple(feeder.to_domain() for feeder in self.feeders),
             bus_sections=self.bus_sections,
             bus_couplers=self.bus_couplers,
             spare_feeders=self.spare_feeders,
             indoor_ip_rating=self.indoor_ip_rating,
             outdoor_ip_rating=self.outdoor_ip_rating,
-            earthing_switch_required=(
-                self.earthing_switch_required
-            ),
-            arc_classification_required=(
-                self.arc_classification_required
-            ),
-            remote_operation_required=(
-                self.remote_operation_required
-            ),
+            earthing_switch_required=(self.earthing_switch_required),
+            arc_classification_required=(self.arc_classification_required),
+            remote_operation_required=(self.remote_operation_required),
             notes=self.notes,
         )
 

@@ -32,13 +32,9 @@ class GeneratorSizingService:
             payload,
             GeneratorSizingRequest,
         ):
-            raise TypeError(
-                "payload must be a GeneratorSizingRequest"
-            )
+            raise TypeError("payload must be a GeneratorSizingRequest")
 
-        return calculate_domain_generator_sizing(
-            payload.to_domain()
-        )
+        return calculate_domain_generator_sizing(payload.to_domain())
 
 
 __all__ = [

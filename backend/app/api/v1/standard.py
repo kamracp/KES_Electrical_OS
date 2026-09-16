@@ -76,9 +76,7 @@ async def get_standard(
 ) -> StandardResponse:
     """Return an Engineering Standard by UUID."""
 
-    standard = await get_service(db).get_by_id(
-        standard_id
-    )
+    standard = await get_service(db).get_by_id(standard_id)
 
     if standard is None:
         raise HTTPException(
@@ -110,13 +108,8 @@ async def update_standard(
             detail="Standard not found",
         )
 
-    if (
-        payload.code is not None
-        and payload.code != standard.code
-    ):
-        standard_with_code = await service.get_by_code(
-            payload.code
-        )
+    if payload.code is not None and payload.code != standard.code:
+        standard_with_code = await service.get_by_code(payload.code)
 
         if standard_with_code is not None:
             raise HTTPException(

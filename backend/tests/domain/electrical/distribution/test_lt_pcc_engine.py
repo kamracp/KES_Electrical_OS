@@ -66,9 +66,7 @@ def make_panel(
         "busbar_peak_withstand_current_ka": Decimal("143"),
         "neutral_bus_rating_percent": Decimal("100"),
         "earth_bus_rating_percent": Decimal("50"),
-        "feeders": (
-            make_feeder(),
-        ),
+        "feeders": (make_feeder(),),
         "bus_sections": 1,
         "bus_couplers": 0,
         "spare_feeders": 0,
@@ -85,9 +83,7 @@ def make_panel(
 
 @pytest.mark.unit
 def test_calculate_lt_pcc_sizing() -> None:
-    result = calculate_lt_pcc_sizing(
-        make_panel()
-    )
+    result = calculate_lt_pcc_sizing(make_panel())
 
     assert result.code == "PCC-001"
     assert result.total_feeders == 1
@@ -101,9 +97,7 @@ def test_calculate_lt_pcc_sizing() -> None:
 
 @pytest.mark.unit
 def test_lt_feeder_engineering_result() -> None:
-    result = calculate_lt_pcc_sizing(
-        make_panel()
-    )
+    result = calculate_lt_pcc_sizing(make_panel())
 
     feeder = result.feeder_results[0]
 
@@ -120,12 +114,8 @@ def test_low_icu_margin_warning() -> None:
         make_panel(
             feeders=(
                 make_feeder(
-                    rated_ultimate_breaking_capacity_ka=(
-                        Decimal("60")
-                    ),
-                    rated_service_breaking_capacity_ka=(
-                        Decimal("60")
-                    ),
+                    rated_ultimate_breaking_capacity_ka=(Decimal("60")),
+                    rated_service_breaking_capacity_ka=(Decimal("60")),
                 ),
             ),
         )
@@ -145,9 +135,7 @@ def test_low_ics_margin_warning() -> None:
         make_panel(
             feeders=(
                 make_feeder(
-                    rated_service_breaking_capacity_ka=(
-                        Decimal("60")
-                    ),
+                    rated_service_breaking_capacity_ka=(Decimal("60")),
                 ),
             ),
         )
@@ -165,9 +153,7 @@ def test_low_icw_margin_warning() -> None:
         make_panel(
             feeders=(
                 make_feeder(
-                    rated_short_time_withstand_current_ka=(
-                        Decimal("60")
-                    ),
+                    rated_short_time_withstand_current_ka=(Decimal("60")),
                 ),
             ),
         )
@@ -192,8 +178,7 @@ def test_low_feeder_spare_capacity_warning() -> None:
     )
 
     assert any(
-        warning.code
-        is LTPCCWarningCode.LOW_FEEDER_SPARE_CAPACITY
+        warning.code is LTPCCWarningCode.LOW_FEEDER_SPARE_CAPACITY
         for warning in result.feeder_results[0].warnings
     )
 
@@ -211,11 +196,7 @@ def test_high_busbar_loading_warning() -> None:
         )
     )
 
-    assert any(
-        warning.code
-        is LTPCCWarningCode.HIGH_BUSBAR_LOADING
-        for warning in result.warnings
-    )
+    assert any(warning.code is LTPCCWarningCode.HIGH_BUSBAR_LOADING for warning in result.warnings)
 
 
 @pytest.mark.unit
@@ -226,11 +207,7 @@ def test_low_busbar_loading_warning() -> None:
         )
     )
 
-    assert any(
-        warning.code
-        is LTPCCWarningCode.LOW_BUSBAR_LOADING
-        for warning in result.warnings
-    )
+    assert any(warning.code is LTPCCWarningCode.LOW_BUSBAR_LOADING for warning in result.warnings)
 
 
 @pytest.mark.unit
@@ -241,11 +218,7 @@ def test_apfc_review_warning() -> None:
         )
     )
 
-    assert any(
-        warning.code
-        is LTPCCWarningCode.APFC_REVIEW_REQUIRED
-        for warning in result.warnings
-    )
+    assert any(warning.code is LTPCCWarningCode.APFC_REVIEW_REQUIRED for warning in result.warnings)
 
 
 @pytest.mark.unit
@@ -258,9 +231,7 @@ def test_outdoor_remote_operation_warning() -> None:
     )
 
     assert any(
-        warning.code
-        is LTPCCWarningCode.REMOTE_OPERATION_RECOMMENDED
-        for warning in result.warnings
+        warning.code is LTPCCWarningCode.REMOTE_OPERATION_RECOMMENDED for warning in result.warnings
     )
 
 

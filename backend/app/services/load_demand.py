@@ -35,13 +35,9 @@ class LoadDemandService:
         """Calculate one validated electrical load."""
 
         if not isinstance(payload, LoadCalculationRequest):
-            raise TypeError(
-                "payload must be a LoadCalculationRequest"
-            )
+            raise TypeError("payload must be a LoadCalculationRequest")
 
-        return calculate_domain_load(
-            payload.to_domain()
-        )
+        return calculate_domain_load(payload.to_domain())
 
     def calculate_load_group(
         self,
@@ -53,13 +49,9 @@ class LoadDemandService:
             payload,
             LoadGroupCalculationRequest,
         ):
-            raise TypeError(
-                "payload must be a LoadGroupCalculationRequest"
-            )
+            raise TypeError("payload must be a LoadGroupCalculationRequest")
 
-        return calculate_domain_load_group(
-            payload.to_domain()
-        )
+        return calculate_domain_load_group(payload.to_domain())
 
 
 __all__ = [

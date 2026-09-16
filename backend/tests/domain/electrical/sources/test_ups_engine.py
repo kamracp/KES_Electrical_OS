@@ -47,45 +47,26 @@ def _build_input(
 
 
 def test_calculate_ups_sizing_selects_standard_rating() -> None:
-    result = calculate_ups_sizing(
-        _build_input()
-    )
+    result = calculate_ups_sizing(_build_input())
 
     assert result.status is UPSSizingStatus.SELECTED
     assert result.base_load_kva == Decimal("133.33")
     assert result.design_load_kva == Decimal("176.00")
-    assert (
-        result.derated_required_capacity_kva
-        == Decimal("185.26")
-    )
-    assert (
-        result.required_capacity_per_duty_module_kva
-        == Decimal("92.63")
-    )
+    assert result.derated_required_capacity_kva == Decimal("185.26")
+    assert result.required_capacity_per_duty_module_kva == Decimal("92.63")
     assert result.selected_unit_rating_kva == Decimal("100.00")
     assert result.duty_capacity_kva == Decimal("200.00")
-    assert (
-        result.total_installed_capacity_kva
-        == Decimal("300.00")
-    )
+    assert result.total_installed_capacity_kva == Decimal("300.00")
     assert result.spare_capacity_kva == Decimal("14.74")
     assert result.loading_percent == Decimal("92.63")
     assert result.total_installed_modules == 3
 
 
 def test_calculate_ups_sizing_calculates_battery_energy() -> None:
-    result = calculate_ups_sizing(
-        _build_input()
-    )
+    result = calculate_ups_sizing(_build_input())
 
-    assert (
-        result.estimated_output_energy_kwh
-        == Decimal("60.00")
-    )
-    assert (
-        result.estimated_dc_energy_kwh
-        == Decimal("63.83")
-    )
+    assert result.estimated_output_energy_kwh == Decimal("60.00")
+    assert result.estimated_dc_energy_kwh == Decimal("63.83")
 
 
 def test_calculate_ups_sizing_returns_no_rating_status() -> None:
@@ -99,10 +80,7 @@ def test_calculate_ups_sizing_returns_no_rating_status() -> None:
         )
     )
 
-    assert (
-        result.status
-        is UPSSizingStatus.NO_STANDARD_RATING_AVAILABLE
-    )
+    assert result.status is UPSSizingStatus.NO_STANDARD_RATING_AVAILABLE
     assert result.selected_unit_rating_kva is None
     assert result.duty_capacity_kva is None
     assert result.total_installed_capacity_kva is None

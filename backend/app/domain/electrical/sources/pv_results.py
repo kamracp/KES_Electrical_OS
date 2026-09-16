@@ -34,9 +34,7 @@ class PVSizingWarningCode(StrEnum):
     LOW_DC_AC_RATIO = "LOW_DC_AC_RATIO"
     EXPORT_LIMIT_APPLIED = "EXPORT_LIMIT_APPLIED"
     DG_COORDINATION_REQUIRED = "DG_COORDINATION_REQUIRED"
-    NO_STANDARD_INVERTER_RATING = (
-        "NO_STANDARD_INVERTER_RATING"
-    )
+    NO_STANDARD_INVERTER_RATING = "NO_STANDARD_INVERTER_RATING"
 
 
 def _require_decimal(
@@ -44,14 +42,10 @@ def _require_decimal(
     value: Decimal,
 ) -> None:
     if not isinstance(value, Decimal):
-        raise TypeError(
-            f"{field_name} must be a Decimal"
-        )
+        raise TypeError(f"{field_name} must be a Decimal")
 
     if not value.is_finite():
-        raise ValueError(
-            f"{field_name} must be finite"
-        )
+        raise ValueError(f"{field_name} must be finite")
 
 
 def _require_non_negative_decimal(
@@ -61,9 +55,7 @@ def _require_non_negative_decimal(
     _require_decimal(field_name, value)
 
     if value < Decimal("0"):
-        raise ValueError(
-            f"{field_name} must not be negative"
-        )
+        raise ValueError(f"{field_name} must not be negative")
 
 
 def _normalize_required_text(
@@ -71,16 +63,12 @@ def _normalize_required_text(
     value: str,
 ) -> str:
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field_name} must be a string"
-        )
+        raise TypeError(f"{field_name} must be a string")
 
     normalized = value.strip()
 
     if not normalized:
-        raise ValueError(
-            f"{field_name} must not be empty"
-        )
+        raise ValueError(f"{field_name} must not be empty")
 
     return normalized
 
@@ -97,9 +85,7 @@ class PVSizingWarning:
             self.code,
             PVSizingWarningCode,
         ):
-            raise TypeError(
-                "code must be a PVSizingWarningCode value"
-            )
+            raise TypeError("code must be a PVSizingWarningCode value")
 
         object.__setattr__(
             self,
@@ -183,24 +169,12 @@ class PVSizingResult:
         )
 
         for field_name, value in {
-            "required_ac_output_kw": (
-                self.required_ac_output_kw
-            ),
-            "future_required_ac_output_kw": (
-                self.future_required_ac_output_kw
-            ),
-            "design_required_ac_output_kw": (
-                self.design_required_ac_output_kw
-            ),
-            "required_dc_array_capacity_kwp": (
-                self.required_dc_array_capacity_kwp
-            ),
-            "required_inverter_capacity_kw": (
-                self.required_inverter_capacity_kw
-            ),
-            "required_unit_rating_kw": (
-                self.required_unit_rating_kw
-            ),
+            "required_ac_output_kw": (self.required_ac_output_kw),
+            "future_required_ac_output_kw": (self.future_required_ac_output_kw),
+            "design_required_ac_output_kw": (self.design_required_ac_output_kw),
+            "required_dc_array_capacity_kwp": (self.required_dc_array_capacity_kwp),
+            "required_inverter_capacity_kw": (self.required_inverter_capacity_kw),
+            "required_unit_rating_kw": (self.required_unit_rating_kw),
         }.items():
             _require_non_negative_decimal(
                 field_name,
@@ -213,61 +187,34 @@ class PVSizingResult:
             "total_strings": self.total_strings,
             "strings_per_mppt": self.strings_per_mppt,
             "duty_inverters": self.duty_inverters,
-            "redundant_inverters": (
-                self.redundant_inverters
-            ),
+            "redundant_inverters": (self.redundant_inverters),
             "total_inverters": self.total_inverters,
         }.items():
             if isinstance(value, bool) or not isinstance(value, int):
-                raise TypeError(
-                    f"{field_name} must be an integer"
-                )
+                raise TypeError(f"{field_name} must be an integer")
 
             if value < 0:
-                raise ValueError(
-                    f"{field_name} must not be negative"
-                )
+                raise ValueError(f"{field_name} must not be negative")
 
-        if self.total_inverters != (
-            self.duty_inverters
-            + self.redundant_inverters
-        ):
-            raise ValueError(
-                "total_inverters must equal duty_inverters "
-                "plus redundant_inverters"
-            )
+        if self.total_inverters != (self.duty_inverters + self.redundant_inverters):
+            raise ValueError("total_inverters must equal duty_inverters plus redundant_inverters")
 
         if not isinstance(
             self.status,
             PVSizingStatus,
         ):
-            raise TypeError(
-                "status must be a PVSizingStatus value"
-            )
+            raise TypeError("status must be a PVSizingStatus value")
 
         if not isinstance(self.warnings, tuple):
-            raise TypeError(
-                "warnings must be a tuple"
-            )
+            raise TypeError("warnings must be a tuple")
 
-        if not all(
-            isinstance(warning, PVSizingWarning)
-            for warning in self.warnings
-        ):
-            raise TypeError(
-                "warnings must contain only "
-                "PVSizingWarning records"
-            )
+        if not all(isinstance(warning, PVSizingWarning) for warning in self.warnings):
+            raise TypeError("warnings must contain only PVSizingWarning records")
 
-        warning_codes = tuple(
-            warning.code
-            for warning in self.warnings
-        )
+        warning_codes = tuple(warning.code for warning in self.warnings)
 
         if len(warning_codes) != len(set(warning_codes)):
-            raise ValueError(
-                "warning codes must be unique"
-            )
+            raise ValueError("warning codes must be unique")
 
         optional_values = (
             self.selected_unit_rating_kw,
@@ -278,22 +225,10 @@ class PVSizingResult:
         )
 
         if self.status is PVSizingStatus.NO_SOLUTION:
-            if any(
-                value is not None
-                for value in optional_values
-            ):
-                raise ValueError(
-                    "NO_SOLUTION result must not contain "
-                    "selected capacity values"
-                )
-        elif any(
-            value is None
-            for value in optional_values
-        ):
-            raise ValueError(
-                "selected PV result requires complete "
-                "capacity values"
-            )
+            if any(value is not None for value in optional_values):
+                raise ValueError("NO_SOLUTION result must not contain selected capacity values")
+        elif any(value is None for value in optional_values):
+            raise ValueError("selected PV result requires complete capacity values")
 
 
 __all__ = [

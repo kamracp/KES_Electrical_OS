@@ -147,20 +147,29 @@ def test_factor_validation() -> None:
 
 @pytest.mark.unit
 def test_text_normalization() -> None:
-    assert normalize_required_text(
-        "name",
-        "  Main Source  ",
-    ) == "Main Source"
+    assert (
+        normalize_required_text(
+            "name",
+            "  Main Source  ",
+        )
+        == "Main Source"
+    )
 
-    assert normalize_optional_text(
-        "notes",
-        "  Approved  ",
-    ) == "Approved"
+    assert (
+        normalize_optional_text(
+            "notes",
+            "  Approved  ",
+        )
+        == "Approved"
+    )
 
-    assert normalize_optional_text(
-        "notes",
-        "   ",
-    ) is None
+    assert (
+        normalize_optional_text(
+            "notes",
+            "   ",
+        )
+        is None
+    )
 
 
 @pytest.mark.unit
@@ -204,13 +213,10 @@ def test_select_smallest_adequate_rating() -> None:
         Decimal("500"),
     )
 
-    assert (
-        select_smallest_adequate_rating(
-            Decimal("200"),
-            ratings,
-        )
-        == Decimal("250")
-    )
+    assert select_smallest_adequate_rating(
+        Decimal("200"),
+        ratings,
+    ) == Decimal("250")
 
     assert (
         select_smallest_adequate_rating(

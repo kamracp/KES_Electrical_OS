@@ -34,9 +34,7 @@ def make_entry() -> CoordinationCatalogueEntry:
     return CoordinationCatalogueEntry(
         code="SEL-001",
         objective=CoordinationObjective.SELECTIVITY,
-        verification_status=(
-            CoordinationVerificationStatus.VERIFIED
-        ),
+        verification_status=(CoordinationVerificationStatus.VERIFIED),
         upstream_device=make_device(),
         downstream_device=make_device("MCCB-DN-01"),
         maximum_selective_current_ka=Decimal("35"),
@@ -85,9 +83,7 @@ def test_selectivity_requires_limit() -> None:
         CoordinationCatalogueEntry(
             code="SEL-BAD",
             objective=CoordinationObjective.SELECTIVITY,
-            verification_status=(
-                CoordinationVerificationStatus.UNVERIFIED
-            ),
+            verification_status=(CoordinationVerificationStatus.UNVERIFIED),
             upstream_device=make_device(),
             downstream_device=make_device("MCCB-DN-01"),
         )
@@ -102,9 +98,7 @@ def test_verified_entry_requires_document() -> None:
         CoordinationCatalogueEntry(
             code="SEL-BAD-02",
             objective=CoordinationObjective.SELECTIVITY,
-            verification_status=(
-                CoordinationVerificationStatus.VERIFIED
-            ),
+            verification_status=(CoordinationVerificationStatus.VERIFIED),
             upstream_device=make_device(),
             downstream_device=make_device("MCCB-DN-01"),
             maximum_selective_current_ka=Decimal("35"),
@@ -135,9 +129,7 @@ def test_type_2_study_requires_motor_data() -> None:
     type_2_entry = CoordinationCatalogueEntry(
         code="T2-001",
         objective=CoordinationObjective.TYPE_2,
-        verification_status=(
-            CoordinationVerificationStatus.VERIFIED
-        ),
+        verification_status=(CoordinationVerificationStatus.VERIFIED),
         upstream_device=make_device(),
         downstream_device=make_device("MPCB-DN-01"),
         starter_method=StarterMethod.DOL,

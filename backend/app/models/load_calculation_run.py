@@ -81,33 +81,19 @@ class LoadCalculationRun(
             name="revision_number_positive",
         ),
         CheckConstraint(
-            (
-                "calculation_type IN "
-                "('SINGLE_LOAD', 'LOAD_GROUP')"
-            ),
+            ("calculation_type IN ('SINGLE_LOAD', 'LOAD_GROUP')"),
             name="calculation_type_valid",
         ),
         CheckConstraint(
-            (
-                "scenario IN "
-                "('NORMAL', 'EMERGENCY', 'OUTAGE', "
-                "'STARTING', 'UPS', 'PV', 'FUTURE')"
-            ),
+            ("scenario IN ('NORMAL', 'EMERGENCY', 'OUTAGE', 'STARTING', 'UPS', 'PV', 'FUTURE')"),
             name="scenario_valid",
         ),
         CheckConstraint(
-            (
-                "run_status IN "
-                "('DRAFT', 'COMPLETED', 'FAILED')"
-            ),
+            ("run_status IN ('DRAFT', 'COMPLETED', 'FAILED')"),
             name="run_status_valid",
         ),
         CheckConstraint(
-            (
-                "approval_status IN "
-                "('NOT_SUBMITTED', 'PENDING', "
-                "'APPROVED', 'REJECTED')"
-            ),
+            ("approval_status IN ('NOT_SUBMITTED', 'PENDING', 'APPROVED', 'REJECTED')"),
             name="approval_status_valid",
         ),
         CheckConstraint(
@@ -133,17 +119,11 @@ class LoadCalculationRun(
             name="rejected_run_audit_complete",
         ),
         CheckConstraint(
-            (
-                "is_immutable = false OR "
-                "approval_status = 'APPROVED'"
-            ),
+            ("is_immutable = false OR approval_status = 'APPROVED'"),
             name="immutable_only_when_approved",
         ),
         CheckConstraint(
-            (
-                "supersedes_run_id IS NULL OR "
-                "supersedes_run_id <> id"
-            ),
+            ("supersedes_run_id IS NULL OR supersedes_run_id <> id"),
             name="run_cannot_supersede_itself",
         ),
         Index(

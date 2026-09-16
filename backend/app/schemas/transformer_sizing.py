@@ -31,8 +31,7 @@ def _reject_float(value: object) -> object:
 
     if isinstance(value, float):
         raise ValueError(
-            "engineering decimal values must be provided as "
-            "strings, integers, or Decimal values"
+            "engineering decimal values must be provided as strings, integers, or Decimal values"
         )
 
     return value
@@ -131,9 +130,7 @@ class TransformerSizingRequest(_RequestBase):
         ge=0,
     )
 
-    redundancy_mode: TransformerRedundancyMode = (
-        TransformerRedundancyMode.NONE
-    )
+    redundancy_mode: TransformerRedundancyMode = TransformerRedundancyMode.NONE
     scenario: LoadScenario = LoadScenario.NORMAL
 
     notes: str | None = None
@@ -144,50 +141,23 @@ class TransformerSizingRequest(_RequestBase):
     ) -> "TransformerSizingRequest":
         """Validate controlled ratings and redundancy arrangement."""
 
-        if len(
-            self.available_unit_ratings_kva
-        ) != len(set(self.available_unit_ratings_kva)):
-            raise ValueError(
-                "available transformer ratings must be unique"
-            )
+        if len(self.available_unit_ratings_kva) != len(set(self.available_unit_ratings_kva)):
+            raise ValueError("available transformer ratings must be unique")
 
-        if self.available_unit_ratings_kva != tuple(
-            sorted(self.available_unit_ratings_kva)
-        ):
-            raise ValueError(
-                "available transformer ratings "
-                "must be in ascending order"
-            )
+        if self.available_unit_ratings_kva != tuple(sorted(self.available_unit_ratings_kva)):
+            raise ValueError("available transformer ratings must be in ascending order")
+
+        if self.redundancy_mode is TransformerRedundancyMode.NONE and self.standby_units != 0:
+            raise ValueError("NONE redundancy requires standby_units to be 0")
+
+        if self.redundancy_mode is TransformerRedundancyMode.N_PLUS_1 and self.standby_units != 1:
+            raise ValueError("N_PLUS_1 redundancy requires exactly one standby unit")
 
         if (
-            self.redundancy_mode
-            is TransformerRedundancyMode.NONE
-            and self.standby_units != 0
-        ):
-            raise ValueError(
-                "NONE redundancy requires "
-                "standby_units to be 0"
-            )
-
-        if (
-            self.redundancy_mode
-            is TransformerRedundancyMode.N_PLUS_1
-            and self.standby_units != 1
-        ):
-            raise ValueError(
-                "N_PLUS_1 redundancy requires "
-                "exactly one standby unit"
-            )
-
-        if (
-            self.redundancy_mode
-            is TransformerRedundancyMode.TWO_N
+            self.redundancy_mode is TransformerRedundancyMode.TWO_N
             and self.standby_units != self.duty_units
         ):
-            raise ValueError(
-                "TWO_N redundancy requires standby_units "
-                "to equal duty_units"
-            )
+            raise ValueError("TWO_N redundancy requires standby_units to equal duty_units")
 
         return self
 
@@ -199,20 +169,12 @@ class TransformerSizingRequest(_RequestBase):
             name=self.name,
             demand_power_kw=self.demand_power_kw,
             demand_power_factor=self.demand_power_factor,
-            available_unit_ratings_kva=(
-                self.available_unit_ratings_kva
-            ),
+            available_unit_ratings_kva=(self.available_unit_ratings_kva),
             future_growth_factor=self.future_growth_factor,
             design_margin_factor=self.design_margin_factor,
-            ambient_derating_factor=(
-                self.ambient_derating_factor
-            ),
-            altitude_derating_factor=(
-                self.altitude_derating_factor
-            ),
-            harmonic_derating_factor=(
-                self.harmonic_derating_factor
-            ),
+            ambient_derating_factor=(self.ambient_derating_factor),
+            altitude_derating_factor=(self.altitude_derating_factor),
+            harmonic_derating_factor=(self.harmonic_derating_factor),
             duty_units=self.duty_units,
             standby_units=self.standby_units,
             redundancy_mode=self.redundancy_mode,

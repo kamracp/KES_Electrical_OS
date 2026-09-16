@@ -33,13 +33,9 @@ class TransformerSizingService:
             payload,
             TransformerSizingRequest,
         ):
-            raise TypeError(
-                "payload must be a TransformerSizingRequest"
-            )
+            raise TypeError("payload must be a TransformerSizingRequest")
 
-        return calculate_domain_transformer_sizing(
-            payload.to_domain()
-        )
+        return calculate_domain_transformer_sizing(payload.to_domain())
 
 
 __all__ = [

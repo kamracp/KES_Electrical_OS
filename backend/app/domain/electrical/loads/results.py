@@ -39,16 +39,12 @@ class CalculationWarning:
         """Validate warning content."""
 
         if not isinstance(self.code, LoadWarningCode):
-            raise TypeError(
-                "code must be a LoadWarningCode value"
-            )
+            raise TypeError("code must be a LoadWarningCode value")
 
         normalized_message = self.message.strip()
 
         if not normalized_message:
-            raise ValueError(
-                "warning message must not be empty"
-            )
+            raise ValueError("warning message must not be empty")
 
         object.__setattr__(
             self,
@@ -64,19 +60,13 @@ def _require_non_negative_decimal(
     """Require an exact, finite, non-negative Decimal."""
 
     if not isinstance(value, Decimal):
-        raise TypeError(
-            f"{field_name} must be a Decimal"
-        )
+        raise TypeError(f"{field_name} must be a Decimal")
 
     if not value.is_finite():
-        raise ValueError(
-            f"{field_name} must be finite"
-        )
+        raise ValueError(f"{field_name} must be finite")
 
     if value < Decimal("0"):
-        raise ValueError(
-            f"{field_name} must not be negative"
-        )
+        raise ValueError(f"{field_name} must not be negative")
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,24 +93,16 @@ class LoadCalculationResult:
         normalized_name = self.load_name.strip()
 
         if not normalized_code:
-            raise ValueError(
-                "load_code must not be empty"
-            )
+            raise ValueError("load_code must not be empty")
 
         if not normalized_name:
-            raise ValueError(
-                "load_name must not be empty"
-            )
+            raise ValueError("load_name must not be empty")
 
         if not isinstance(self.scenario, LoadScenario):
-            raise TypeError(
-                "scenario must be a LoadScenario value"
-            )
+            raise TypeError("scenario must be a LoadScenario value")
 
         if not isinstance(self.phase_system, PhaseSystem):
-            raise TypeError(
-                "phase_system must be a PhaseSystem value"
-            )
+            raise TypeError("phase_system must be a PhaseSystem value")
 
         decimal_fields = {
             "connected_power_kw": self.connected_power_kw,
@@ -138,33 +120,16 @@ class LoadCalculationResult:
             )
 
         if not isinstance(self.status, CalculationStatus):
-            raise TypeError(
-                "status must be a CalculationStatus value"
-            )
+            raise TypeError("status must be a CalculationStatus value")
 
-        if not all(
-            isinstance(warning, CalculationWarning)
-            for warning in self.warnings
-        ):
-            raise TypeError(
-                "warnings must contain CalculationWarning records"
-            )
+        if not all(isinstance(warning, CalculationWarning) for warning in self.warnings):
+            raise TypeError("warnings must contain CalculationWarning records")
 
-        if (
-            self.status is CalculationStatus.VALID
-            and self.warnings
-        ):
-            raise ValueError(
-                "VALID result must not contain warnings"
-            )
+        if self.status is CalculationStatus.VALID and self.warnings:
+            raise ValueError("VALID result must not contain warnings")
 
-        if (
-            self.status is CalculationStatus.WARNING
-            and not self.warnings
-        ):
-            raise ValueError(
-                "WARNING result must contain at least one warning"
-            )
+        if self.status is CalculationStatus.WARNING and not self.warnings:
+            raise ValueError("WARNING result must contain at least one warning")
 
         object.__setattr__(
             self,
@@ -201,14 +166,10 @@ class LoadGroupCalculationResult:
         normalized_name = self.group_name.strip()
 
         if not normalized_code:
-            raise ValueError(
-                "group_code must not be empty"
-            )
+            raise ValueError("group_code must not be empty")
 
         if not normalized_name:
-            raise ValueError(
-                "group_name must not be empty"
-            )
+            raise ValueError("group_name must not be empty")
 
         _require_non_negative_decimal(
             "coincidence_factor",
@@ -216,15 +177,11 @@ class LoadGroupCalculationResult:
         )
 
         if self.coincidence_factor > Decimal("1"):
-            raise ValueError(
-                "coincidence_factor must not be greater than 1"
-            )
+            raise ValueError("coincidence_factor must not be greater than 1")
 
         decimal_fields = {
             "connected_power_kw": self.connected_power_kw,
-            "pre_coincidence_demand_kw": (
-                self.pre_coincidence_demand_kw
-            ),
+            "pre_coincidence_demand_kw": (self.pre_coincidence_demand_kw),
             "demand_power_kw": self.demand_power_kw,
             "apparent_power_kva": self.apparent_power_kva,
             "reactive_power_kvar": self.reactive_power_kvar,
@@ -237,57 +194,27 @@ class LoadGroupCalculationResult:
             )
 
         if not self.load_results:
-            raise ValueError(
-                "load_results must not be empty"
-            )
+            raise ValueError("load_results must not be empty")
 
-        if not all(
-            isinstance(result, LoadCalculationResult)
-            for result in self.load_results
-        ):
-            raise TypeError(
-                "load_results must contain "
-                "LoadCalculationResult records"
-            )
+        if not all(isinstance(result, LoadCalculationResult) for result in self.load_results):
+            raise TypeError("load_results must contain LoadCalculationResult records")
 
-        load_codes = [
-            result.load_code
-            for result in self.load_results
-        ]
+        load_codes = [result.load_code for result in self.load_results]
 
         if len(load_codes) != len(set(load_codes)):
-            raise ValueError(
-                "load result codes must be unique"
-            )
+            raise ValueError("load result codes must be unique")
 
         if not isinstance(self.status, CalculationStatus):
-            raise TypeError(
-                "status must be a CalculationStatus value"
-            )
+            raise TypeError("status must be a CalculationStatus value")
 
-        if not all(
-            isinstance(warning, CalculationWarning)
-            for warning in self.warnings
-        ):
-            raise TypeError(
-                "warnings must contain CalculationWarning records"
-            )
+        if not all(isinstance(warning, CalculationWarning) for warning in self.warnings):
+            raise TypeError("warnings must contain CalculationWarning records")
 
-        if (
-            self.status is CalculationStatus.VALID
-            and self.warnings
-        ):
-            raise ValueError(
-                "VALID result must not contain warnings"
-            )
+        if self.status is CalculationStatus.VALID and self.warnings:
+            raise ValueError("VALID result must not contain warnings")
 
-        if (
-            self.status is CalculationStatus.WARNING
-            and not self.warnings
-        ):
-            raise ValueError(
-                "WARNING result must contain at least one warning"
-            )
+        if self.status is CalculationStatus.WARNING and not self.warnings:
+            raise ValueError("WARNING result must contain at least one warning")
 
         object.__setattr__(
             self,

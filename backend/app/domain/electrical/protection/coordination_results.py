@@ -49,9 +49,7 @@ class CoordinationWarning:
             self.code,
             CoordinationWarningCode,
         ):
-            raise TypeError(
-                "code must be a CoordinationWarningCode value"
-            )
+            raise TypeError("code must be a CoordinationWarningCode value")
 
         object.__setattr__(
             self,
@@ -103,17 +101,13 @@ class CoordinationEntryEvaluation:
             "overall_match": self.overall_match,
         }.items():
             if not isinstance(value, bool):
-                raise TypeError(
-                    f"{field_name} must be a boolean"
-                )
+                raise TypeError(f"{field_name} must be a boolean")
 
         if not isinstance(
             self.warnings,
             tuple,
         ):
-            raise TypeError(
-                "warnings must be a tuple"
-            )
+            raise TypeError("warnings must be a tuple")
 
         if not all(
             isinstance(
@@ -122,22 +116,12 @@ class CoordinationEntryEvaluation:
             )
             for warning in self.warnings
         ):
-            raise TypeError(
-                "warnings must contain only "
-                "CoordinationWarning records"
-            )
+            raise TypeError("warnings must contain only CoordinationWarning records")
 
-        warning_codes = tuple(
-            warning.code
-            for warning in self.warnings
-        )
+        warning_codes = tuple(warning.code for warning in self.warnings)
 
-        if len(warning_codes) != len(
-            set(warning_codes)
-        ):
-            raise ValueError(
-                "entry warning codes must be unique"
-            )
+        if len(warning_codes) != len(set(warning_codes)):
+            raise ValueError("entry warning codes must be unique")
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,9 +138,7 @@ class CoordinationStudyResult:
     matching_entries: int
 
     selected_entry_code: str | None
-    selected_verification_status: (
-        CoordinationVerificationStatus | None
-    )
+    selected_verification_status: CoordinationVerificationStatus | None
 
     selected_limit_ka: Decimal | None
     fault_level_margin_ka: Decimal | None
@@ -200,36 +182,25 @@ class CoordinationStudyResult:
                 value,
                 int,
             ):
-                raise TypeError(
-                    f"{field_name} must be an integer"
-                )
+                raise TypeError(f"{field_name} must be an integer")
 
             if value < 0:
-                raise ValueError(
-                    f"{field_name} must not be negative"
-                )
+                raise ValueError(f"{field_name} must not be negative")
 
         if self.matching_entries > self.evaluated_entries:
-            raise ValueError(
-                "matching_entries must not exceed "
-                "evaluated_entries"
-            )
+            raise ValueError("matching_entries must not exceed evaluated_entries")
 
         if not isinstance(
             self.coordination_verified,
             bool,
         ):
-            raise TypeError(
-                "coordination_verified must be a boolean"
-            )
+            raise TypeError("coordination_verified must be a boolean")
 
         if not isinstance(
             self.entry_evaluations,
             tuple,
         ):
-            raise TypeError(
-                "entry_evaluations must be a tuple"
-            )
+            raise TypeError("entry_evaluations must be a tuple")
 
         if not all(
             isinstance(
@@ -239,26 +210,17 @@ class CoordinationStudyResult:
             for evaluation in self.entry_evaluations
         ):
             raise TypeError(
-                "entry_evaluations must contain only "
-                "CoordinationEntryEvaluation records"
+                "entry_evaluations must contain only CoordinationEntryEvaluation records"
             )
 
-        if (
-            len(self.entry_evaluations)
-            != self.evaluated_entries
-        ):
-            raise ValueError(
-                "entry_evaluations count must equal "
-                "evaluated_entries"
-            )
+        if len(self.entry_evaluations) != self.evaluated_entries:
+            raise ValueError("entry_evaluations count must equal evaluated_entries")
 
         if not isinstance(
             self.status,
             CoordinationStudyStatus,
         ):
-            raise TypeError(
-                "status must be a CoordinationStudyStatus value"
-            )
+            raise TypeError("status must be a CoordinationStudyStatus value")
 
         selected_values = (
             self.selected_entry_code,
@@ -268,30 +230,16 @@ class CoordinationStudyResult:
         )
 
         if self.status is CoordinationStudyStatus.NO_MATCH:
-            if any(
-                value is not None
-                for value in selected_values
-            ):
-                raise ValueError(
-                    "NO_MATCH result must not contain "
-                    "selected entry values"
-                )
-        elif any(
-            value is None
-            for value in selected_values
-        ):
-            raise ValueError(
-                "matched coordination result requires complete "
-                "selected entry values"
-            )
+            if any(value is not None for value in selected_values):
+                raise ValueError("NO_MATCH result must not contain selected entry values")
+        elif any(value is None for value in selected_values):
+            raise ValueError("matched coordination result requires complete selected entry values")
 
         if not isinstance(
             self.warnings,
             tuple,
         ):
-            raise TypeError(
-                "warnings must be a tuple"
-            )
+            raise TypeError("warnings must be a tuple")
 
         if not all(
             isinstance(
@@ -300,22 +248,12 @@ class CoordinationStudyResult:
             )
             for warning in self.warnings
         ):
-            raise TypeError(
-                "warnings must contain only "
-                "CoordinationWarning records"
-            )
+            raise TypeError("warnings must contain only CoordinationWarning records")
 
-        warning_codes = tuple(
-            warning.code
-            for warning in self.warnings
-        )
+        warning_codes = tuple(warning.code for warning in self.warnings)
 
-        if len(warning_codes) != len(
-            set(warning_codes)
-        ):
-            raise ValueError(
-                "result warning codes must be unique"
-            )
+        if len(warning_codes) != len(set(warning_codes)):
+            raise ValueError("result warning codes must be unique")
 
 
 __all__ = [

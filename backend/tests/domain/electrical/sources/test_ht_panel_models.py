@@ -62,9 +62,7 @@ def make_panel(
         "busbar_peak_withstand_current_ka": Decimal("63"),
         "rated_insulation_level_kv": Decimal("28"),
         "lightning_impulse_withstand_voltage_kvp": Decimal("75"),
-        "feeders": (
-            make_feeder(),
-        ),
+        "feeders": (make_feeder(),),
         "bus_sections": 1,
         "bus_couplers": 0,
         "spare_feeders": 1,

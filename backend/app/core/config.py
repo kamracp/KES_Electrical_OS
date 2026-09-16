@@ -41,10 +41,7 @@ class Settings(BaseSettings):
     # Database
     # ------------------------------------------------------------------
 
-    DATABASE_URL: str = (
-        "postgresql+psycopg://postgres:postgres@localhost:5432/"
-        "kes_electrical_os"
-    )
+    DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/kes_electrical_os"
 
     DATABASE_ECHO: bool = False
 

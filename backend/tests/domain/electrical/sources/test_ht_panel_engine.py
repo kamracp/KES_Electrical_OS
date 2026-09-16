@@ -71,9 +71,7 @@ def make_panel(
         "busbar_peak_withstand_current_ka": Decimal("63"),
         "rated_insulation_level_kv": Decimal("28"),
         "lightning_impulse_withstand_voltage_kvp": Decimal("75"),
-        "feeders": (
-            make_feeder(),
-        ),
+        "feeders": (make_feeder(),),
         "bus_sections": 1,
         "bus_couplers": 0,
         "spare_feeders": 0,
@@ -88,9 +86,7 @@ def make_panel(
 
 @pytest.mark.unit
 def test_calculate_ht_panel_sizing() -> None:
-    result = calculate_ht_panel_sizing(
-        make_panel()
-    )
+    result = calculate_ht_panel_sizing(make_panel())
 
     assert result.code == "HTP-001"
     assert result.total_feeders == 1
@@ -104,9 +100,7 @@ def test_calculate_ht_panel_sizing() -> None:
 
 @pytest.mark.unit
 def test_feeder_engineering_result() -> None:
-    result = calculate_ht_panel_sizing(
-        make_panel()
-    )
+    result = calculate_ht_panel_sizing(make_panel())
 
     feeder = result.feeder_results[0]
 
@@ -123,9 +117,7 @@ def test_low_breaking_capacity_margin_warning() -> None:
         make_panel(
             feeders=(
                 make_feeder(
-                    rated_short_circuit_breaking_current_ka=(
-                        Decimal("24")
-                    ),
+                    rated_short_circuit_breaking_current_ka=(Decimal("24")),
                 ),
             ),
         )
@@ -136,8 +128,7 @@ def test_low_breaking_capacity_margin_warning() -> None:
     feeder_warnings = result.feeder_results[0].warnings
 
     assert any(
-        warning.code
-        is HTPanelWarningCode.BREAKING_CAPACITY_MARGIN_LOW
+        warning.code is HTPanelWarningCode.BREAKING_CAPACITY_MARGIN_LOW
         for warning in feeder_warnings
     )
 
@@ -155,8 +146,7 @@ def test_low_ct_margin_warning() -> None:
     )
 
     assert any(
-        warning.code
-        is HTPanelWarningCode.CT_RATIO_MARGIN_LOW
+        warning.code is HTPanelWarningCode.CT_RATIO_MARGIN_LOW
         for warning in result.feeder_results[0].warnings
     )
 
@@ -179,9 +169,7 @@ def test_high_busbar_loading_warning() -> None:
     assert result.status is HTPanelSizingStatus.WARNING
 
     assert any(
-        warning.code
-        is HTPanelWarningCode.HIGH_BUSBAR_LOADING
-        for warning in result.warnings
+        warning.code is HTPanelWarningCode.HIGH_BUSBAR_LOADING for warning in result.warnings
     )
 
 
@@ -193,11 +181,7 @@ def test_low_busbar_loading_warning() -> None:
         )
     )
 
-    assert any(
-        warning.code
-        is HTPanelWarningCode.LOW_BUSBAR_LOADING
-        for warning in result.warnings
-    )
+    assert any(warning.code is HTPanelWarningCode.LOW_BUSBAR_LOADING for warning in result.warnings)
 
 
 @pytest.mark.unit
@@ -209,8 +193,7 @@ def test_arc_classification_warning() -> None:
     )
 
     assert any(
-        warning.code
-        is HTPanelWarningCode.ARC_CLASSIFICATION_REQUIRED
+        warning.code is HTPanelWarningCode.ARC_CLASSIFICATION_REQUIRED
         for warning in result.warnings
     )
 
@@ -225,8 +208,7 @@ def test_outdoor_remote_operation_warning() -> None:
     )
 
     assert any(
-        warning.code
-        is HTPanelWarningCode.REMOTE_OPERATION_RECOMMENDED
+        warning.code is HTPanelWarningCode.REMOTE_OPERATION_RECOMMENDED
         for warning in result.warnings
     )
 

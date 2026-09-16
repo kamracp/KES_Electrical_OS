@@ -40,19 +40,14 @@ def _evaluate_candidate(
 ) -> SwitchgearCandidateEvaluation:
     """Evaluate one switchgear candidate."""
 
-    current_margin_a = (
-        candidate.rated_current_a
-        - sizing_input.design_current_a
-    )
+    current_margin_a = candidate.rated_current_a - sizing_input.design_current_a
 
     icu_margin_ka = (
-        candidate.ultimate_breaking_capacity_ka
-        - sizing_input.prospective_short_circuit_current_ka
+        candidate.ultimate_breaking_capacity_ka - sizing_input.prospective_short_circuit_current_ka
     )
 
     ics_margin_ka = (
-        candidate.service_breaking_capacity_ka
-        - sizing_input.prospective_short_circuit_current_ka
+        candidate.service_breaking_capacity_ka - sizing_input.prospective_short_circuit_current_ka
     )
 
     icw_margin_ka = (
@@ -60,24 +55,16 @@ def _evaluate_candidate(
         - sizing_input.minimum_short_time_withstand_current_ka
     )
 
-    current_adequate = (
-        candidate.rated_current_a
-        >= sizing_input.design_current_a
-    )
+    current_adequate = candidate.rated_current_a >= sizing_input.design_current_a
 
-    voltage_adequate = (
-        candidate.rated_operational_voltage_v
-        >= sizing_input.system_voltage_v
-    )
+    voltage_adequate = candidate.rated_operational_voltage_v >= sizing_input.system_voltage_v
 
     icu_adequate = (
-        candidate.ultimate_breaking_capacity_ka
-        >= sizing_input.prospective_short_circuit_current_ka
+        candidate.ultimate_breaking_capacity_ka >= sizing_input.prospective_short_circuit_current_ka
     )
 
     ics_adequate = (
-        candidate.service_breaking_capacity_ka
-        >= sizing_input.prospective_short_circuit_current_ka
+        candidate.service_breaking_capacity_ka >= sizing_input.prospective_short_circuit_current_ka
     )
 
     icw_adequate = (
@@ -85,20 +72,15 @@ def _evaluate_candidate(
         >= sizing_input.minimum_short_time_withstand_current_ka
     )
 
-    pole_count_adequate = (
-        candidate.number_of_poles
-        == sizing_input.number_of_poles
-    )
+    pole_count_adequate = candidate.number_of_poles == sizing_input.number_of_poles
 
     service_breaking_ratio_adequate = (
-        candidate.service_breaking_ratio
-        >= sizing_input.minimum_service_breaking_ratio
+        candidate.service_breaking_ratio >= sizing_input.minimum_service_breaking_ratio
     )
 
     overall_adequate = all(
         (
-            candidate.device_type
-            is sizing_input.required_device_type,
+            candidate.device_type is sizing_input.required_device_type,
             current_adequate,
             voltage_adequate,
             icu_adequate,
@@ -112,70 +94,47 @@ def _evaluate_candidate(
     warnings: list[SwitchgearWarning] = []
 
     if current_adequate and (
-        candidate.rated_current_a
-        < sizing_input.design_current_a
-        * LOW_MARGIN_FACTOR
+        candidate.rated_current_a < sizing_input.design_current_a * LOW_MARGIN_FACTOR
     ):
         warnings.append(
             SwitchgearWarning(
-                code=(
-                    SwitchgearWarningCode
-                    .LOW_CURRENT_MARGIN
-                ),
-                message=(
-                    "Selected device current margin is "
-                    "below 25 percent."
-                ),
+                code=(SwitchgearWarningCode.LOW_CURRENT_MARGIN),
+                message=("Selected device current margin is below 25 percent."),
             )
         )
 
     if icu_adequate and (
         candidate.ultimate_breaking_capacity_ka
-        < sizing_input.prospective_short_circuit_current_ka
-        * LOW_MARGIN_FACTOR
+        < sizing_input.prospective_short_circuit_current_ka * LOW_MARGIN_FACTOR
     ):
         warnings.append(
             SwitchgearWarning(
                 code=SwitchgearWarningCode.LOW_ICU_MARGIN,
-                message=(
-                    "Selected device Icu margin is "
-                    "below 25 percent."
-                ),
+                message=("Selected device Icu margin is below 25 percent."),
             )
         )
 
     if ics_adequate and (
         candidate.service_breaking_capacity_ka
-        < sizing_input.prospective_short_circuit_current_ka
-        * LOW_MARGIN_FACTOR
+        < sizing_input.prospective_short_circuit_current_ka * LOW_MARGIN_FACTOR
     ):
         warnings.append(
             SwitchgearWarning(
                 code=SwitchgearWarningCode.LOW_ICS_MARGIN,
-                message=(
-                    "Selected device Ics margin is "
-                    "below 25 percent."
-                ),
+                message=("Selected device Ics margin is below 25 percent."),
             )
         )
 
     if (
         icw_adequate
-        and sizing_input
-        .minimum_short_time_withstand_current_ka
-        > Decimal("0")
+        and sizing_input.minimum_short_time_withstand_current_ka > Decimal("0")
         and candidate.short_time_withstand_current_ka
-        < sizing_input
-        .minimum_short_time_withstand_current_ka
-        * LOW_MARGIN_FACTOR
+        < sizing_input.minimum_short_time_withstand_current_ka * LOW_MARGIN_FACTOR
     ):
         warnings.append(
             SwitchgearWarning(
                 code=SwitchgearWarningCode.LOW_ICW_MARGIN,
-                message=(
-                    "Selected device Icw margin is "
-                    "below 25 percent."
-                ),
+                message=("Selected device Icw margin is below 25 percent."),
             )
         )
 
@@ -191,22 +150,12 @@ def _evaluate_candidate(
         ics_adequate=ics_adequate,
         icw_adequate=icw_adequate,
         pole_count_adequate=pole_count_adequate,
-        service_breaking_ratio_adequate=(
-            service_breaking_ratio_adequate
-        ),
+        service_breaking_ratio_adequate=(service_breaking_ratio_adequate),
         overall_adequate=overall_adequate,
-        current_margin_a=_round_value(
-            current_margin_a
-        ),
-        icu_margin_ka=_round_value(
-            icu_margin_ka
-        ),
-        ics_margin_ka=_round_value(
-            ics_margin_ka
-        ),
-        icw_margin_ka=_round_value(
-            icw_margin_ka
-        ),
+        current_margin_a=_round_value(current_margin_a),
+        icu_margin_ka=_round_value(icu_margin_ka),
+        ics_margin_ka=_round_value(ics_margin_ka),
+        icw_margin_ka=_round_value(icw_margin_ka),
         warnings=tuple(warnings),
     )
 
@@ -220,10 +169,7 @@ def calculate_switchgear_selection(
         sizing_input,
         SwitchgearSelectionInput,
     ):
-        raise TypeError(
-            "sizing_input must be a "
-            "SwitchgearSelectionInput record"
-        )
+        raise TypeError("sizing_input must be a SwitchgearSelectionInput record")
 
     evaluations = tuple(
         _evaluate_candidate(
@@ -246,30 +192,20 @@ def calculate_switchgear_selection(
         if evaluation.overall_adequate
     )
 
-    coordination_verified = (
-        sizing_input.coordination_type
-        is CoordinationType.NONE
-    )
+    coordination_verified = sizing_input.coordination_type is CoordinationType.NONE
 
     manufacturer_reference_used = any(
-        candidate.manufacturer
-        is not ManufacturerSource.MANUFACTURER_NEUTRAL
+        candidate.manufacturer is not ManufacturerSource.MANUFACTURER_NEUTRAL
         and candidate.reference_document is not None
         for candidate in sizing_input.candidates
     )
 
     warnings: list[SwitchgearWarning] = []
 
-    if (
-        sizing_input.coordination_type
-        is not CoordinationType.NONE
-    ):
+    if sizing_input.coordination_type is not CoordinationType.NONE:
         warnings.append(
             SwitchgearWarning(
-                code=(
-                    SwitchgearWarningCode
-                    .COORDINATION_NOT_VERIFIED
-                ),
+                code=(SwitchgearWarningCode.COORDINATION_NOT_VERIFIED),
                 message=(
                     "Requested coordination requires verified "
                     "manufacturer selectivity or coordination data."
@@ -277,33 +213,20 @@ def calculate_switchgear_selection(
             )
         )
 
-    if (
-        sizing_input.manufacturer_reference_required
-        and not manufacturer_reference_used
-    ):
+    if sizing_input.manufacturer_reference_required and not manufacturer_reference_used:
         warnings.append(
             SwitchgearWarning(
-                code=(
-                    SwitchgearWarningCode
-                    .MANUFACTURER_REFERENCE_REQUIRED
-                ),
-                message=(
-                    "A verified manufacturer reference is required "
-                    "for this selection."
-                ),
+                code=(SwitchgearWarningCode.MANUFACTURER_REFERENCE_REQUIRED),
+                message=("A verified manufacturer reference is required for this selection."),
             )
         )
 
     if sizing_input.protection_settings is None:
         warnings.append(
             SwitchgearWarning(
-                code=(
-                    SwitchgearWarningCode
-                    .PROTECTION_SETTINGS_REVIEW_REQUIRED
-                ),
+                code=(SwitchgearWarningCode.PROTECTION_SETTINGS_REVIEW_REQUIRED),
                 message=(
-                    "Protection settings have not been provided "
-                    "and require engineering review."
+                    "Protection settings have not been provided and require engineering review."
                 ),
             )
         )
@@ -311,14 +234,8 @@ def calculate_switchgear_selection(
     if not adequate_pairs:
         warnings.append(
             SwitchgearWarning(
-                code=(
-                    SwitchgearWarningCode
-                    .NO_SUITABLE_DEVICE
-                ),
-                message=(
-                    "No switchgear candidate satisfies all "
-                    "selection requirements."
-                ),
+                code=(SwitchgearWarningCode.NO_SUITABLE_DEVICE),
+                message=("No switchgear candidate satisfies all selection requirements."),
             )
         )
 
@@ -326,15 +243,12 @@ def calculate_switchgear_selection(
             code=sizing_input.code,
             name=sizing_input.name,
             application=sizing_input.application,
-            required_device_type=(
-                sizing_input.required_device_type
-            ),
+            required_device_type=(sizing_input.required_device_type),
             coordination_type=sizing_input.coordination_type,
             system_voltage_v=sizing_input.system_voltage_v,
             design_current_a=sizing_input.design_current_a,
             prospective_short_circuit_current_ka=(
-                sizing_input
-                .prospective_short_circuit_current_ka
+                sizing_input.prospective_short_circuit_current_ka
             ),
             evaluated_candidates=len(evaluations),
             adequate_candidates=0,
@@ -351,9 +265,7 @@ def calculate_switchgear_selection(
             ics_margin_ka=None,
             icw_margin_ka=None,
             coordination_verified=coordination_verified,
-            manufacturer_reference_used=(
-                manufacturer_reference_used
-            ),
+            manufacturer_reference_used=(manufacturer_reference_used),
             candidate_evaluations=evaluations,
             status=SwitchgearSelectionStatus.NO_SOLUTION,
             warnings=tuple(warnings),
@@ -369,85 +281,37 @@ def calculate_switchgear_selection(
         ),
     )
 
-    warnings.extend(
-        selected_evaluation.warnings
-    )
+    warnings.extend(selected_evaluation.warnings)
 
-    status = (
-        SwitchgearSelectionStatus.WARNING
-        if warnings
-        else SwitchgearSelectionStatus.SELECTED
-    )
+    status = SwitchgearSelectionStatus.WARNING if warnings else SwitchgearSelectionStatus.SELECTED
 
     return SwitchgearSelectionResult(
         code=sizing_input.code,
         name=sizing_input.name,
         application=sizing_input.application,
-        required_device_type=(
-            sizing_input.required_device_type
-        ),
-        coordination_type=(
-            sizing_input.coordination_type
-        ),
-        system_voltage_v=(
-            sizing_input.system_voltage_v
-        ),
-        design_current_a=(
-            sizing_input.design_current_a
-        ),
-        prospective_short_circuit_current_ka=(
-            sizing_input
-            .prospective_short_circuit_current_ka
-        ),
+        required_device_type=(sizing_input.required_device_type),
+        coordination_type=(sizing_input.coordination_type),
+        system_voltage_v=(sizing_input.system_voltage_v),
+        design_current_a=(sizing_input.design_current_a),
+        prospective_short_circuit_current_ka=(sizing_input.prospective_short_circuit_current_ka),
         evaluated_candidates=len(evaluations),
         adequate_candidates=len(adequate_pairs),
-        selected_candidate_code=(
-            selected_candidate.code
-        ),
-        selected_candidate_family=(
-            selected_candidate.family
-        ),
-        selected_manufacturer=(
-            selected_candidate.manufacturer
-        ),
-        selected_frame_current_a=(
-            selected_candidate.frame_current_a
-        ),
-        selected_rated_current_a=(
-            selected_candidate.rated_current_a
-        ),
-        selected_icu_ka=(
-            selected_candidate
-            .ultimate_breaking_capacity_ka
-        ),
-        selected_ics_ka=(
-            selected_candidate
-            .service_breaking_capacity_ka
-        ),
-        selected_icw_ka=(
-            selected_candidate
-            .short_time_withstand_current_ka
-        ),
-        current_margin_a=(
-            selected_evaluation.current_margin_a
-        ),
-        icu_margin_ka=(
-            selected_evaluation.icu_margin_ka
-        ),
-        ics_margin_ka=(
-            selected_evaluation.ics_margin_ka
-        ),
-        icw_margin_ka=(
-            selected_evaluation.icw_margin_ka
-        ),
-        coordination_verified=(
-            coordination_verified
-        ),
+        selected_candidate_code=(selected_candidate.code),
+        selected_candidate_family=(selected_candidate.family),
+        selected_manufacturer=(selected_candidate.manufacturer),
+        selected_frame_current_a=(selected_candidate.frame_current_a),
+        selected_rated_current_a=(selected_candidate.rated_current_a),
+        selected_icu_ka=(selected_candidate.ultimate_breaking_capacity_ka),
+        selected_ics_ka=(selected_candidate.service_breaking_capacity_ka),
+        selected_icw_ka=(selected_candidate.short_time_withstand_current_ka),
+        current_margin_a=(selected_evaluation.current_margin_a),
+        icu_margin_ka=(selected_evaluation.icu_margin_ka),
+        ics_margin_ka=(selected_evaluation.ics_margin_ka),
+        icw_margin_ka=(selected_evaluation.icw_margin_ka),
+        coordination_verified=(coordination_verified),
         manufacturer_reference_used=(
-            selected_candidate.manufacturer
-            is not ManufacturerSource.MANUFACTURER_NEUTRAL
-            and selected_candidate.reference_document
-            is not None
+            selected_candidate.manufacturer is not ManufacturerSource.MANUFACTURER_NEUTRAL
+            and selected_candidate.reference_document is not None
         ),
         candidate_evaluations=evaluations,
         status=status,

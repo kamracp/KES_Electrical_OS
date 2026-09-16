@@ -155,10 +155,7 @@ def test_low_power_factor_produces_warning() -> None:
     result = calculate_load(load)
 
     assert result.status is CalculationStatus.WARNING
-    assert any(
-        warning.code is LoadWarningCode.LOW_POWER_FACTOR
-        for warning in result.warnings
-    )
+    assert any(warning.code is LoadWarningCode.LOW_POWER_FACTOR for warning in result.warnings)
 
 
 @pytest.mark.unit
@@ -172,10 +169,7 @@ def test_low_mechanical_efficiency_produces_warning() -> None:
     result = calculate_load(load)
 
     assert result.status is CalculationStatus.WARNING
-    assert any(
-        warning.code is LoadWarningCode.LOW_EFFICIENCY
-        for warning in result.warnings
-    )
+    assert any(warning.code is LoadWarningCode.LOW_EFFICIENCY for warning in result.warnings)
 
 
 @pytest.mark.unit
@@ -190,10 +184,7 @@ def test_multiple_load_warnings_are_preserved() -> None:
 
     result = calculate_load(load)
 
-    warning_codes = {
-        warning.code
-        for warning in result.warnings
-    }
+    warning_codes = {warning.code for warning in result.warnings}
 
     assert result.status is CalculationStatus.WARNING
     assert warning_codes == {
@@ -223,10 +214,7 @@ def test_electrical_input_efficiency_does_not_change_power() -> None:
 
     assert result.connected_power_kw == Decimal("30.0000")
     assert result.demand_power_kw == Decimal("30.0000")
-    assert not any(
-        warning.code is LoadWarningCode.LOW_EFFICIENCY
-        for warning in result.warnings
-    )
+    assert not any(warning.code is LoadWarningCode.LOW_EFFICIENCY for warning in result.warnings)
 
 
 @pytest.mark.unit
@@ -334,9 +322,7 @@ def test_group_warnings_include_load_code() -> None:
 
     assert result.status is CalculationStatus.WARNING
     assert result.warnings[0].code is LoadWarningCode.LOW_POWER_FACTOR
-    assert result.warnings[0].message.startswith(
-        "MTR-LOW-PF:"
-    )
+    assert result.warnings[0].message.startswith("MTR-LOW-PF:")
 
 
 @pytest.mark.unit

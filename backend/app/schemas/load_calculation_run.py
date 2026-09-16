@@ -55,9 +55,7 @@ def _validate_json_value(
     if isinstance(value, dict):
         for key, nested_value in value.items():
             if not isinstance(key, str):
-                raise ValueError(
-                    f"{path} must contain only string object keys"
-                )
+                raise ValueError(f"{path} must contain only string object keys")
 
             _validate_json_value(
                 nested_value,
@@ -75,10 +73,7 @@ def _validate_json_value(
 
         return
 
-    raise ValueError(
-        f"{path} contains a non-JSON-compatible value "
-        f"of type {type(value).__name__}"
-    )
+    raise ValueError(f"{path} contains a non-JSON-compatible value of type {type(value).__name__}")
 
 
 class _RequestBase(BaseModel):
@@ -116,9 +111,7 @@ class LoadCalculationRunCreate(_RequestBase):
 
     scenario: LoadScenario
 
-    run_status: CalculationRunStatus = (
-        CalculationRunStatus.COMPLETED
-    )
+    run_status: CalculationRunStatus = CalculationRunStatus.COMPLETED
 
     engine_version: str = Field(
         min_length=1,

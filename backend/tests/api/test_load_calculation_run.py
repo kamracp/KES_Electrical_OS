@@ -77,16 +77,11 @@ async def test_create_and_get_calculation_run(
     assert created["supersedes_run_id"] is None
     assert len(created["content_hash"]) == 64
 
-    get_response = await client.get(
-        f"{BASE_URL}/{created['id']}"
-    )
+    get_response = await client.get(f"{BASE_URL}/{created['id']}")
 
     assert get_response.status_code == 200
     assert get_response.json()["id"] == created["id"]
-    assert (
-        get_response.json()["content_hash"]
-        == created["content_hash"]
-    )
+    assert get_response.json()["content_hash"] == created["content_hash"]
 
 
 @pytest.mark.api
@@ -117,14 +112,9 @@ async def test_revision_history_and_comparison(
     second_run = second_response.json()
 
     assert second_run["revision_number"] == 2
-    assert (
-        second_run["supersedes_run_id"]
-        == first_run["id"]
-    )
+    assert second_run["supersedes_run_id"] == first_run["id"]
 
-    history_response = await client.get(
-        f"{BASE_URL}/history/MAIN-LV-DEMAND"
-    )
+    history_response = await client.get(f"{BASE_URL}/history/MAIN-LV-DEMAND")
 
     assert history_response.status_code == 200
 
@@ -148,14 +138,8 @@ async def test_revision_history_and_comparison(
 
     assert comparison["base_revision_number"] == 1
     assert comparison["target_revision_number"] == 2
-    assert (
-        "connected_power_kw"
-        in comparison["input_differences"]
-    )
-    assert (
-        "demand_power_kw"
-        in comparison["result_differences"]
-    )
+    assert "connected_power_kw" in comparison["input_differences"]
+    assert "demand_power_kw" in comparison["result_differences"]
 
 
 @pytest.mark.api
@@ -186,9 +170,7 @@ async def test_submit_approve_and_immutability(
     assert submitted["submitted_by"] == "Electrical Designer"
     assert submitted["submitted_at"] is not None
 
-    pending_response = await client.get(
-        f"{BASE_URL}/pending-review"
-    )
+    pending_response = await client.get(f"{BASE_URL}/pending-review")
 
     assert pending_response.status_code == 200
     assert len(pending_response.json()) == 1
@@ -221,9 +203,7 @@ async def test_submit_approve_and_immutability(
     assert second_submit_response.status_code == 409
     assert "immutable" in second_submit_response.json()["detail"]
 
-    pending_after_approval = await client.get(
-        f"{BASE_URL}/pending-review"
-    )
+    pending_after_approval = await client.get(f"{BASE_URL}/pending-review")
 
     assert pending_after_approval.status_code == 200
     assert pending_after_approval.json() == []
@@ -257,9 +237,7 @@ async def test_reject_pending_calculation_run(
         f"{BASE_URL}/{run_id}/reject",
         json={
             "rejected_by": "Engineering Checker",
-            "rejection_reason": (
-                "Demand-factor evidence is required."
-            ),
+            "rejection_reason": ("Demand-factor evidence is required."),
         },
     )
 
@@ -270,9 +248,7 @@ async def test_reject_pending_calculation_run(
     assert rejected["approval_status"] == "REJECTED"
     assert rejected["rejected_by"] == "Engineering Checker"
     assert rejected["rejected_at"] is not None
-    assert rejected["rejection_reason"] == (
-        "Demand-factor evidence is required."
-    )
+    assert rejected["rejection_reason"] == ("Demand-factor evidence is required.")
     assert rejected["is_immutable"] is False
 
 
@@ -297,9 +273,7 @@ async def test_duplicate_calculation_run_is_rejected(
     )
 
     assert duplicate_response.status_code == 409
-    assert "identical calculation run" in (
-        duplicate_response.json()["detail"]
-    )
+    assert "identical calculation run" in (duplicate_response.json()["detail"])
 
 
 @pytest.mark.api
@@ -323,11 +297,7 @@ async def test_float_snapshot_value_is_rejected(
 
     errors = response.json()["detail"]
 
-    assert any(
-        "must not contain floating-point values"
-        in error["msg"]
-        for error in errors
-    )
+    assert any("must not contain floating-point values" in error["msg"] for error in errors)
 
 
 @pytest.mark.api
@@ -336,11 +306,7 @@ async def test_unknown_calculation_run_returns_not_found(
 ) -> None:
     """An unknown calculation-run UUID should return HTTP 404."""
 
-    response = await client.get(
-        f"{BASE_URL}/{uuid4()}"
-    )
+    response = await client.get(f"{BASE_URL}/{uuid4()}")
 
     assert response.status_code == 404
-    assert response.json()["detail"] == (
-        "calculation run not found"
-    )
+    assert response.json()["detail"] == ("calculation run not found")

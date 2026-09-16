@@ -75,9 +75,7 @@ def make_pv_input(
 
 @pytest.mark.unit
 def test_calculate_pv_sizing_selects_inverter() -> None:
-    result = calculate_pv_sizing(
-        make_pv_input()
-    )
+    result = calculate_pv_sizing(make_pv_input())
 
     assert result.selected_unit_rating_kw == Decimal("630")
     assert result.duty_inverters == 1
@@ -93,26 +91,12 @@ def test_calculate_pv_sizing_selects_inverter() -> None:
 
 @pytest.mark.unit
 def test_pv_temperature_voltage_calculation() -> None:
-    result = calculate_pv_sizing(
-        make_pv_input()
-    )
+    result = calculate_pv_sizing(make_pv_input())
 
-    assert (
-        result.cold_corrected_module_voc_v
-        > Decimal("49.9")
-    )
-    assert (
-        result.hot_corrected_module_vmp_v
-        < Decimal("41.8")
-    )
-    assert (
-        result.cold_string_voc_v
-        <= Decimal("1100")
-    )
-    assert (
-        result.hot_string_vmp_v
-        >= Decimal("200")
-    )
+    assert result.cold_corrected_module_voc_v > Decimal("49.9")
+    assert result.hot_corrected_module_vmp_v < Decimal("41.8")
+    assert result.cold_string_voc_v <= Decimal("1100")
+    assert result.hot_string_vmp_v >= Decimal("200")
 
 
 @pytest.mark.unit
@@ -130,8 +114,7 @@ def test_no_standard_inverter_rating_returns_no_solution() -> None:
     assert result.status is PVSizingStatus.NO_SOLUTION
     assert result.selected_unit_rating_kw is None
     assert any(
-        warning.code
-        is PVSizingWarningCode.NO_STANDARD_INVERTER_RATING
+        warning.code is PVSizingWarningCode.NO_STANDARD_INVERTER_RATING
         for warning in result.warnings
     )
 
@@ -145,9 +128,7 @@ def test_export_limit_warning() -> None:
     )
 
     assert any(
-        warning.code
-        is PVSizingWarningCode.EXPORT_LIMIT_APPLIED
-        for warning in result.warnings
+        warning.code is PVSizingWarningCode.EXPORT_LIMIT_APPLIED for warning in result.warnings
     )
 
 
@@ -160,9 +141,7 @@ def test_dg_coordination_warning() -> None:
     )
 
     assert any(
-        warning.code
-        is PVSizingWarningCode.DG_COORDINATION_REQUIRED
-        for warning in result.warnings
+        warning.code is PVSizingWarningCode.DG_COORDINATION_REQUIRED for warning in result.warnings
     )
 
 
@@ -175,9 +154,7 @@ def test_string_current_limit_warning() -> None:
     )
 
     assert any(
-        warning.code
-        is PVSizingWarningCode.STRING_CURRENT_LIMIT
-        for warning in result.warnings
+        warning.code is PVSizingWarningCode.STRING_CURRENT_LIMIT for warning in result.warnings
     )
 
 
@@ -193,9 +170,7 @@ def test_n_plus_one_inverter_arrangement() -> None:
             ),
             duty_inverters=2,
             redundant_inverters=1,
-            redundancy_mode=(
-                PVInverterRedundancyMode.N_PLUS_1
-            ),
+            redundancy_mode=(PVInverterRedundancyMode.N_PLUS_1),
         )
     )
 

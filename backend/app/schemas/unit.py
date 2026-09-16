@@ -25,8 +25,7 @@ def reject_float_conversion_factor(value: object) -> object:
 
     if isinstance(value, float):
         raise ValueError(
-            "conversion_factor must be provided as a decimal string, "
-            "integer, or Decimal"
+            "conversion_factor must be provided as a decimal string, integer, or Decimal"
         )
 
     return value

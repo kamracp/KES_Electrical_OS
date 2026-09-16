@@ -35,12 +35,8 @@ class SwitchgearWarningCode(StrEnum):
     LOW_ICS_MARGIN = "LOW_ICS_MARGIN"
     LOW_ICW_MARGIN = "LOW_ICW_MARGIN"
     COORDINATION_NOT_VERIFIED = "COORDINATION_NOT_VERIFIED"
-    MANUFACTURER_REFERENCE_REQUIRED = (
-        "MANUFACTURER_REFERENCE_REQUIRED"
-    )
-    PROTECTION_SETTINGS_REVIEW_REQUIRED = (
-        "PROTECTION_SETTINGS_REVIEW_REQUIRED"
-    )
+    MANUFACTURER_REFERENCE_REQUIRED = "MANUFACTURER_REFERENCE_REQUIRED"
+    PROTECTION_SETTINGS_REVIEW_REQUIRED = "PROTECTION_SETTINGS_REVIEW_REQUIRED"
     NO_SUITABLE_DEVICE = "NO_SUITABLE_DEVICE"
 
 
@@ -56,9 +52,7 @@ class SwitchgearWarning:
             self.code,
             SwitchgearWarningCode,
         ):
-            raise TypeError(
-                "code must be a SwitchgearWarningCode value"
-            )
+            raise TypeError("code must be a SwitchgearWarningCode value")
 
         object.__setattr__(
             self,
@@ -123,25 +117,19 @@ class SwitchgearCandidateEvaluation:
             "ics_adequate": self.ics_adequate,
             "icw_adequate": self.icw_adequate,
             "pole_count_adequate": self.pole_count_adequate,
-            "service_breaking_ratio_adequate": (
-                self.service_breaking_ratio_adequate
-            ),
+            "service_breaking_ratio_adequate": (self.service_breaking_ratio_adequate),
             "overall_adequate": self.overall_adequate,
         }
 
         for field_name, value in boolean_fields.items():
             if not isinstance(value, bool):
-                raise TypeError(
-                    f"{field_name} must be a boolean"
-                )
+                raise TypeError(f"{field_name} must be a boolean")
 
         if not isinstance(
             self.warnings,
             tuple,
         ):
-            raise TypeError(
-                "warnings must be a tuple"
-            )
+            raise TypeError("warnings must be a tuple")
 
         if not all(
             isinstance(
@@ -150,20 +138,12 @@ class SwitchgearCandidateEvaluation:
             )
             for warning in self.warnings
         ):
-            raise TypeError(
-                "warnings must contain only "
-                "SwitchgearWarning records"
-            )
+            raise TypeError("warnings must contain only SwitchgearWarning records")
 
-        warning_codes = tuple(
-            warning.code
-            for warning in self.warnings
-        )
+        warning_codes = tuple(warning.code for warning in self.warnings)
 
         if len(warning_codes) != len(set(warning_codes)):
-            raise ValueError(
-                "candidate warning codes must be unique"
-            )
+            raise ValueError("candidate warning codes must be unique")
 
 
 @dataclass(frozen=True, slots=True)
@@ -236,47 +216,31 @@ class SwitchgearSelectionResult:
                 value,
                 int,
             ):
-                raise TypeError(
-                    f"{field_name} must be an integer"
-                )
+                raise TypeError(f"{field_name} must be an integer")
 
             if value < 0:
-                raise ValueError(
-                    f"{field_name} must not be negative"
-                )
+                raise ValueError(f"{field_name} must not be negative")
 
-        if (
-            self.adequate_candidates
-            > self.evaluated_candidates
-        ):
-            raise ValueError(
-                "adequate_candidates must not exceed "
-                "evaluated_candidates"
-            )
+        if self.adequate_candidates > self.evaluated_candidates:
+            raise ValueError("adequate_candidates must not exceed evaluated_candidates")
 
         if not isinstance(
             self.coordination_verified,
             bool,
         ):
-            raise TypeError(
-                "coordination_verified must be a boolean"
-            )
+            raise TypeError("coordination_verified must be a boolean")
 
         if not isinstance(
             self.manufacturer_reference_used,
             bool,
         ):
-            raise TypeError(
-                "manufacturer_reference_used must be a boolean"
-            )
+            raise TypeError("manufacturer_reference_used must be a boolean")
 
         if not isinstance(
             self.candidate_evaluations,
             tuple,
         ):
-            raise TypeError(
-                "candidate_evaluations must be a tuple"
-            )
+            raise TypeError("candidate_evaluations must be a tuple")
 
         if not all(
             isinstance(
@@ -286,27 +250,17 @@ class SwitchgearSelectionResult:
             for evaluation in self.candidate_evaluations
         ):
             raise TypeError(
-                "candidate_evaluations must contain only "
-                "SwitchgearCandidateEvaluation records"
+                "candidate_evaluations must contain only SwitchgearCandidateEvaluation records"
             )
 
-        if (
-            len(self.candidate_evaluations)
-            != self.evaluated_candidates
-        ):
-            raise ValueError(
-                "candidate_evaluations count must equal "
-                "evaluated_candidates"
-            )
+        if len(self.candidate_evaluations) != self.evaluated_candidates:
+            raise ValueError("candidate_evaluations count must equal evaluated_candidates")
 
         if not isinstance(
             self.status,
             SwitchgearSelectionStatus,
         ):
-            raise TypeError(
-                "status must be a "
-                "SwitchgearSelectionStatus value"
-            )
+            raise TypeError("status must be a SwitchgearSelectionStatus value")
 
         selected_values = (
             self.selected_candidate_code,
@@ -323,34 +277,17 @@ class SwitchgearSelectionResult:
             self.icw_margin_ka,
         )
 
-        if (
-            self.status
-            is SwitchgearSelectionStatus.NO_SOLUTION
-        ):
-            if any(
-                value is not None
-                for value in selected_values
-            ):
-                raise ValueError(
-                    "NO_SOLUTION result must not contain "
-                    "selected device values"
-                )
-        elif any(
-            value is None
-            for value in selected_values
-        ):
-            raise ValueError(
-                "selected switchgear result requires complete "
-                "selected device values"
-            )
+        if self.status is SwitchgearSelectionStatus.NO_SOLUTION:
+            if any(value is not None for value in selected_values):
+                raise ValueError("NO_SOLUTION result must not contain selected device values")
+        elif any(value is None for value in selected_values):
+            raise ValueError("selected switchgear result requires complete selected device values")
 
         if not isinstance(
             self.warnings,
             tuple,
         ):
-            raise TypeError(
-                "warnings must be a tuple"
-            )
+            raise TypeError("warnings must be a tuple")
 
         if not all(
             isinstance(
@@ -359,20 +296,12 @@ class SwitchgearSelectionResult:
             )
             for warning in self.warnings
         ):
-            raise TypeError(
-                "warnings must contain only "
-                "SwitchgearWarning records"
-            )
+            raise TypeError("warnings must contain only SwitchgearWarning records")
 
-        warning_codes = tuple(
-            warning.code
-            for warning in self.warnings
-        )
+        warning_codes = tuple(warning.code for warning in self.warnings)
 
         if len(warning_codes) != len(set(warning_codes)):
-            raise ValueError(
-                "result warning codes must be unique"
-            )
+            raise ValueError("result warning codes must be unique")
 
 
 __all__ = [

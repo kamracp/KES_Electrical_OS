@@ -26,14 +26,10 @@ class GeneratorSizingWarningCode(StrEnum):
     """Controlled generator-sizing warning codes."""
 
     DERATING_APPLIED = "DERATING_APPLIED"
-    TRANSIENT_REQUIREMENT_GOVERNS = (
-        "TRANSIENT_REQUIREMENT_GOVERNS"
-    )
+    TRANSIENT_REQUIREMENT_GOVERNS = "TRANSIENT_REQUIREMENT_GOVERNS"
     HIGH_LOADING = "HIGH_LOADING"
     LOW_LOADING = "LOW_LOADING"
-    NO_STANDARD_RATING_AVAILABLE = (
-        "NO_STANDARD_RATING_AVAILABLE"
-    )
+    NO_STANDARD_RATING_AVAILABLE = "NO_STANDARD_RATING_AVAILABLE"
 
 
 def _require_decimal(
@@ -43,15 +39,10 @@ def _require_decimal(
     """Require an exact finite Decimal value."""
 
     if not isinstance(value, Decimal):
-        raise TypeError(
-            f"{field_name} must be a Decimal; "
-            "float values are not permitted"
-        )
+        raise TypeError(f"{field_name} must be a Decimal; float values are not permitted")
 
     if not value.is_finite():
-        raise ValueError(
-            f"{field_name} must be finite"
-        )
+        raise ValueError(f"{field_name} must be finite")
 
 
 def _require_positive_decimal(
@@ -63,9 +54,7 @@ def _require_positive_decimal(
     _require_decimal(field_name, value)
 
     if value <= Decimal("0"):
-        raise ValueError(
-            f"{field_name} must be greater than zero"
-        )
+        raise ValueError(f"{field_name} must be greater than zero")
 
 
 def _require_non_negative_decimal(
@@ -77,9 +66,7 @@ def _require_non_negative_decimal(
     _require_decimal(field_name, value)
 
     if value < Decimal("0"):
-        raise ValueError(
-            f"{field_name} must not be negative"
-        )
+        raise ValueError(f"{field_name} must not be negative")
 
 
 def _require_ratio(
@@ -91,10 +78,7 @@ def _require_ratio(
     _require_decimal(field_name, value)
 
     if not Decimal("0") < value <= Decimal("1"):
-        raise ValueError(
-            f"{field_name} must be greater than 0 "
-            "and not greater than 1"
-        )
+        raise ValueError(f"{field_name} must be greater than 0 and not greater than 1")
 
 
 def _require_factor_not_below_one(
@@ -106,9 +90,7 @@ def _require_factor_not_below_one(
     _require_decimal(field_name, value)
 
     if value < Decimal("1"):
-        raise ValueError(
-            f"{field_name} must not be less than 1"
-        )
+        raise ValueError(f"{field_name} must not be less than 1")
 
 
 def _normalize_required_text(
@@ -118,16 +100,12 @@ def _normalize_required_text(
     """Validate and normalize required text."""
 
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field_name} must be a string"
-        )
+        raise TypeError(f"{field_name} must be a string")
 
     normalized_value = value.strip()
 
     if not normalized_value:
-        raise ValueError(
-            f"{field_name} must not be empty"
-        )
+        raise ValueError(f"{field_name} must not be empty")
 
     return normalized_value
 
@@ -146,10 +124,7 @@ class GeneratorSizingWarning:
             self.code,
             GeneratorSizingWarningCode,
         ):
-            raise TypeError(
-                "code must be a "
-                "GeneratorSizingWarningCode value"
-            )
+            raise TypeError("code must be a GeneratorSizingWarningCode value")
 
         normalized_message = _normalize_required_text(
             "warning message",
@@ -239,60 +214,35 @@ class GeneratorSizingResult:
             self.scenario,
             LoadScenario,
         ):
-            raise TypeError(
-                "scenario must be a LoadScenario value"
-            )
+            raise TypeError("scenario must be a LoadScenario value")
 
         if not isinstance(
             self.duty_class,
             GeneratorDutyClass,
         ):
-            raise TypeError(
-                "duty_class must be a GeneratorDutyClass value"
-            )
+            raise TypeError("duty_class must be a GeneratorDutyClass value")
 
         if not isinstance(
             self.redundancy_mode,
             GeneratorRedundancyMode,
         ):
-            raise TypeError(
-                "redundancy_mode must be a "
-                "GeneratorRedundancyMode value"
-            )
+            raise TypeError("redundancy_mode must be a GeneratorRedundancyMode value")
 
         if not isinstance(
             self.status,
             GeneratorSizingStatus,
         ):
-            raise TypeError(
-                "status must be a GeneratorSizingStatus value"
-            )
+            raise TypeError("status must be a GeneratorSizingStatus value")
 
         for field_name, value in {
-            "steady_state_demand_kw": (
-                self.steady_state_demand_kw
-            ),
-            "steady_state_demand_kva": (
-                self.steady_state_demand_kva
-            ),
-            "future_steady_state_kva": (
-                self.future_steady_state_kva
-            ),
-            "steady_state_required_kva": (
-                self.steady_state_required_kva
-            ),
-            "transient_required_kva": (
-                self.transient_required_kva
-            ),
-            "governing_required_kva": (
-                self.governing_required_kva
-            ),
-            "required_nameplate_capacity_kva": (
-                self.required_nameplate_capacity_kva
-            ),
-            "required_unit_rating_kva": (
-                self.required_unit_rating_kva
-            ),
+            "steady_state_demand_kw": (self.steady_state_demand_kw),
+            "steady_state_demand_kva": (self.steady_state_demand_kva),
+            "future_steady_state_kva": (self.future_steady_state_kva),
+            "steady_state_required_kva": (self.steady_state_required_kva),
+            "transient_required_kva": (self.transient_required_kva),
+            "governing_required_kva": (self.governing_required_kva),
+            "required_nameplate_capacity_kva": (self.required_nameplate_capacity_kva),
+            "required_unit_rating_kva": (self.required_unit_rating_kva),
         }.items():
             _require_positive_decimal(
                 field_name,
@@ -328,21 +278,11 @@ class GeneratorSizingResult:
             self.combined_derating_factor,
         )
 
-        if self.governing_required_kva < (
-            self.steady_state_required_kva
-        ):
-            raise ValueError(
-                "governing_required_kva must not be below "
-                "steady_state_required_kva"
-            )
+        if self.governing_required_kva < (self.steady_state_required_kva):
+            raise ValueError("governing_required_kva must not be below steady_state_required_kva")
 
-        if self.governing_required_kva < (
-            self.transient_required_kva
-        ):
-            raise ValueError(
-                "governing_required_kva must not be below "
-                "transient_required_kva"
-            )
+        if self.governing_required_kva < (self.transient_required_kva):
+            raise ValueError("governing_required_kva must not be below transient_required_kva")
 
         for field_name, value in {
             "duty_units": self.duty_units,
@@ -353,65 +293,34 @@ class GeneratorSizingResult:
                 value,
                 int,
             ):
-                raise TypeError(
-                    f"{field_name} must be an integer"
-                )
+                raise TypeError(f"{field_name} must be an integer")
 
         if self.duty_units <= 0:
-            raise ValueError(
-                "duty_units must be greater than zero"
-            )
+            raise ValueError("duty_units must be greater than zero")
 
         if self.standby_units < 0:
-            raise ValueError(
-                "standby_units must not be negative"
-            )
+            raise ValueError("standby_units must not be negative")
 
-        if self.total_units != (
-            self.duty_units + self.standby_units
-        ):
-            raise ValueError(
-                "total_units must equal duty_units "
-                "plus standby_units"
-            )
+        if self.total_units != (self.duty_units + self.standby_units):
+            raise ValueError("total_units must equal duty_units plus standby_units")
 
-        if (
-            self.redundancy_mode
-            is GeneratorRedundancyMode.NONE
-            and self.standby_units != 0
-        ):
-            raise ValueError(
-                "NONE redundancy requires "
-                "standby_units to be 0"
-            )
+        if self.redundancy_mode is GeneratorRedundancyMode.NONE and self.standby_units != 0:
+            raise ValueError("NONE redundancy requires standby_units to be 0")
+
+        if self.redundancy_mode is GeneratorRedundancyMode.N_PLUS_1 and self.standby_units != 1:
+            raise ValueError("N_PLUS_1 redundancy requires exactly one standby unit")
 
         if (
-            self.redundancy_mode
-            is GeneratorRedundancyMode.N_PLUS_1
-            and self.standby_units != 1
-        ):
-            raise ValueError(
-                "N_PLUS_1 redundancy requires "
-                "exactly one standby unit"
-            )
-
-        if (
-            self.redundancy_mode
-            is GeneratorRedundancyMode.TWO_N
+            self.redundancy_mode is GeneratorRedundancyMode.TWO_N
             and self.standby_units != self.duty_units
         ):
-            raise ValueError(
-                "TWO_N redundancy requires standby_units "
-                "to equal duty_units"
-            )
+            raise ValueError("TWO_N redundancy requires standby_units to equal duty_units")
 
         if not isinstance(
             self.warnings,
             tuple,
         ):
-            raise TypeError(
-                "warnings must be a tuple"
-            )
+            raise TypeError("warnings must be a tuple")
 
         if not all(
             isinstance(
@@ -420,91 +329,44 @@ class GeneratorSizingResult:
             )
             for warning in self.warnings
         ):
-            raise TypeError(
-                "warnings must contain only "
-                "GeneratorSizingWarning records"
-            )
+            raise TypeError("warnings must contain only GeneratorSizingWarning records")
 
-        warning_codes = tuple(
-            warning.code
-            for warning in self.warnings
-        )
+        warning_codes = tuple(warning.code for warning in self.warnings)
 
         if len(warning_codes) != len(set(warning_codes)):
-            raise ValueError(
-                "warning codes must be unique"
-            )
+            raise ValueError("warning codes must be unique")
 
         optional_capacity_fields = {
-            "installed_nameplate_capacity_kva": (
-                self.installed_nameplate_capacity_kva
-            ),
-            "derated_duty_capacity_kva": (
-                self.derated_duty_capacity_kva
-            ),
-            "spare_derated_capacity_kva": (
-                self.spare_derated_capacity_kva
-            ),
-            "steady_state_loading_percent": (
-                self.steady_state_loading_percent
-            ),
+            "installed_nameplate_capacity_kva": (self.installed_nameplate_capacity_kva),
+            "derated_duty_capacity_kva": (self.derated_duty_capacity_kva),
+            "spare_derated_capacity_kva": (self.spare_derated_capacity_kva),
+            "steady_state_loading_percent": (self.steady_state_loading_percent),
         }
 
         if self.selected_unit_rating_kva is None:
-            if (
-                self.status
-                is not GeneratorSizingStatus.NO_SOLUTION
-            ):
+            if self.status is not GeneratorSizingStatus.NO_SOLUTION:
+                raise ValueError("missing selected rating requires NO_SOLUTION status")
+
+            if any(value is not None for value in optional_capacity_fields.values()):
                 raise ValueError(
-                    "missing selected rating requires "
-                    "NO_SOLUTION status"
+                    "capacity and loading results must be None when no rating is selected"
                 )
 
-            if any(
-                value is not None
-                for value in optional_capacity_fields.values()
-            ):
-                raise ValueError(
-                    "capacity and loading results must be "
-                    "None when no rating is selected"
-                )
-
-            if (
-                GeneratorSizingWarningCode
-                .NO_STANDARD_RATING_AVAILABLE
-                not in warning_codes
-            ):
-                raise ValueError(
-                    "NO_SOLUTION result requires "
-                    "NO_STANDARD_RATING_AVAILABLE warning"
-                )
+            if GeneratorSizingWarningCode.NO_STANDARD_RATING_AVAILABLE not in warning_codes:
+                raise ValueError("NO_SOLUTION result requires NO_STANDARD_RATING_AVAILABLE warning")
         else:
             _require_positive_decimal(
                 "selected_unit_rating_kva",
                 self.selected_unit_rating_kva,
             )
 
-            if (
-                self.status
-                is GeneratorSizingStatus.NO_SOLUTION
-            ):
-                raise ValueError(
-                    "NO_SOLUTION status cannot contain "
-                    "a selected rating"
-                )
+            if self.status is GeneratorSizingStatus.NO_SOLUTION:
+                raise ValueError("NO_SOLUTION status cannot contain a selected rating")
 
-            if any(
-                value is None
-                for value in optional_capacity_fields.values()
-            ):
-                raise ValueError(
-                    "selected rating requires complete "
-                    "capacity and loading results"
-                )
+            if any(value is None for value in optional_capacity_fields.values()):
+                raise ValueError("selected rating requires complete capacity and loading results")
 
-            for field_name, value in (
-                optional_capacity_fields.items()
-            ):
+            for field_name, value in optional_capacity_fields.items():
                 assert value is not None
 
                 _require_non_negative_decimal(

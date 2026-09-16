@@ -21,9 +21,7 @@ from app.domain.electrical.sources.results import (
 
 def make_warning(
     *,
-    code: TransformerSizingWarningCode = (
-        TransformerSizingWarningCode.DERATING_APPLIED
-    ),
+    code: TransformerSizingWarningCode = (TransformerSizingWarningCode.DERATING_APPLIED),
     message: str = "Derating factors were applied.",
 ) -> TransformerSizingWarning:
     """Create a valid transformer-sizing warning."""
@@ -79,10 +77,7 @@ def make_no_solution_result(
     """Create a valid no-solution result."""
 
     warning = make_warning(
-        code=(
-            TransformerSizingWarningCode
-            .NO_STANDARD_RATING_AVAILABLE
-        ),
+        code=(TransformerSizingWarningCode.NO_STANDARD_RATING_AVAILABLE),
         message="No suitable transformer rating is available.",
     )
 
@@ -109,10 +104,7 @@ def test_create_valid_transformer_sizing_warning() -> None:
         message="  Derating factors were applied.  ",
     )
 
-    assert (
-        warning.code
-        is TransformerSizingWarningCode.DERATING_APPLIED
-    )
+    assert warning.code is TransformerSizingWarningCode.DERATING_APPLIED
     assert warning.message == "Derating factors were applied."
 
 
@@ -122,10 +114,7 @@ def test_invalid_warning_code_is_rejected() -> None:
 
     with pytest.raises(
         TypeError,
-        match=(
-            "code must be a "
-            "TransformerSizingWarningCode value"
-        ),
+        match=("code must be a TransformerSizingWarningCode value"),
     ):
         TransformerSizingWarning(
             code="DERATING_APPLIED",  # type: ignore[arg-type]
@@ -251,8 +240,7 @@ def test_invalid_result_identifiers_are_rejected(
         (
             "redundancy_mode",
             "NONE",
-            "redundancy_mode must be a "
-            "TransformerRedundancyMode value",
+            "redundancy_mode must be a TransformerRedundancyMode value",
         ),
         (
             "status",
@@ -435,10 +423,7 @@ def test_total_units_must_match_installed_units() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "total_units must equal duty_units "
-            "plus standby_units"
-        ),
+        match=("total_units must equal duty_units plus standby_units"),
     ):
         make_result(
             total_units=2,
@@ -474,8 +459,7 @@ def test_total_units_must_match_installed_units() -> None:
             2,
             1,
             3,
-            "TWO_N redundancy requires standby_units "
-            "to equal duty_units",
+            "TWO_N redundancy requires standby_units to equal duty_units",
         ),
     ],
 )
@@ -519,10 +503,7 @@ def test_warning_collection_rejects_invalid_records() -> None:
 
     with pytest.raises(
         TypeError,
-        match=(
-            "warnings must contain only "
-            "TransformerSizingWarning records"
-        ),
+        match=("warnings must contain only TransformerSizingWarning records"),
     ):
         make_result(
             warnings=("invalid",),
@@ -559,10 +540,7 @@ def test_missing_selected_rating_requires_no_solution_status() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "missing selected rating requires "
-            "NO_SOLUTION status"
-        ),
+        match=("missing selected rating requires NO_SOLUTION status"),
     ):
         make_result(
             selected_unit_rating_kva=None,
@@ -574,18 +552,12 @@ def test_no_solution_requires_empty_capacity_results() -> None:
     """No-solution result cannot retain calculated selection outputs."""
 
     warning = make_warning(
-        code=(
-            TransformerSizingWarningCode
-            .NO_STANDARD_RATING_AVAILABLE
-        ),
+        code=(TransformerSizingWarningCode.NO_STANDARD_RATING_AVAILABLE),
     )
 
     with pytest.raises(
         ValueError,
-        match=(
-            "capacity and loading results must be "
-            "None when no rating is selected"
-        ),
+        match=("capacity and loading results must be None when no rating is selected"),
     ):
         make_result(
             selected_unit_rating_kva=None,
@@ -600,10 +572,7 @@ def test_no_solution_requires_standard_rating_warning() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "NO_SOLUTION result requires "
-            "NO_STANDARD_RATING_AVAILABLE warning"
-        ),
+        match=("NO_SOLUTION result requires NO_STANDARD_RATING_AVAILABLE warning"),
     ):
         make_no_solution_result(
             warnings=(),
@@ -619,11 +588,7 @@ def test_create_valid_no_solution_result() -> None:
     assert result.status is TransformerSizingStatus.NO_SOLUTION
     assert result.selected_unit_rating_kva is None
     assert result.loading_percent is None
-    assert (
-        result.warnings[0].code
-        is TransformerSizingWarningCode
-        .NO_STANDARD_RATING_AVAILABLE
-    )
+    assert result.warnings[0].code is TransformerSizingWarningCode.NO_STANDARD_RATING_AVAILABLE
 
 
 @pytest.mark.unit
@@ -632,10 +597,7 @@ def test_no_solution_status_rejects_selected_rating() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "NO_SOLUTION status cannot contain "
-            "a selected rating"
-        ),
+        match=("NO_SOLUTION status cannot contain a selected rating"),
     ):
         make_result(
             status=TransformerSizingStatus.NO_SOLUTION,
@@ -659,10 +621,7 @@ def test_selected_rating_requires_complete_outputs(
 
     with pytest.raises(
         ValueError,
-        match=(
-            "selected rating requires complete "
-            "capacity and loading results"
-        ),
+        match=("selected rating requires complete capacity and loading results"),
     ):
         make_result(
             **{field_name: None},

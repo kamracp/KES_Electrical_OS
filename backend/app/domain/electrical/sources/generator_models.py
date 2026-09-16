@@ -33,15 +33,10 @@ def _require_decimal(
     """Require an exact finite Decimal value."""
 
     if not isinstance(value, Decimal):
-        raise TypeError(
-            f"{field_name} must be a Decimal; "
-            "float values are not permitted"
-        )
+        raise TypeError(f"{field_name} must be a Decimal; float values are not permitted")
 
     if not value.is_finite():
-        raise ValueError(
-            f"{field_name} must be finite"
-        )
+        raise ValueError(f"{field_name} must be finite")
 
 
 def _require_positive_decimal(
@@ -53,9 +48,7 @@ def _require_positive_decimal(
     _require_decimal(field_name, value)
 
     if value <= Decimal("0"):
-        raise ValueError(
-            f"{field_name} must be greater than zero"
-        )
+        raise ValueError(f"{field_name} must be greater than zero")
 
 
 def _require_non_negative_decimal(
@@ -67,9 +60,7 @@ def _require_non_negative_decimal(
     _require_decimal(field_name, value)
 
     if value < Decimal("0"):
-        raise ValueError(
-            f"{field_name} must not be negative"
-        )
+        raise ValueError(f"{field_name} must not be negative")
 
 
 def _require_ratio(
@@ -81,10 +72,7 @@ def _require_ratio(
     _require_decimal(field_name, value)
 
     if not Decimal("0") < value <= Decimal("1"):
-        raise ValueError(
-            f"{field_name} must be greater than 0 "
-            "and not greater than 1"
-        )
+        raise ValueError(f"{field_name} must be greater than 0 and not greater than 1")
 
 
 def _require_factor_not_below_one(
@@ -96,9 +84,7 @@ def _require_factor_not_below_one(
     _require_decimal(field_name, value)
 
     if value < Decimal("1"):
-        raise ValueError(
-            f"{field_name} must not be less than 1"
-        )
+        raise ValueError(f"{field_name} must not be less than 1")
 
 
 def _normalize_required_text(
@@ -108,16 +94,12 @@ def _normalize_required_text(
     """Validate and normalize required text."""
 
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field_name} must be a string"
-        )
+        raise TypeError(f"{field_name} must be a string")
 
     normalized_value = value.strip()
 
     if not normalized_value:
-        raise ValueError(
-            f"{field_name} must not be empty"
-        )
+        raise ValueError(f"{field_name} must not be empty")
 
     return normalized_value
 
@@ -132,9 +114,7 @@ def _normalize_optional_text(
         return None
 
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field_name} must be a string or None"
-        )
+        raise TypeError(f"{field_name} must be a string or None")
 
     normalized_value = value.strip()
 
@@ -178,9 +158,7 @@ class GeneratorSizingInput:
 
     duty_class: GeneratorDutyClass = GeneratorDutyClass.STANDBY
 
-    redundancy_mode: GeneratorRedundancyMode = (
-        GeneratorRedundancyMode.NONE
-    )
+    redundancy_mode: GeneratorRedundancyMode = GeneratorRedundancyMode.NONE
 
     scenario: LoadScenario = LoadScenario.EMERGENCY
 
@@ -235,70 +213,44 @@ class GeneratorSizingInput:
             self.altitude_derating_factor,
         )
 
-        if (
-            isinstance(self.duty_units, bool)
-            or not isinstance(self.duty_units, int)
-        ):
-            raise TypeError(
-                "duty_units must be an integer"
-            )
+        if isinstance(self.duty_units, bool) or not isinstance(self.duty_units, int):
+            raise TypeError("duty_units must be an integer")
 
         if self.duty_units <= 0:
-            raise ValueError(
-                "duty_units must be greater than zero"
-            )
+            raise ValueError("duty_units must be greater than zero")
 
-        if (
-            isinstance(self.standby_units, bool)
-            or not isinstance(self.standby_units, int)
-        ):
-            raise TypeError(
-                "standby_units must be an integer"
-            )
+        if isinstance(self.standby_units, bool) or not isinstance(self.standby_units, int):
+            raise TypeError("standby_units must be an integer")
 
         if self.standby_units < 0:
-            raise ValueError(
-                "standby_units must not be negative"
-            )
+            raise ValueError("standby_units must not be negative")
 
         if not isinstance(
             self.duty_class,
             GeneratorDutyClass,
         ):
-            raise TypeError(
-                "duty_class must be a GeneratorDutyClass value"
-            )
+            raise TypeError("duty_class must be a GeneratorDutyClass value")
 
         if not isinstance(
             self.redundancy_mode,
             GeneratorRedundancyMode,
         ):
-            raise TypeError(
-                "redundancy_mode must be a "
-                "GeneratorRedundancyMode value"
-            )
+            raise TypeError("redundancy_mode must be a GeneratorRedundancyMode value")
 
         if not isinstance(
             self.scenario,
             LoadScenario,
         ):
-            raise TypeError(
-                "scenario must be a LoadScenario value"
-            )
+            raise TypeError("scenario must be a LoadScenario value")
 
         if not isinstance(
             self.available_unit_ratings_kva,
             tuple,
         ):
-            raise TypeError(
-                "available_unit_ratings_kva must be a tuple"
-            )
+            raise TypeError("available_unit_ratings_kva must be a tuple")
 
         if not self.available_unit_ratings_kva:
-            raise ValueError(
-                "at least one available generator "
-                "rating is required"
-            )
+            raise ValueError("at least one available generator rating is required")
 
         for rating in self.available_unit_ratings_kva:
             _require_positive_decimal(
@@ -306,50 +258,23 @@ class GeneratorSizingInput:
                 rating,
             )
 
-        if len(
-            self.available_unit_ratings_kva
-        ) != len(set(self.available_unit_ratings_kva)):
-            raise ValueError(
-                "available generator ratings must be unique"
-            )
+        if len(self.available_unit_ratings_kva) != len(set(self.available_unit_ratings_kva)):
+            raise ValueError("available generator ratings must be unique")
 
-        if self.available_unit_ratings_kva != tuple(
-            sorted(self.available_unit_ratings_kva)
-        ):
-            raise ValueError(
-                "available generator ratings "
-                "must be in ascending order"
-            )
+        if self.available_unit_ratings_kva != tuple(sorted(self.available_unit_ratings_kva)):
+            raise ValueError("available generator ratings must be in ascending order")
+
+        if self.redundancy_mode is GeneratorRedundancyMode.NONE and self.standby_units != 0:
+            raise ValueError("NONE redundancy requires standby_units to be 0")
+
+        if self.redundancy_mode is GeneratorRedundancyMode.N_PLUS_1 and self.standby_units != 1:
+            raise ValueError("N_PLUS_1 redundancy requires exactly one standby unit")
 
         if (
-            self.redundancy_mode
-            is GeneratorRedundancyMode.NONE
-            and self.standby_units != 0
-        ):
-            raise ValueError(
-                "NONE redundancy requires "
-                "standby_units to be 0"
-            )
-
-        if (
-            self.redundancy_mode
-            is GeneratorRedundancyMode.N_PLUS_1
-            and self.standby_units != 1
-        ):
-            raise ValueError(
-                "N_PLUS_1 redundancy requires "
-                "exactly one standby unit"
-            )
-
-        if (
-            self.redundancy_mode
-            is GeneratorRedundancyMode.TWO_N
+            self.redundancy_mode is GeneratorRedundancyMode.TWO_N
             and self.standby_units != self.duty_units
         ):
-            raise ValueError(
-                "TWO_N redundancy requires standby_units "
-                "to equal duty_units"
-            )
+            raise ValueError("TWO_N redundancy requires standby_units to equal duty_units")
 
         object.__setattr__(
             self,

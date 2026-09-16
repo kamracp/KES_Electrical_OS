@@ -1,4 +1,3 @@
-
 """
 Pydantic schemas for LT PCC / Main Panel engineering.
 KESE-S2-M10
@@ -37,8 +36,7 @@ def _reject_float(value: object) -> object:
 
     if isinstance(value, float):
         raise ValueError(
-            "engineering decimal values must be provided as "
-            "strings, integers, or Decimal values"
+            "engineering decimal values must be provided as strings, integers, or Decimal values"
         )
 
     return value
@@ -81,18 +79,10 @@ class LTFeederRequest(_RequestBase):
     design_current_a: ExactDecimal = Field(gt=Decimal("0"))
     rated_current_a: ExactDecimal = Field(gt=Decimal("0"))
 
-    prospective_short_circuit_current_ka: ExactDecimal = Field(
-        gt=Decimal("0")
-    )
-    rated_ultimate_breaking_capacity_ka: ExactDecimal = Field(
-        gt=Decimal("0")
-    )
-    rated_service_breaking_capacity_ka: ExactDecimal = Field(
-        gt=Decimal("0")
-    )
-    rated_short_time_withstand_current_ka: ExactDecimal = Field(
-        gt=Decimal("0")
-    )
+    prospective_short_circuit_current_ka: ExactDecimal = Field(gt=Decimal("0"))
+    rated_ultimate_breaking_capacity_ka: ExactDecimal = Field(gt=Decimal("0"))
+    rated_service_breaking_capacity_ka: ExactDecimal = Field(gt=Decimal("0"))
+    rated_short_time_withstand_current_ka: ExactDecimal = Field(gt=Decimal("0"))
 
     number_of_poles: StrictInt = Field(default=4)
     cable_count: StrictInt = Field(default=1, gt=0)
@@ -111,18 +101,10 @@ class LTFeederRequest(_RequestBase):
             trip_unit_type=self.trip_unit_type,
             design_current_a=self.design_current_a,
             rated_current_a=self.rated_current_a,
-            prospective_short_circuit_current_ka=(
-                self.prospective_short_circuit_current_ka
-            ),
-            rated_ultimate_breaking_capacity_ka=(
-                self.rated_ultimate_breaking_capacity_ka
-            ),
-            rated_service_breaking_capacity_ka=(
-                self.rated_service_breaking_capacity_ka
-            ),
-            rated_short_time_withstand_current_ka=(
-                self.rated_short_time_withstand_current_ka
-            ),
+            prospective_short_circuit_current_ka=(self.prospective_short_circuit_current_ka),
+            rated_ultimate_breaking_capacity_ka=(self.rated_ultimate_breaking_capacity_ka),
+            rated_service_breaking_capacity_ka=(self.rated_service_breaking_capacity_ka),
+            rated_short_time_withstand_current_ka=(self.rated_short_time_withstand_current_ka),
             number_of_poles=self.number_of_poles,
             cable_count=self.cable_count,
             spare_feeder=self.spare_feeder,
@@ -143,19 +125,11 @@ class LTPCCSizingRequest(_RequestBase):
     form_of_separation: LTPanelFormOfSeparation
 
     busbar_rated_current_a: ExactDecimal = Field(gt=Decimal("0"))
-    busbar_short_time_withstand_current_ka: ExactDecimal = Field(
-        gt=Decimal("0")
-    )
-    busbar_peak_withstand_current_ka: ExactDecimal = Field(
-        gt=Decimal("0")
-    )
+    busbar_short_time_withstand_current_ka: ExactDecimal = Field(gt=Decimal("0"))
+    busbar_peak_withstand_current_ka: ExactDecimal = Field(gt=Decimal("0"))
 
-    neutral_bus_rating_percent: ExactDecimal = Field(
-        gt=Decimal("0")
-    )
-    earth_bus_rating_percent: ExactDecimal = Field(
-        gt=Decimal("0")
-    )
+    neutral_bus_rating_percent: ExactDecimal = Field(gt=Decimal("0"))
+    earth_bus_rating_percent: ExactDecimal = Field(gt=Decimal("0"))
 
     feeders: tuple[LTFeederRequest, ...] = Field(min_length=1)
 
@@ -186,31 +160,18 @@ class LTPCCSizingRequest(_RequestBase):
             installation=self.installation,
             form_of_separation=self.form_of_separation,
             busbar_rated_current_a=self.busbar_rated_current_a,
-            busbar_short_time_withstand_current_ka=(
-                self.busbar_short_time_withstand_current_ka
-            ),
-            busbar_peak_withstand_current_ka=(
-                self.busbar_peak_withstand_current_ka
-            ),
-            neutral_bus_rating_percent=(
-                self.neutral_bus_rating_percent
-            ),
-            earth_bus_rating_percent=(
-                self.earth_bus_rating_percent
-            ),
-            feeders=tuple(
-                feeder.to_domain()
-                for feeder in self.feeders
-            ),
+            busbar_short_time_withstand_current_ka=(self.busbar_short_time_withstand_current_ka),
+            busbar_peak_withstand_current_ka=(self.busbar_peak_withstand_current_ka),
+            neutral_bus_rating_percent=(self.neutral_bus_rating_percent),
+            earth_bus_rating_percent=(self.earth_bus_rating_percent),
+            feeders=tuple(feeder.to_domain() for feeder in self.feeders),
             bus_sections=self.bus_sections,
             bus_couplers=self.bus_couplers,
             spare_feeders=self.spare_feeders,
             ip_rating=self.ip_rating,
             apfc_required=self.apfc_required,
             metering_required=self.metering_required,
-            remote_operation_required=(
-                self.remote_operation_required
-            ),
+            remote_operation_required=(self.remote_operation_required),
             notes=self.notes,
         )
 

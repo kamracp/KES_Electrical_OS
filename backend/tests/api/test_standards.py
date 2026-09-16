@@ -276,9 +276,7 @@ async def test_invalid_lifecycle_dates_return_validation_error(
     errors = response.json()["detail"]
 
     assert any(
-        "withdrawn_date cannot be earlier than effective_date"
-        in error["msg"]
-        for error in errors
+        "withdrawn_date cannot be earlier than effective_date" in error["msg"] for error in errors
     )
 
 

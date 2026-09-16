@@ -100,8 +100,7 @@ async def test_lt_pcc_warning_response(
     assert data["status"] == "WARNING"
 
     assert any(
-        warning["code"] == "ICU_MARGIN_LOW"
-        for warning in data["feeder_results"][0]["warnings"]
+        warning["code"] == "ICU_MARGIN_LOW" for warning in data["feeder_results"][0]["warnings"]
     )
 
 

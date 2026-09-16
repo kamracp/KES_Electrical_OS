@@ -83,14 +83,10 @@ def _require_positive_integer(
     value: int,
 ) -> None:
     if isinstance(value, bool) or not isinstance(value, int):
-        raise TypeError(
-            f"{field_name} must be an integer"
-        )
+        raise TypeError(f"{field_name} must be an integer")
 
     if value <= 0:
-        raise ValueError(
-            f"{field_name} must be greater than zero"
-        )
+        raise ValueError(f"{field_name} must be greater than zero")
 
 
 def _require_non_negative_integer(
@@ -98,14 +94,10 @@ def _require_non_negative_integer(
     value: int,
 ) -> None:
     if isinstance(value, bool) or not isinstance(value, int):
-        raise TypeError(
-            f"{field_name} must be an integer"
-        )
+        raise TypeError(f"{field_name} must be an integer")
 
     if value < 0:
-        raise ValueError(
-            f"{field_name} must not be negative"
-        )
+        raise ValueError(f"{field_name} must not be negative")
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,42 +154,27 @@ class LTFeederInput:
             self.feeder_type,
             LTFeederType,
         ):
-            raise TypeError(
-                "feeder_type must be an LTFeederType value"
-            )
+            raise TypeError("feeder_type must be an LTFeederType value")
 
         if not isinstance(
             self.switching_device,
             LTSwitchingDevice,
         ):
-            raise TypeError(
-                "switching_device must be an "
-                "LTSwitchingDevice value"
-            )
+            raise TypeError("switching_device must be an LTSwitchingDevice value")
 
         if not isinstance(
             self.trip_unit_type,
             LTTripUnitType,
         ):
-            raise TypeError(
-                "trip_unit_type must be an LTTripUnitType value"
-            )
+            raise TypeError("trip_unit_type must be an LTTripUnitType value")
 
         for field_name, value in {
             "design_current_a": self.design_current_a,
             "rated_current_a": self.rated_current_a,
-            "prospective_short_circuit_current_ka": (
-                self.prospective_short_circuit_current_ka
-            ),
-            "rated_ultimate_breaking_capacity_ka": (
-                self.rated_ultimate_breaking_capacity_ka
-            ),
-            "rated_service_breaking_capacity_ka": (
-                self.rated_service_breaking_capacity_ka
-            ),
-            "rated_short_time_withstand_current_ka": (
-                self.rated_short_time_withstand_current_ka
-            ),
+            "prospective_short_circuit_current_ka": (self.prospective_short_circuit_current_ka),
+            "rated_ultimate_breaking_capacity_ka": (self.rated_ultimate_breaking_capacity_ka),
+            "rated_service_breaking_capacity_ka": (self.rated_service_breaking_capacity_ka),
+            "rated_short_time_withstand_current_ka": (self.rated_short_time_withstand_current_ka),
         }.items():
             require_positive_decimal(
                 field_name,
@@ -205,42 +182,27 @@ class LTFeederInput:
             )
 
         if self.rated_current_a < self.design_current_a:
-            raise ValueError(
-                "rated_current_a must not be below "
-                "design_current_a"
-            )
+            raise ValueError("rated_current_a must not be below design_current_a")
 
-        if (
-            self.rated_ultimate_breaking_capacity_ka
-            < self.prospective_short_circuit_current_ka
-        ):
+        if self.rated_ultimate_breaking_capacity_ka < self.prospective_short_circuit_current_ka:
             raise ValueError(
                 "rated ultimate breaking capacity must not be "
                 "below prospective short-circuit current"
             )
 
-        if (
-            self.rated_service_breaking_capacity_ka
-            > self.rated_ultimate_breaking_capacity_ka
-        ):
+        if self.rated_service_breaking_capacity_ka > self.rated_ultimate_breaking_capacity_ka:
             raise ValueError(
-                "rated service breaking capacity must not exceed "
-                "rated ultimate breaking capacity"
+                "rated service breaking capacity must not exceed rated ultimate breaking capacity"
             )
 
-        if (
-            self.rated_short_time_withstand_current_ka
-            < self.prospective_short_circuit_current_ka
-        ):
+        if self.rated_short_time_withstand_current_ka < self.prospective_short_circuit_current_ka:
             raise ValueError(
                 "rated short-time withstand current must not be "
                 "below prospective short-circuit current"
             )
 
         if self.number_of_poles not in {2, 3, 4}:
-            raise ValueError(
-                "number_of_poles must be 2, 3 or 4"
-            )
+            raise ValueError("number_of_poles must be 2, 3 or 4")
 
         _require_positive_integer(
             "cable_count",
@@ -248,9 +210,7 @@ class LTFeederInput:
         )
 
         if not isinstance(self.spare_feeder, bool):
-            raise TypeError(
-                "spare_feeder must be a boolean"
-            )
+            raise TypeError("spare_feeder must be a boolean")
 
 
 @dataclass(frozen=True, slots=True)
@@ -325,45 +285,27 @@ class LTPCCSizingInput:
             self.system_voltage,
             LTSystemVoltage,
         ):
-            raise TypeError(
-                "system_voltage must be an LTSystemVoltage value"
-            )
+            raise TypeError("system_voltage must be an LTSystemVoltage value")
 
         if not isinstance(
             self.installation,
             LTPanelInstallation,
         ):
-            raise TypeError(
-                "installation must be an "
-                "LTPanelInstallation value"
-            )
+            raise TypeError("installation must be an LTPanelInstallation value")
 
         if not isinstance(
             self.form_of_separation,
             LTPanelFormOfSeparation,
         ):
-            raise TypeError(
-                "form_of_separation must be an "
-                "LTPanelFormOfSeparation value"
-            )
+            raise TypeError("form_of_separation must be an LTPanelFormOfSeparation value")
 
         for field_name, value in {
             "frequency_hz": self.frequency_hz,
-            "busbar_rated_current_a": (
-                self.busbar_rated_current_a
-            ),
-            "busbar_short_time_withstand_current_ka": (
-                self.busbar_short_time_withstand_current_ka
-            ),
-            "busbar_peak_withstand_current_ka": (
-                self.busbar_peak_withstand_current_ka
-            ),
-            "neutral_bus_rating_percent": (
-                self.neutral_bus_rating_percent
-            ),
-            "earth_bus_rating_percent": (
-                self.earth_bus_rating_percent
-            ),
+            "busbar_rated_current_a": (self.busbar_rated_current_a),
+            "busbar_short_time_withstand_current_ka": (self.busbar_short_time_withstand_current_ka),
+            "busbar_peak_withstand_current_ka": (self.busbar_peak_withstand_current_ka),
+            "neutral_bus_rating_percent": (self.neutral_bus_rating_percent),
+            "earth_bus_rating_percent": (self.earth_bus_rating_percent),
         }.items():
             require_positive_decimal(
                 field_name,
@@ -371,14 +313,10 @@ class LTPCCSizingInput:
             )
 
         if not isinstance(self.feeders, tuple):
-            raise TypeError(
-                "feeders must be a tuple"
-            )
+            raise TypeError("feeders must be a tuple")
 
         if not self.feeders:
-            raise ValueError(
-                "LT PCC must contain at least one feeder"
-            )
+            raise ValueError("LT PCC must contain at least one feeder")
 
         if not all(
             isinstance(
@@ -387,43 +325,25 @@ class LTPCCSizingInput:
             )
             for feeder in self.feeders
         ):
-            raise TypeError(
-                "feeders must contain only LTFeederInput records"
-            )
+            raise TypeError("feeders must contain only LTFeederInput records")
 
-        feeder_codes = tuple(
-            feeder.code
-            for feeder in self.feeders
-        )
+        feeder_codes = tuple(feeder.code for feeder in self.feeders)
 
         if len(feeder_codes) != len(set(feeder_codes)):
-            raise ValueError(
-                "LT feeder codes must be unique"
-            )
+            raise ValueError("LT feeder codes must be unique")
 
-        maximum_feeder_current = max(
-            feeder.rated_current_a
-            for feeder in self.feeders
-        )
+        maximum_feeder_current = max(feeder.rated_current_a for feeder in self.feeders)
 
-        if (
-            self.busbar_rated_current_a
-            < maximum_feeder_current
-        ):
+        if self.busbar_rated_current_a < maximum_feeder_current:
             raise ValueError(
-                "busbar_rated_current_a must not be below "
-                "the highest feeder rated current"
+                "busbar_rated_current_a must not be below the highest feeder rated current"
             )
 
         maximum_fault_current = max(
-            feeder.prospective_short_circuit_current_ka
-            for feeder in self.feeders
+            feeder.prospective_short_circuit_current_ka for feeder in self.feeders
         )
 
-        if (
-            self.busbar_short_time_withstand_current_ka
-            < maximum_fault_current
-        ):
+        if self.busbar_short_time_withstand_current_ka < maximum_fault_current:
             raise ValueError(
                 "busbar short-time withstand current must not "
                 "be below the maximum feeder fault current"
@@ -443,30 +363,18 @@ class LTPCCSizingInput:
         )
 
         if self.bus_sections == 1 and self.bus_couplers != 0:
-            raise ValueError(
-                "single bus section cannot have a bus coupler"
-            )
+            raise ValueError("single bus section cannot have a bus coupler")
 
-        if (
-            self.bus_sections > 1
-            and self.bus_couplers < 1
-        ):
-            raise ValueError(
-                "multiple bus sections require at least "
-                "one bus coupler"
-            )
+        if self.bus_sections > 1 and self.bus_couplers < 1:
+            raise ValueError("multiple bus sections require at least one bus coupler")
 
         for field_name, value in {
             "apfc_required": self.apfc_required,
             "metering_required": self.metering_required,
-            "remote_operation_required": (
-                self.remote_operation_required
-            ),
+            "remote_operation_required": (self.remote_operation_required),
         }.items():
             if not isinstance(value, bool):
-                raise TypeError(
-                    f"{field_name} must be a boolean"
-                )
+                raise TypeError(f"{field_name} must be a boolean")
 
 
 __all__ = [

@@ -7,9 +7,7 @@ import pytest
 from httpx import AsyncClient
 
 
-GENERATOR_SIZING_URL = (
-    "/api/v1/electrical/generator-sizing/calculate"
-)
+GENERATOR_SIZING_URL = "/api/v1/electrical/generator-sizing/calculate"
 
 
 def generator_payload() -> dict[str, object]:
@@ -69,10 +67,7 @@ async def test_calculate_generator_sizing(
     assert data["required_unit_rating_kva"] == "1100.0000"
     assert data["selected_unit_rating_kva"] == "1250"
 
-    assert (
-        data["installed_nameplate_capacity_kva"]
-        == "1250.0000"
-    )
+    assert data["installed_nameplate_capacity_kva"] == "1250.0000"
     assert data["derated_duty_capacity_kva"] == "1250.0000"
     assert data["spare_derated_capacity_kva"] == "150.0000"
     assert data["steady_state_loading_percent"] == "88.0000"
@@ -119,20 +114,14 @@ async def test_transient_and_derating_warning_response(
     assert data["governing_required_kva"] == "1485.0000"
 
     assert data["combined_derating_factor"] == "0.9310"
-    assert (
-        data["required_nameplate_capacity_kva"]
-        == "1595.0591"
-    )
+    assert data["required_nameplate_capacity_kva"] == "1595.0591"
     assert data["selected_unit_rating_kva"] == "1600"
     assert data["derated_duty_capacity_kva"] == "1489.6000"
     assert data["spare_derated_capacity_kva"] == "4.6000"
 
     assert data["status"] == "WARNING"
 
-    warning_codes = {
-        warning["code"]
-        for warning in data["warnings"]
-    }
+    warning_codes = {warning["code"] for warning in data["warnings"]}
 
     assert warning_codes == {
         "DERATING_APPLIED",
@@ -165,11 +154,7 @@ async def test_no_generator_rating_available(
     assert data["spare_derated_capacity_kva"] is None
     assert data["steady_state_loading_percent"] is None
 
-    assert any(
-        warning["code"]
-        == "NO_STANDARD_RATING_AVAILABLE"
-        for warning in data["warnings"]
-    )
+    assert any(warning["code"] == "NO_STANDARD_RATING_AVAILABLE" for warning in data["warnings"])
 
 
 @pytest.mark.api
@@ -207,10 +192,7 @@ async def test_generator_n_plus_one_arrangement(
     assert data["standby_units"] == 1
     assert data["total_units"] == 3
 
-    assert (
-        data["installed_nameplate_capacity_kva"]
-        == "3000.0000"
-    )
+    assert data["installed_nameplate_capacity_kva"] == "3000.0000"
     assert data["derated_duty_capacity_kva"] == "2000.0000"
 
 
@@ -232,11 +214,7 @@ async def test_generator_float_input_is_rejected(
 
     errors = response.json()["detail"]
 
-    assert any(
-        "engineering decimal values must be provided"
-        in error["msg"]
-        for error in errors
-    )
+    assert any("engineering decimal values must be provided" in error["msg"] for error in errors)
 
 
 @pytest.mark.api
@@ -261,7 +239,4 @@ async def test_unsorted_generator_ratings_are_rejected(
 
     errors = response.json()["detail"]
 
-    assert any(
-        "must be in ascending order" in error["msg"]
-        for error in errors
-    )
+    assert any("must be in ascending order" in error["msg"] for error in errors)

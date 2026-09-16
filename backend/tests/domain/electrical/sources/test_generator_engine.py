@@ -71,9 +71,7 @@ def warning_codes(
 def test_calculate_normal_generator_sizing() -> None:
     """Engine should select the smallest adequate unit rating."""
 
-    result = calculate_generator_sizing(
-        make_generator_input()
-    )
+    result = calculate_generator_sizing(make_generator_input())
 
     assert result.steady_state_demand_kva == Decimal("1000.0000")
     assert result.future_steady_state_kva == Decimal("1000.0000")
@@ -83,9 +81,7 @@ def test_calculate_normal_generator_sizing() -> None:
     assert result.governing_required_kva == Decimal("1100.0000")
     assert result.required_unit_rating_kva == Decimal("1100.0000")
     assert result.selected_unit_rating_kva == Decimal("1250")
-    assert result.installed_nameplate_capacity_kva == Decimal(
-        "1250.0000"
-    )
+    assert result.installed_nameplate_capacity_kva == Decimal("1250.0000")
     assert result.derated_duty_capacity_kva == Decimal("1250.0000")
     assert result.spare_derated_capacity_kva == Decimal("150.0000")
     assert result.steady_state_loading_percent == Decimal("88.0000")
@@ -118,9 +114,7 @@ def test_transient_and_derating_requirements() -> None:
     assert result.transient_required_kva == Decimal("1485.0000")
     assert result.governing_required_kva == Decimal("1485.0000")
     assert result.combined_derating_factor == Decimal("0.9310")
-    assert result.required_nameplate_capacity_kva == Decimal(
-        "1595.0591"
-    )
+    assert result.required_nameplate_capacity_kva == Decimal("1595.0591")
     assert result.selected_unit_rating_kva == Decimal("1600")
     assert result.derated_duty_capacity_kva == Decimal("1489.6000")
     assert result.spare_derated_capacity_kva == Decimal("4.6000")
@@ -146,10 +140,7 @@ def test_small_transient_does_not_govern_selection() -> None:
     assert result.transient_required_kva == Decimal("1050.0000")
     assert result.steady_state_required_kva == Decimal("1100.0000")
     assert result.governing_required_kva == Decimal("1100.0000")
-    assert (
-        GeneratorSizingWarningCode.TRANSIENT_REQUIREMENT_GOVERNS
-        not in warning_codes(result)
-    )
+    assert GeneratorSizingWarningCode.TRANSIENT_REQUIREMENT_GOVERNS not in warning_codes(result)
     assert result.status is GeneratorSizingStatus.VALID
 
 
@@ -223,9 +214,7 @@ def test_high_generator_loading_warning() -> None:
             steady_state_demand_kw=Decimal("900"),
             steady_state_power_factor=Decimal("1"),
             design_margin_factor=Decimal("1"),
-            available_unit_ratings_kva=(
-                Decimal("1000"),
-            ),
+            available_unit_ratings_kva=(Decimal("1000"),),
         )
     )
 
@@ -245,9 +234,7 @@ def test_low_generator_loading_warning() -> None:
             steady_state_demand_kw=Decimal("300"),
             steady_state_power_factor=Decimal("1"),
             design_margin_factor=Decimal("1"),
-            available_unit_ratings_kva=(
-                Decimal("1000"),
-            ),
+            available_unit_ratings_kva=(Decimal("1000"),),
         )
     )
 
@@ -276,9 +263,7 @@ def test_derating_warning_without_transient_warning() -> None:
     )
 
     assert result.combined_derating_factor == Decimal("0.9310")
-    assert result.required_nameplate_capacity_kva == Decimal(
-        "886.1439"
-    )
+    assert result.required_nameplate_capacity_kva == Decimal("886.1439")
     assert result.selected_unit_rating_kva == Decimal("1000")
     assert result.steady_state_loading_percent == Decimal("88.6144")
     assert result.status is GeneratorSizingStatus.WARNING
@@ -310,9 +295,7 @@ def test_n_plus_one_generator_arrangement() -> None:
     assert result.duty_units == 2
     assert result.standby_units == 1
     assert result.total_units == 3
-    assert result.installed_nameplate_capacity_kva == Decimal(
-        "3000.0000"
-    )
+    assert result.installed_nameplate_capacity_kva == Decimal("3000.0000")
     assert result.derated_duty_capacity_kva == Decimal("2000.0000")
     assert result.spare_derated_capacity_kva == Decimal("0.0000")
 
@@ -338,9 +321,7 @@ def test_two_n_generator_arrangement() -> None:
     assert result.duty_units == 1
     assert result.standby_units == 1
     assert result.total_units == 2
-    assert result.installed_nameplate_capacity_kva == Decimal(
-        "2000.0000"
-    )
+    assert result.installed_nameplate_capacity_kva == Decimal("2000.0000")
     assert result.derated_duty_capacity_kva == Decimal("1000.0000")
 
 
@@ -379,10 +360,7 @@ def test_generator_engine_rejects_invalid_input_type() -> None:
 
     with pytest.raises(
         TypeError,
-        match=(
-            "sizing_input must be a "
-            "GeneratorSizingInput record"
-        ),
+        match=("sizing_input must be a GeneratorSizingInput record"),
     ):
         calculate_generator_sizing(
             "invalid",  # type: ignore[arg-type]

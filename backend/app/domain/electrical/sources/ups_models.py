@@ -49,15 +49,10 @@ def _require_decimal(
     """Require an exact finite Decimal value."""
 
     if not isinstance(value, Decimal):
-        raise TypeError(
-            f"{field_name} must be a Decimal; "
-            "float values are not permitted"
-        )
+        raise TypeError(f"{field_name} must be a Decimal; float values are not permitted")
 
     if not value.is_finite():
-        raise ValueError(
-            f"{field_name} must be finite"
-        )
+        raise ValueError(f"{field_name} must be finite")
 
 
 def _require_positive_decimal(
@@ -69,9 +64,7 @@ def _require_positive_decimal(
     _require_decimal(field_name, value)
 
     if value <= Decimal("0"):
-        raise ValueError(
-            f"{field_name} must be greater than zero"
-        )
+        raise ValueError(f"{field_name} must be greater than zero")
 
 
 def _require_non_negative_decimal(
@@ -83,9 +76,7 @@ def _require_non_negative_decimal(
     _require_decimal(field_name, value)
 
     if value < Decimal("0"):
-        raise ValueError(
-            f"{field_name} must not be negative"
-        )
+        raise ValueError(f"{field_name} must not be negative")
 
 
 def _require_ratio(
@@ -97,10 +88,7 @@ def _require_ratio(
     _require_decimal(field_name, value)
 
     if not Decimal("0") < value <= Decimal("1"):
-        raise ValueError(
-            f"{field_name} must be greater than 0 "
-            "and not greater than 1"
-        )
+        raise ValueError(f"{field_name} must be greater than 0 and not greater than 1")
 
 
 def _require_factor_not_below_one(
@@ -112,9 +100,7 @@ def _require_factor_not_below_one(
     _require_decimal(field_name, value)
 
     if value < Decimal("1"):
-        raise ValueError(
-            f"{field_name} must not be less than 1"
-        )
+        raise ValueError(f"{field_name} must not be less than 1")
 
 
 def _normalize_required_text(
@@ -124,16 +110,12 @@ def _normalize_required_text(
     """Validate and normalize required text."""
 
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field_name} must be a string"
-        )
+        raise TypeError(f"{field_name} must be a string")
 
     normalized_value = value.strip()
 
     if not normalized_value:
-        raise ValueError(
-            f"{field_name} must not be empty"
-        )
+        raise ValueError(f"{field_name} must not be empty")
 
     return normalized_value
 
@@ -148,9 +130,7 @@ def _normalize_optional_text(
         return None
 
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field_name} must be a string or None"
-        )
+        raise TypeError(f"{field_name} must be a string or None")
 
     normalized_value = value.strip()
 
@@ -202,9 +182,7 @@ class UPSSizingInput:
     redundant_modules: int = 0
 
     topology: UPSTopology = UPSTopology.ONLINE_DOUBLE_CONVERSION
-    phase_configuration: UPSPhaseConfiguration = (
-        UPSPhaseConfiguration.THREE_PHASE
-    )
+    phase_configuration: UPSPhaseConfiguration = UPSPhaseConfiguration.THREE_PHASE
     redundancy_mode: UPSRedundancyMode = UPSRedundancyMode.NONE
     battery_technology: UPSBatteryTechnology = UPSBatteryTechnology.VRLA
 
@@ -265,87 +243,56 @@ class UPSSizingInput:
             self.required_runtime_minutes,
         )
 
-        if (
-            isinstance(self.duty_modules, bool)
-            or not isinstance(self.duty_modules, int)
-        ):
-            raise TypeError(
-                "duty_modules must be an integer"
-            )
+        if isinstance(self.duty_modules, bool) or not isinstance(self.duty_modules, int):
+            raise TypeError("duty_modules must be an integer")
 
         if self.duty_modules <= 0:
-            raise ValueError(
-                "duty_modules must be greater than zero"
-            )
+            raise ValueError("duty_modules must be greater than zero")
 
-        if (
-            isinstance(self.redundant_modules, bool)
-            or not isinstance(self.redundant_modules, int)
-        ):
-            raise TypeError(
-                "redundant_modules must be an integer"
-            )
+        if isinstance(self.redundant_modules, bool) or not isinstance(self.redundant_modules, int):
+            raise TypeError("redundant_modules must be an integer")
 
         if self.redundant_modules < 0:
-            raise ValueError(
-                "redundant_modules must not be negative"
-            )
+            raise ValueError("redundant_modules must not be negative")
 
         if not isinstance(
             self.topology,
             UPSTopology,
         ):
-            raise TypeError(
-                "topology must be a UPSTopology value"
-            )
+            raise TypeError("topology must be a UPSTopology value")
 
         if not isinstance(
             self.phase_configuration,
             UPSPhaseConfiguration,
         ):
-            raise TypeError(
-                "phase_configuration must be a "
-                "UPSPhaseConfiguration value"
-            )
+            raise TypeError("phase_configuration must be a UPSPhaseConfiguration value")
 
         if not isinstance(
             self.redundancy_mode,
             UPSRedundancyMode,
         ):
-            raise TypeError(
-                "redundancy_mode must be a "
-                "UPSRedundancyMode value"
-            )
+            raise TypeError("redundancy_mode must be a UPSRedundancyMode value")
 
         if not isinstance(
             self.battery_technology,
             UPSBatteryTechnology,
         ):
-            raise TypeError(
-                "battery_technology must be a "
-                "UPSBatteryTechnology value"
-            )
+            raise TypeError("battery_technology must be a UPSBatteryTechnology value")
 
         if not isinstance(
             self.scenario,
             LoadScenario,
         ):
-            raise TypeError(
-                "scenario must be a LoadScenario value"
-            )
+            raise TypeError("scenario must be a LoadScenario value")
 
         if not isinstance(
             self.available_unit_ratings_kva,
             tuple,
         ):
-            raise TypeError(
-                "available_unit_ratings_kva must be a tuple"
-            )
+            raise TypeError("available_unit_ratings_kva must be a tuple")
 
         if not self.available_unit_ratings_kva:
-            raise ValueError(
-                "at least one available UPS rating is required"
-            )
+            raise ValueError("at least one available UPS rating is required")
 
         for rating in self.available_unit_ratings_kva:
             _require_positive_decimal(
@@ -353,45 +300,23 @@ class UPSSizingInput:
                 rating,
             )
 
-        if len(
-            self.available_unit_ratings_kva
-        ) != len(set(self.available_unit_ratings_kva)):
-            raise ValueError(
-                "available UPS ratings must be unique"
-            )
+        if len(self.available_unit_ratings_kva) != len(set(self.available_unit_ratings_kva)):
+            raise ValueError("available UPS ratings must be unique")
 
-        if self.available_unit_ratings_kva != tuple(
-            sorted(self.available_unit_ratings_kva)
-        ):
-            raise ValueError(
-                "available UPS ratings must be in ascending order"
-            )
+        if self.available_unit_ratings_kva != tuple(sorted(self.available_unit_ratings_kva)):
+            raise ValueError("available UPS ratings must be in ascending order")
 
-        if (
-            self.redundancy_mode is UPSRedundancyMode.NONE
-            and self.redundant_modules != 0
-        ):
-            raise ValueError(
-                "NONE redundancy requires redundant_modules to be 0"
-            )
+        if self.redundancy_mode is UPSRedundancyMode.NONE and self.redundant_modules != 0:
+            raise ValueError("NONE redundancy requires redundant_modules to be 0")
 
-        if (
-            self.redundancy_mode is UPSRedundancyMode.N_PLUS_1
-            and self.redundant_modules != 1
-        ):
-            raise ValueError(
-                "N_PLUS_1 redundancy requires exactly "
-                "one redundant module"
-            )
+        if self.redundancy_mode is UPSRedundancyMode.N_PLUS_1 and self.redundant_modules != 1:
+            raise ValueError("N_PLUS_1 redundancy requires exactly one redundant module")
 
         if (
             self.redundancy_mode is UPSRedundancyMode.TWO_N
             and self.redundant_modules != self.duty_modules
         ):
-            raise ValueError(
-                "TWO_N redundancy requires redundant_modules "
-                "to equal duty_modules"
-            )
+            raise ValueError("TWO_N redundancy requires redundant_modules to equal duty_modules")
 
         object.__setattr__(
             self,

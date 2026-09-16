@@ -7,9 +7,7 @@ import pytest
 from httpx import AsyncClient
 
 
-TRANSFORMER_SIZING_URL = (
-    "/api/v1/electrical/transformer-sizing/calculate"
-)
+TRANSFORMER_SIZING_URL = "/api/v1/electrical/transformer-sizing/calculate"
 
 
 def transformer_payload() -> dict[str, object]:
@@ -94,10 +92,7 @@ async def test_derating_warning_response(
     assert data["selected_unit_rating_kva"] == "1600"
     assert data["status"] == "WARNING"
 
-    assert any(
-        warning["code"] == "DERATING_APPLIED"
-        for warning in data["warnings"]
-    )
+    assert any(warning["code"] == "DERATING_APPLIED" for warning in data["warnings"])
 
 
 @pytest.mark.api
@@ -125,11 +120,7 @@ async def test_no_standard_rating_available(
     assert data["spare_derated_capacity_kva"] is None
     assert data["loading_percent"] is None
 
-    assert any(
-        warning["code"]
-        == "NO_STANDARD_RATING_AVAILABLE"
-        for warning in data["warnings"]
-    )
+    assert any(warning["code"] == "NO_STANDARD_RATING_AVAILABLE" for warning in data["warnings"])
 
 
 @pytest.mark.api
@@ -188,11 +179,7 @@ async def test_float_engineering_input_is_rejected(
 
     errors = response.json()["detail"]
 
-    assert any(
-        "engineering decimal values must be provided"
-        in error["msg"]
-        for error in errors
-    )
+    assert any("engineering decimal values must be provided" in error["msg"] for error in errors)
 
 
 @pytest.mark.api
@@ -217,7 +204,4 @@ async def test_unsorted_rating_schedule_is_rejected(
 
     errors = response.json()["detail"]
 
-    assert any(
-        "must be in ascending order" in error["msg"]
-        for error in errors
-    )
+    assert any("must be in ascending order" in error["msg"] for error in errors)

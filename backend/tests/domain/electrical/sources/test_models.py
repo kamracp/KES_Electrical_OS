@@ -61,10 +61,7 @@ def test_create_valid_transformer_sizing_input() -> None:
     assert sizing_input.design_margin_factor == Decimal("1.10")
     assert sizing_input.duty_units == 1
     assert sizing_input.standby_units == 0
-    assert (
-        sizing_input.redundancy_mode
-        is TransformerRedundancyMode.NONE
-    )
+    assert sizing_input.redundancy_mode is TransformerRedundancyMode.NONE
     assert sizing_input.scenario is LoadScenario.NORMAL
 
 
@@ -331,8 +328,7 @@ def test_invalid_unit_count_limits_are_rejected(
         (
             "redundancy_mode",
             "NONE",
-            "redundancy_mode must be a "
-            "TransformerRedundancyMode value",
+            "redundancy_mode must be a TransformerRedundancyMode value",
         ),
         (
             "scenario",
@@ -396,14 +392,12 @@ def test_invalid_rating_collections_are_rejected(
         (
             (1000.0,),
             TypeError,
-            "available_unit_ratings_kva rating "
-            "must be a Decimal",
+            "available_unit_ratings_kva rating must be a Decimal",
         ),
         (
             (Decimal("0"),),
             ValueError,
-            "available_unit_ratings_kva rating "
-            "must be greater than zero",
+            "available_unit_ratings_kva rating must be greater than zero",
         ),
     ],
 )
@@ -445,10 +439,7 @@ def test_unsorted_transformer_ratings_are_rejected() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "available transformer ratings "
-            "must be in ascending order"
-        ),
+        match=("available transformer ratings must be in ascending order"),
     ):
         make_sizing_input(
             available_unit_ratings_kva=(
@@ -483,8 +474,7 @@ def test_unsorted_transformer_ratings_are_rejected() -> None:
             TransformerRedundancyMode.TWO_N,
             2,
             1,
-            "TWO_N redundancy requires standby_units "
-            "to equal duty_units",
+            "TWO_N redundancy requires standby_units to equal duty_units",
         ),
     ],
 )

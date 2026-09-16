@@ -59,9 +59,7 @@ def make_panel(
         "busbar_peak_withstand_current_ka": Decimal("143"),
         "neutral_bus_rating_percent": Decimal("100"),
         "earth_bus_rating_percent": Decimal("50"),
-        "feeders": (
-            make_feeder(),
-        ),
+        "feeders": (make_feeder(),),
         "bus_sections": 1,
         "bus_couplers": 0,
         "spare_feeders": 1,

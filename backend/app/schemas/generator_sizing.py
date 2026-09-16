@@ -32,8 +32,7 @@ def _reject_float(value: object) -> object:
 
     if isinstance(value, float):
         raise ValueError(
-            "engineering decimal values must be provided as "
-            "strings, integers, or Decimal values"
+            "engineering decimal values must be provided as strings, integers, or Decimal values"
         )
 
     return value
@@ -141,9 +140,7 @@ class GeneratorSizingRequest(_RequestBase):
 
     duty_class: GeneratorDutyClass = GeneratorDutyClass.STANDBY
 
-    redundancy_mode: GeneratorRedundancyMode = (
-        GeneratorRedundancyMode.NONE
-    )
+    redundancy_mode: GeneratorRedundancyMode = GeneratorRedundancyMode.NONE
 
     scenario: LoadScenario = LoadScenario.EMERGENCY
 
@@ -155,50 +152,23 @@ class GeneratorSizingRequest(_RequestBase):
     ) -> "GeneratorSizingRequest":
         """Validate controlled ratings and redundancy arrangement."""
 
-        if len(
-            self.available_unit_ratings_kva
-        ) != len(set(self.available_unit_ratings_kva)):
-            raise ValueError(
-                "available generator ratings must be unique"
-            )
+        if len(self.available_unit_ratings_kva) != len(set(self.available_unit_ratings_kva)):
+            raise ValueError("available generator ratings must be unique")
 
-        if self.available_unit_ratings_kva != tuple(
-            sorted(self.available_unit_ratings_kva)
-        ):
-            raise ValueError(
-                "available generator ratings "
-                "must be in ascending order"
-            )
+        if self.available_unit_ratings_kva != tuple(sorted(self.available_unit_ratings_kva)):
+            raise ValueError("available generator ratings must be in ascending order")
+
+        if self.redundancy_mode is GeneratorRedundancyMode.NONE and self.standby_units != 0:
+            raise ValueError("NONE redundancy requires standby_units to be 0")
+
+        if self.redundancy_mode is GeneratorRedundancyMode.N_PLUS_1 and self.standby_units != 1:
+            raise ValueError("N_PLUS_1 redundancy requires exactly one standby unit")
 
         if (
-            self.redundancy_mode
-            is GeneratorRedundancyMode.NONE
-            and self.standby_units != 0
-        ):
-            raise ValueError(
-                "NONE redundancy requires "
-                "standby_units to be 0"
-            )
-
-        if (
-            self.redundancy_mode
-            is GeneratorRedundancyMode.N_PLUS_1
-            and self.standby_units != 1
-        ):
-            raise ValueError(
-                "N_PLUS_1 redundancy requires "
-                "exactly one standby unit"
-            )
-
-        if (
-            self.redundancy_mode
-            is GeneratorRedundancyMode.TWO_N
+            self.redundancy_mode is GeneratorRedundancyMode.TWO_N
             and self.standby_units != self.duty_units
         ):
-            raise ValueError(
-                "TWO_N redundancy requires standby_units "
-                "to equal duty_units"
-            )
+            raise ValueError("TWO_N redundancy requires standby_units to equal duty_units")
 
         return self
 
@@ -208,29 +178,15 @@ class GeneratorSizingRequest(_RequestBase):
         return GeneratorSizingInput(
             code=self.code,
             name=self.name,
-            steady_state_demand_kw=(
-                self.steady_state_demand_kw
-            ),
-            steady_state_power_factor=(
-                self.steady_state_power_factor
-            ),
-            transient_step_load_kva=(
-                self.transient_step_load_kva
-            ),
-            transient_allowance_factor=(
-                self.transient_allowance_factor
-            ),
+            steady_state_demand_kw=(self.steady_state_demand_kw),
+            steady_state_power_factor=(self.steady_state_power_factor),
+            transient_step_load_kva=(self.transient_step_load_kva),
+            transient_allowance_factor=(self.transient_allowance_factor),
             future_growth_factor=self.future_growth_factor,
             design_margin_factor=self.design_margin_factor,
-            ambient_derating_factor=(
-                self.ambient_derating_factor
-            ),
-            altitude_derating_factor=(
-                self.altitude_derating_factor
-            ),
-            available_unit_ratings_kva=(
-                self.available_unit_ratings_kva
-            ),
+            ambient_derating_factor=(self.ambient_derating_factor),
+            altitude_derating_factor=(self.altitude_derating_factor),
+            available_unit_ratings_kva=(self.available_unit_ratings_kva),
             duty_units=self.duty_units,
             standby_units=self.standby_units,
             duty_class=self.duty_class,

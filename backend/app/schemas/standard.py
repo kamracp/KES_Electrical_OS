@@ -33,10 +33,7 @@ class StandardBase(BaseModel):
         ...,
         min_length=1,
         max_length=300,
-        examples=[
-            "Low-voltage electrical installations — "
-            "Fundamental principles"
-        ],
+        examples=["Low-voltage electrical installations — Fundamental principles"],
     )
 
     issuing_organization: str = Field(
@@ -102,9 +99,7 @@ class StandardBase(BaseModel):
             and self.withdrawn_date is not None
             and self.withdrawn_date < self.effective_date
         ):
-            raise ValueError(
-                "withdrawn_date cannot be earlier than effective_date"
-            )
+            raise ValueError("withdrawn_date cannot be earlier than effective_date")
 
         return self
 
@@ -188,9 +183,7 @@ class StandardUpdate(BaseModel):
             and self.withdrawn_date is not None
             and self.withdrawn_date < self.effective_date
         ):
-            raise ValueError(
-                "withdrawn_date cannot be earlier than effective_date"
-            )
+            raise ValueError("withdrawn_date cannot be earlier than effective_date")
 
         return self
 

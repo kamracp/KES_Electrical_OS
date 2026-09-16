@@ -90,14 +90,10 @@ def _require_positive_integer(
     """Require a non-boolean integer greater than zero."""
 
     if isinstance(value, bool) or not isinstance(value, int):
-        raise TypeError(
-            f"{field_name} must be an integer"
-        )
+        raise TypeError(f"{field_name} must be an integer")
 
     if value <= 0:
-        raise ValueError(
-            f"{field_name} must be greater than zero"
-        )
+        raise ValueError(f"{field_name} must be greater than zero")
 
 
 def _require_non_negative_integer(
@@ -107,14 +103,10 @@ def _require_non_negative_integer(
     """Require a non-boolean integer equal to or above zero."""
 
     if isinstance(value, bool) or not isinstance(value, int):
-        raise TypeError(
-            f"{field_name} must be an integer"
-        )
+        raise TypeError(f"{field_name} must be an integer")
 
     if value < 0:
-        raise ValueError(
-            f"{field_name} must not be negative"
-        )
+        raise ValueError(f"{field_name} must not be negative")
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,38 +190,24 @@ class HTFeederInput:
             self.feeder_type,
             HTFeederType,
         ):
-            raise TypeError(
-                "feeder_type must be an HTFeederType value"
-            )
+            raise TypeError("feeder_type must be an HTFeederType value")
 
         if not isinstance(
             self.switching_device,
             HTSwitchingDevice,
         ):
-            raise TypeError(
-                "switching_device must be an HTSwitchingDevice value"
-            )
+            raise TypeError("switching_device must be an HTSwitchingDevice value")
 
         for field_name, value in {
             "design_current_a": self.design_current_a,
-            "prospective_short_circuit_current_ka": (
-                self.prospective_short_circuit_current_ka
-            ),
-            "rated_normal_current_a": (
-                self.rated_normal_current_a
-            ),
+            "prospective_short_circuit_current_ka": (self.prospective_short_circuit_current_ka),
+            "rated_normal_current_a": (self.rated_normal_current_a),
             "rated_short_circuit_breaking_current_ka": (
                 self.rated_short_circuit_breaking_current_ka
             ),
-            "rated_short_time_withstand_current_ka": (
-                self.rated_short_time_withstand_current_ka
-            ),
-            "short_time_withstand_duration_s": (
-                self.short_time_withstand_duration_s
-            ),
-            "rated_peak_withstand_current_ka": (
-                self.rated_peak_withstand_current_ka
-            ),
+            "rated_short_time_withstand_current_ka": (self.rated_short_time_withstand_current_ka),
+            "short_time_withstand_duration_s": (self.short_time_withstand_duration_s),
+            "rated_peak_withstand_current_ka": (self.rated_peak_withstand_current_ka),
             "ct_primary_current_a": self.ct_primary_current_a,
             "ct_secondary_current_a": self.ct_secondary_current_a,
         }.items():
@@ -238,68 +216,44 @@ class HTFeederInput:
                 value,
             )
 
-        if (
-            self.rated_normal_current_a
-            < self.design_current_a
-        ):
-            raise ValueError(
-                "rated_normal_current_a must not be below "
-                "design_current_a"
-            )
+        if self.rated_normal_current_a < self.design_current_a:
+            raise ValueError("rated_normal_current_a must not be below design_current_a")
 
-        if (
-            self.rated_short_circuit_breaking_current_ka
-            < self.prospective_short_circuit_current_ka
-        ):
+        if self.rated_short_circuit_breaking_current_ka < self.prospective_short_circuit_current_ka:
             raise ValueError(
                 "rated short-circuit breaking current must not "
                 "be below prospective short-circuit current"
             )
 
-        if (
-            self.rated_short_time_withstand_current_ka
-            < self.prospective_short_circuit_current_ka
-        ):
+        if self.rated_short_time_withstand_current_ka < self.prospective_short_circuit_current_ka:
             raise ValueError(
                 "rated short-time withstand current must not "
                 "be below prospective short-circuit current"
             )
 
-        if (
-            self.rated_peak_withstand_current_ka
-            < self.rated_short_time_withstand_current_ka
-        ):
+        if self.rated_peak_withstand_current_ka < self.rated_short_time_withstand_current_ka:
             raise ValueError(
                 "rated_peak_withstand_current_ka must not be "
                 "below rated_short_time_withstand_current_ka"
             )
 
         if self.ct_primary_current_a < self.design_current_a:
-            raise ValueError(
-                "ct_primary_current_a must not be below "
-                "design_current_a"
-            )
+            raise ValueError("ct_primary_current_a must not be below design_current_a")
 
         if self.ct_secondary_current_a not in {
             Decimal("1"),
             Decimal("5"),
         }:
-            raise ValueError(
-                "ct_secondary_current_a must be 1 or 5"
-            )
+            raise ValueError("ct_secondary_current_a must be 1 or 5")
 
         if not isinstance(
             self.relay_functions,
             tuple,
         ):
-            raise TypeError(
-                "relay_functions must be a tuple"
-            )
+            raise TypeError("relay_functions must be a tuple")
 
         if not self.relay_functions:
-            raise ValueError(
-                "at least one relay function is required"
-            )
+            raise ValueError("at least one relay function is required")
 
         if not all(
             isinstance(
@@ -308,17 +262,10 @@ class HTFeederInput:
             )
             for function in self.relay_functions
         ):
-            raise TypeError(
-                "relay_functions must contain only "
-                "HTRelayFunction values"
-            )
+            raise TypeError("relay_functions must contain only HTRelayFunction values")
 
-        if len(self.relay_functions) != len(
-            set(self.relay_functions)
-        ):
-            raise ValueError(
-                "relay functions must be unique"
-            )
+        if len(self.relay_functions) != len(set(self.relay_functions)):
+            raise ValueError("relay functions must be unique")
 
         _require_positive_integer(
             "cable_count",
@@ -326,9 +273,7 @@ class HTFeederInput:
         )
 
         if not isinstance(self.spare_feeder, bool):
-            raise TypeError(
-                "spare_feeder must be a boolean"
-            )
+            raise TypeError("spare_feeder must be a boolean")
 
 
 @dataclass(frozen=True, slots=True)
@@ -416,46 +361,28 @@ class HTPanelSizingInput:
             self.system_voltage,
             HTSystemVoltage,
         ):
-            raise TypeError(
-                "system_voltage must be an HTSystemVoltage value"
-            )
+            raise TypeError("system_voltage must be an HTSystemVoltage value")
 
         if not isinstance(
             self.installation,
             HTPanelInstallation,
         ):
-            raise TypeError(
-                "installation must be an HTPanelInstallation value"
-            )
+            raise TypeError("installation must be an HTPanelInstallation value")
 
         if not isinstance(
             self.construction,
             HTPanelConstruction,
         ):
-            raise TypeError(
-                "construction must be an HTPanelConstruction value"
-            )
+            raise TypeError("construction must be an HTPanelConstruction value")
 
         for field_name, value in {
-            "highest_system_voltage_kv": (
-                self.highest_system_voltage_kv
-            ),
+            "highest_system_voltage_kv": (self.highest_system_voltage_kv),
             "frequency_hz": self.frequency_hz,
-            "busbar_rated_current_a": (
-                self.busbar_rated_current_a
-            ),
-            "busbar_short_time_withstand_current_ka": (
-                self.busbar_short_time_withstand_current_ka
-            ),
-            "busbar_short_time_duration_s": (
-                self.busbar_short_time_duration_s
-            ),
-            "busbar_peak_withstand_current_ka": (
-                self.busbar_peak_withstand_current_ka
-            ),
-            "rated_insulation_level_kv": (
-                self.rated_insulation_level_kv
-            ),
+            "busbar_rated_current_a": (self.busbar_rated_current_a),
+            "busbar_short_time_withstand_current_ka": (self.busbar_short_time_withstand_current_ka),
+            "busbar_short_time_duration_s": (self.busbar_short_time_duration_s),
+            "busbar_peak_withstand_current_ka": (self.busbar_peak_withstand_current_ka),
+            "rated_insulation_level_kv": (self.rated_insulation_level_kv),
             "lightning_impulse_withstand_voltage_kvp": (
                 self.lightning_impulse_withstand_voltage_kvp
             ),
@@ -465,24 +392,17 @@ class HTPanelSizingInput:
                 value,
             )
 
-        if (
-            self.busbar_peak_withstand_current_ka
-            < self.busbar_short_time_withstand_current_ka
-        ):
+        if self.busbar_peak_withstand_current_ka < self.busbar_short_time_withstand_current_ka:
             raise ValueError(
                 "busbar peak withstand current must not be below "
                 "busbar short-time withstand current"
             )
 
         if not isinstance(self.feeders, tuple):
-            raise TypeError(
-                "feeders must be a tuple"
-            )
+            raise TypeError("feeders must be a tuple")
 
         if not self.feeders:
-            raise ValueError(
-                "HT panel must contain at least one feeder"
-            )
+            raise ValueError("HT panel must contain at least one feeder")
 
         if not all(
             isinstance(
@@ -491,43 +411,25 @@ class HTPanelSizingInput:
             )
             for feeder in self.feeders
         ):
-            raise TypeError(
-                "feeders must contain only HTFeederInput records"
-            )
+            raise TypeError("feeders must contain only HTFeederInput records")
 
-        feeder_codes = tuple(
-            feeder.code
-            for feeder in self.feeders
-        )
+        feeder_codes = tuple(feeder.code for feeder in self.feeders)
 
         if len(feeder_codes) != len(set(feeder_codes)):
-            raise ValueError(
-                "HT feeder codes must be unique"
-            )
+            raise ValueError("HT feeder codes must be unique")
 
-        maximum_feeder_current = max(
-            feeder.rated_normal_current_a
-            for feeder in self.feeders
-        )
+        maximum_feeder_current = max(feeder.rated_normal_current_a for feeder in self.feeders)
 
-        if (
-            self.busbar_rated_current_a
-            < maximum_feeder_current
-        ):
+        if self.busbar_rated_current_a < maximum_feeder_current:
             raise ValueError(
-                "busbar_rated_current_a must not be below "
-                "the highest feeder rated current"
+                "busbar_rated_current_a must not be below the highest feeder rated current"
             )
 
         maximum_fault_current = max(
-            feeder.prospective_short_circuit_current_ka
-            for feeder in self.feeders
+            feeder.prospective_short_circuit_current_ka for feeder in self.feeders
         )
 
-        if (
-            self.busbar_short_time_withstand_current_ka
-            < maximum_fault_current
-        ):
+        if self.busbar_short_time_withstand_current_ka < maximum_fault_current:
             raise ValueError(
                 "busbar short-time withstand current must not "
                 "be below the maximum feeder fault current"
@@ -547,34 +449,18 @@ class HTPanelSizingInput:
         )
 
         if self.bus_sections == 1 and self.bus_couplers != 0:
-            raise ValueError(
-                "single bus section cannot have a bus coupler"
-            )
+            raise ValueError("single bus section cannot have a bus coupler")
 
-        if (
-            self.bus_sections > 1
-            and self.bus_couplers < 1
-        ):
-            raise ValueError(
-                "multiple bus sections require at least "
-                "one bus coupler"
-            )
+        if self.bus_sections > 1 and self.bus_couplers < 1:
+            raise ValueError("multiple bus sections require at least one bus coupler")
 
         for field_name, value in {
-            "earthing_switch_required": (
-                self.earthing_switch_required
-            ),
-            "arc_classification_required": (
-                self.arc_classification_required
-            ),
-            "remote_operation_required": (
-                self.remote_operation_required
-            ),
+            "earthing_switch_required": (self.earthing_switch_required),
+            "arc_classification_required": (self.arc_classification_required),
+            "remote_operation_required": (self.remote_operation_required),
         }.items():
             if not isinstance(value, bool):
-                raise TypeError(
-                    f"{field_name} must be a boolean"
-                )
+                raise TypeError(f"{field_name} must be a boolean")
 
 
 __all__ = [

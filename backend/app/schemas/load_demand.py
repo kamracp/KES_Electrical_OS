@@ -33,11 +33,11 @@ def _reject_float(value: object) -> object:
 
     if isinstance(value, float):
         raise ValueError(
-            "engineering decimal values must be provided as "
-            "strings, integers, or Decimal values"
+            "engineering decimal values must be provided as strings, integers, or Decimal values"
         )
 
     return value
+
 
 type ExactDecimal = Annotated[
     Decimal,
@@ -126,13 +126,8 @@ class LoadCalculationRequest(_RequestBase):
     ) -> "LoadCalculationRequest":
         """Validate phase-specific input requirements."""
 
-        if (
-            self.phase_system is PhaseSystem.DC
-            and self.power_factor != Decimal("1")
-        ):
-            raise ValueError(
-                "DC loads must use a power_factor of 1"
-            )
+        if self.phase_system is PhaseSystem.DC and self.power_factor != Decimal("1"):
+            raise ValueError("DC loads must use a power_factor of 1")
 
         return self
 
@@ -184,10 +179,7 @@ class LoadGroupCalculationRequest(_RequestBase):
         return LoadGroupInput(
             code=self.code,
             name=self.name,
-            loads=tuple(
-                load.to_domain()
-                for load in self.loads
-            ),
+            loads=tuple(load.to_domain() for load in self.loads),
             coincidence_factor=self.coincidence_factor,
         )
 

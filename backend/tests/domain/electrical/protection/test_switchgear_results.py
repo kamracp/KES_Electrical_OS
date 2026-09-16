@@ -77,9 +77,7 @@ def make_result(
         "adequate_candidates": 1,
         "selected_candidate_code": "ACB-1600-65",
         "selected_candidate_family": "Master Range",
-        "selected_manufacturer": (
-            ManufacturerSource.MANUFACTURER_NEUTRAL
-        ),
+        "selected_manufacturer": (ManufacturerSource.MANUFACTURER_NEUTRAL),
         "selected_frame_current_a": Decimal("1600"),
         "selected_rated_current_a": Decimal("1600"),
         "selected_icu_ka": Decimal("65"),

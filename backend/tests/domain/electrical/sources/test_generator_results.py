@@ -22,9 +22,7 @@ from app.domain.electrical.sources.generator_results import (
 
 def make_warning(
     *,
-    code: GeneratorSizingWarningCode = (
-        GeneratorSizingWarningCode.DERATING_APPLIED
-    ),
+    code: GeneratorSizingWarningCode = (GeneratorSizingWarningCode.DERATING_APPLIED),
     message: str = "Generator derating was applied.",
 ) -> GeneratorSizingWarning:
     """Create a valid generator-sizing warning."""
@@ -86,10 +84,7 @@ def make_no_solution_result(
     """Create a valid no-solution result."""
 
     warning = make_warning(
-        code=(
-            GeneratorSizingWarningCode
-            .NO_STANDARD_RATING_AVAILABLE
-        ),
+        code=(GeneratorSizingWarningCode.NO_STANDARD_RATING_AVAILABLE),
         message="No suitable generator rating is available.",
     )
 
@@ -116,10 +111,7 @@ def test_create_valid_generator_sizing_warning() -> None:
         message="  Generator derating was applied.  ",
     )
 
-    assert (
-        warning.code
-        is GeneratorSizingWarningCode.DERATING_APPLIED
-    )
+    assert warning.code is GeneratorSizingWarningCode.DERATING_APPLIED
     assert warning.message == "Generator derating was applied."
 
 
@@ -129,10 +121,7 @@ def test_invalid_generator_warning_code_is_rejected() -> None:
 
     with pytest.raises(
         TypeError,
-        match=(
-            "code must be a "
-            "GeneratorSizingWarningCode value"
-        ),
+        match=("code must be a GeneratorSizingWarningCode value"),
     ):
         GeneratorSizingWarning(
             code="DERATING_APPLIED",  # type: ignore[arg-type]
@@ -263,10 +252,7 @@ def test_invalid_generator_result_identifiers_are_rejected(
         (
             "redundancy_mode",
             "NONE",
-            (
-                "redundancy_mode must be a "
-                "GeneratorRedundancyMode value"
-            ),
+            ("redundancy_mode must be a GeneratorRedundancyMode value"),
         ),
         (
             "status",
@@ -427,10 +413,7 @@ def test_governing_capacity_cannot_be_below_steady_state() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "governing_required_kva must not be below "
-            "steady_state_required_kva"
-        ),
+        match=("governing_required_kva must not be below steady_state_required_kva"),
     ):
         make_result(
             governing_required_kva=Decimal("1099"),
@@ -443,10 +426,7 @@ def test_governing_capacity_cannot_be_below_transient() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "governing_required_kva must not be below "
-            "transient_required_kva"
-        ),
+        match=("governing_required_kva must not be below transient_required_kva"),
     ):
         make_result(
             transient_required_kva=Decimal("1200"),
@@ -512,10 +492,7 @@ def test_generator_total_units_must_match() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "total_units must equal duty_units "
-            "plus standby_units"
-        ),
+        match=("total_units must equal duty_units plus standby_units"),
     ):
         make_result(
             total_units=2,
@@ -544,20 +521,14 @@ def test_generator_total_units_must_match() -> None:
             2,
             0,
             2,
-            (
-                "N_PLUS_1 redundancy requires "
-                "exactly one standby unit"
-            ),
+            ("N_PLUS_1 redundancy requires exactly one standby unit"),
         ),
         (
             GeneratorRedundancyMode.TWO_N,
             2,
             1,
             3,
-            (
-                "TWO_N redundancy requires standby_units "
-                "to equal duty_units"
-            ),
+            ("TWO_N redundancy requires standby_units to equal duty_units"),
         ),
     ],
 )
@@ -601,10 +572,7 @@ def test_generator_warning_records_are_required() -> None:
 
     with pytest.raises(
         TypeError,
-        match=(
-            "warnings must contain only "
-            "GeneratorSizingWarning records"
-        ),
+        match=("warnings must contain only GeneratorSizingWarning records"),
     ):
         make_result(
             warnings=("invalid",),
@@ -645,10 +613,7 @@ def test_missing_selected_rating_requires_no_solution() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "missing selected rating requires "
-            "NO_SOLUTION status"
-        ),
+        match=("missing selected rating requires NO_SOLUTION status"),
     ):
         make_result(
             selected_unit_rating_kva=None,
@@ -661,10 +626,7 @@ def test_no_solution_cannot_contain_selected_rating() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "NO_SOLUTION status cannot contain "
-            "a selected rating"
-        ),
+        match=("NO_SOLUTION status cannot contain a selected rating"),
     ):
         make_result(
             status=GeneratorSizingStatus.NO_SOLUTION,
@@ -677,10 +639,7 @@ def test_no_solution_capacity_outputs_must_be_none() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "capacity and loading results must be "
-            "None when no rating is selected"
-        ),
+        match=("capacity and loading results must be None when no rating is selected"),
     ):
         make_no_solution_result(
             installed_nameplate_capacity_kva=Decimal("1250"),
@@ -693,10 +652,7 @@ def test_no_solution_requires_controlled_warning() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "NO_SOLUTION result requires "
-            "NO_STANDARD_RATING_AVAILABLE warning"
-        ),
+        match=("NO_SOLUTION result requires NO_STANDARD_RATING_AVAILABLE warning"),
     ):
         make_no_solution_result(
             warnings=(),
@@ -720,10 +676,7 @@ def test_selected_rating_requires_complete_outputs(
 
     with pytest.raises(
         ValueError,
-        match=(
-            "selected rating requires complete "
-            "capacity and loading results"
-        ),
+        match=("selected rating requires complete capacity and loading results"),
     ):
         make_result(
             **{field_name: None},

@@ -27,13 +27,9 @@ class HTPanelService:
             payload,
             HTPanelSizingRequest,
         ):
-            raise TypeError(
-                "payload must be an HTPanelSizingRequest"
-            )
+            raise TypeError("payload must be an HTPanelSizingRequest")
 
-        return calculate_domain_ht_panel_sizing(
-            payload.to_domain()
-        )
+        return calculate_domain_ht_panel_sizing(payload.to_domain())
 
 
 __all__ = [

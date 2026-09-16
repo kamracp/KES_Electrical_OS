@@ -34,9 +34,7 @@ def make_evaluation(
     values: dict[str, object] = {
         "entry_code": "SEL-001",
         "objective": CoordinationObjective.SELECTIVITY,
-        "verification_status": (
-            CoordinationVerificationStatus.VERIFIED
-        ),
+        "verification_status": (CoordinationVerificationStatus.VERIFIED),
         "device_pair_match": True,
         "fault_level_adequate": True,
         "starter_method_match": True,
@@ -67,9 +65,7 @@ def make_result(
         "evaluated_entries": 1,
         "matching_entries": 1,
         "selected_entry_code": "SEL-001",
-        "selected_verification_status": (
-            CoordinationVerificationStatus.VERIFIED
-        ),
+        "selected_verification_status": (CoordinationVerificationStatus.VERIFIED),
         "selected_limit_ka": Decimal("35"),
         "fault_level_margin_ka": Decimal("5"),
         "selected_starter_method": None,

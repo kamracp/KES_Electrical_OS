@@ -83,15 +83,12 @@ def test_no_candidate_available():
         frame_current_a=Decimal("800"),
     )
 
-    result = calculate_switchgear_selection(
-        make_input(candidates=(bad,))
-    )
+    result = calculate_switchgear_selection(make_input(candidates=(bad,)))
 
     assert result.status is SwitchgearSelectionStatus.NO_SOLUTION
 
     assert any(
-        warning.code is SwitchgearWarningCode.NO_SUITABLE_DEVICE
-        for warning in result.warnings
+        warning.code is SwitchgearWarningCode.NO_SUITABLE_DEVICE for warning in result.warnings
     )
 
 
@@ -107,8 +104,7 @@ def test_coordination_warning():
     assert result.status is SwitchgearSelectionStatus.WARNING
 
     assert any(
-        warning.code
-        is SwitchgearWarningCode.COORDINATION_NOT_VERIFIED
+        warning.code is SwitchgearWarningCode.COORDINATION_NOT_VERIFIED
         for warning in result.warnings
     )
 
@@ -122,8 +118,7 @@ def test_manufacturer_reference_warning():
     )
 
     assert any(
-        warning.code
-        is SwitchgearWarningCode.MANUFACTURER_REFERENCE_REQUIRED
+        warning.code is SwitchgearWarningCode.MANUFACTURER_REFERENCE_REQUIRED
         for warning in result.warnings
     )
 

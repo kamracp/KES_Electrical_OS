@@ -40,9 +40,7 @@ def get_service(
 ) -> LoadCalculationRunService:
     """Create a calculation-run service for the request."""
 
-    return LoadCalculationRunService(
-        LoadCalculationRunRepository(db)
-    )
+    return LoadCalculationRunService(LoadCalculationRunRepository(db))
 
 
 def raise_service_error(
@@ -77,15 +75,11 @@ async def create_calculation_run(
     """Persist a new electrical calculation revision."""
 
     try:
-        calculation_run = await get_service(db).create(
-            payload
-        )
+        calculation_run = await get_service(db).create(payload)
     except (LookupError, ValueError) as error:
         raise_service_error(error)
 
-    return LoadCalculationRunResponse.model_validate(
-        calculation_run
-    )
+    return LoadCalculationRunResponse.model_validate(calculation_run)
 
 
 @router.get(
@@ -97,14 +91,10 @@ async def list_pending_review(
 ) -> list[LoadCalculationRunResponse]:
     """Return calculation runs awaiting engineering review."""
 
-    calculation_runs = (
-        await get_service(db).list_pending_review()
-    )
+    calculation_runs = await get_service(db).list_pending_review()
 
     return [
-        LoadCalculationRunResponse.model_validate(
-            calculation_run
-        )
+        LoadCalculationRunResponse.model_validate(calculation_run)
         for calculation_run in calculation_runs
     ]
 
@@ -120,20 +110,12 @@ async def list_revision_history(
     """Return complete revision history for a calculation key."""
 
     try:
-        calculation_runs = (
-            await get_service(
-                db
-            ).list_revision_history(
-                calculation_key
-            )
-        )
+        calculation_runs = await get_service(db).list_revision_history(calculation_key)
     except ValueError as error:
         raise_service_error(error)
 
     return [
-        LoadCalculationRunResponse.model_validate(
-            calculation_run
-        )
+        LoadCalculationRunResponse.model_validate(calculation_run)
         for calculation_run in calculation_runs
     ]
 
@@ -169,15 +151,11 @@ async def get_calculation_run(
     """Return one calculation run by UUID."""
 
     try:
-        calculation_run = await get_service(db).get_by_id(
-            run_id
-        )
+        calculation_run = await get_service(db).get_by_id(run_id)
     except LookupError as error:
         raise_service_error(error)
 
-    return LoadCalculationRunResponse.model_validate(
-        calculation_run
-    )
+    return LoadCalculationRunResponse.model_validate(calculation_run)
 
 
 @router.post(
@@ -199,9 +177,7 @@ async def submit_calculation_run(
     except (LookupError, ValueError) as error:
         raise_service_error(error)
 
-    return LoadCalculationRunResponse.model_validate(
-        calculation_run
-    )
+    return LoadCalculationRunResponse.model_validate(calculation_run)
 
 
 @router.post(
@@ -223,9 +199,7 @@ async def approve_calculation_run(
     except (LookupError, ValueError) as error:
         raise_service_error(error)
 
-    return LoadCalculationRunResponse.model_validate(
-        calculation_run
-    )
+    return LoadCalculationRunResponse.model_validate(calculation_run)
 
 
 @router.post(
@@ -247,9 +221,7 @@ async def reject_calculation_run(
     except (LookupError, ValueError) as error:
         raise_service_error(error)
 
-    return LoadCalculationRunResponse.model_validate(
-        calculation_run
-    )
+    return LoadCalculationRunResponse.model_validate(calculation_run)
 
 
 __all__ = [

@@ -38,9 +38,7 @@ class LTPCCWarningCode(StrEnum):
     ICW_MARGIN_LOW = "ICW_MARGIN_LOW"
     LOW_FEEDER_SPARE_CAPACITY = "LOW_FEEDER_SPARE_CAPACITY"
     APFC_REVIEW_REQUIRED = "APFC_REVIEW_REQUIRED"
-    REMOTE_OPERATION_RECOMMENDED = (
-        "REMOTE_OPERATION_RECOMMENDED"
-    )
+    REMOTE_OPERATION_RECOMMENDED = "REMOTE_OPERATION_RECOMMENDED"
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,9 +53,7 @@ class LTPCCWarning:
             self.code,
             LTPCCWarningCode,
         ):
-            raise TypeError(
-                "code must be an LTPCCWarningCode value"
-            )
+            raise TypeError("code must be an LTPCCWarningCode value")
 
         object.__setattr__(
             self,
@@ -124,27 +120,19 @@ class LTFeederResult:
             self.feeder_type,
             LTFeederType,
         ):
-            raise TypeError(
-                "feeder_type must be an LTFeederType value"
-            )
+            raise TypeError("feeder_type must be an LTFeederType value")
 
         if not isinstance(
             self.switching_device,
             LTSwitchingDevice,
         ):
-            raise TypeError(
-                "switching_device must be an "
-                "LTSwitchingDevice value"
-            )
+            raise TypeError("switching_device must be an LTSwitchingDevice value")
 
         if not isinstance(
             self.trip_unit_type,
             LTTripUnitType,
         ):
-            raise TypeError(
-                "trip_unit_type must be an "
-                "LTTripUnitType value"
-            )
+            raise TypeError("trip_unit_type must be an LTTripUnitType value")
 
         if not isinstance(
             self.number_of_poles,
@@ -153,14 +141,10 @@ class LTFeederResult:
             self.number_of_poles,
             bool,
         ):
-            raise TypeError(
-                "number_of_poles must be an integer"
-            )
+            raise TypeError("number_of_poles must be an integer")
 
         if self.number_of_poles not in {2, 3, 4}:
-            raise ValueError(
-                "number_of_poles must be 2, 3 or 4"
-            )
+            raise ValueError("number_of_poles must be 2, 3 or 4")
 
         if not isinstance(
             self.cable_count,
@@ -169,30 +153,22 @@ class LTFeederResult:
             self.cable_count,
             bool,
         ):
-            raise TypeError(
-                "cable_count must be an integer"
-            )
+            raise TypeError("cable_count must be an integer")
 
         if self.cable_count <= 0:
-            raise ValueError(
-                "cable_count must be greater than zero"
-            )
+            raise ValueError("cable_count must be greater than zero")
 
         if not isinstance(
             self.spare_feeder,
             bool,
         ):
-            raise TypeError(
-                "spare_feeder must be a boolean"
-            )
+            raise TypeError("spare_feeder must be a boolean")
 
         if not isinstance(
             self.warnings,
             tuple,
         ):
-            raise TypeError(
-                "warnings must be a tuple"
-            )
+            raise TypeError("warnings must be a tuple")
 
         if not all(
             isinstance(
@@ -201,22 +177,12 @@ class LTFeederResult:
             )
             for warning in self.warnings
         ):
-            raise TypeError(
-                "warnings must contain only "
-                "LTPCCWarning records"
-            )
+            raise TypeError("warnings must contain only LTPCCWarning records")
 
-        warning_codes = tuple(
-            warning.code
-            for warning in self.warnings
-        )
+        warning_codes = tuple(warning.code for warning in self.warnings)
 
-        if len(warning_codes) != len(
-            set(warning_codes)
-        ):
-            raise ValueError(
-                "feeder warning codes must be unique"
-            )
+        if len(warning_codes) != len(set(warning_codes)):
+            raise ValueError("feeder warning codes must be unique")
 
 
 @dataclass(frozen=True, slots=True)
@@ -284,28 +250,19 @@ class LTPCCSizingResult:
             self.system_voltage,
             LTSystemVoltage,
         ):
-            raise TypeError(
-                "system_voltage must be an "
-                "LTSystemVoltage value"
-            )
+            raise TypeError("system_voltage must be an LTSystemVoltage value")
 
         if not isinstance(
             self.installation,
             LTPanelInstallation,
         ):
-            raise TypeError(
-                "installation must be an "
-                "LTPanelInstallation value"
-            )
+            raise TypeError("installation must be an LTPanelInstallation value")
 
         if not isinstance(
             self.form_of_separation,
             LTPanelFormOfSeparation,
         ):
-            raise TypeError(
-                "form_of_separation must be an "
-                "LTPanelFormOfSeparation value"
-            )
+            raise TypeError("form_of_separation must be an LTPanelFormOfSeparation value")
 
         for field_name, value in {
             "total_feeders": self.total_feeders,
@@ -318,36 +275,22 @@ class LTPCCSizingResult:
                 value,
                 int,
             ):
-                raise TypeError(
-                    f"{field_name} must be an integer"
-                )
+                raise TypeError(f"{field_name} must be an integer")
 
             if value < 0:
-                raise ValueError(
-                    f"{field_name} must not be negative"
-                )
+                raise ValueError(f"{field_name} must not be negative")
 
-        if self.total_feeders != (
-            self.active_feeders
-            + self.spare_feeders
-        ):
-            raise ValueError(
-                "total_feeders must equal active_feeders "
-                "plus spare_feeders"
-            )
+        if self.total_feeders != (self.active_feeders + self.spare_feeders):
+            raise ValueError("total_feeders must equal active_feeders plus spare_feeders")
 
         if self.bus_sections <= 0:
-            raise ValueError(
-                "bus_sections must be greater than zero"
-            )
+            raise ValueError("bus_sections must be greater than zero")
 
         if not isinstance(
             self.feeder_results,
             tuple,
         ):
-            raise TypeError(
-                "feeder_results must be a tuple"
-            )
+            raise TypeError("feeder_results must be a tuple")
 
         if not all(
             isinstance(
@@ -356,58 +299,40 @@ class LTPCCSizingResult:
             )
             for result in self.feeder_results
         ):
-            raise TypeError(
-                "feeder_results must contain only "
-                "LTFeederResult records"
-            )
+            raise TypeError("feeder_results must contain only LTFeederResult records")
 
-        if len(
-            self.feeder_results
-        ) != self.total_feeders:
-            raise ValueError(
-                "feeder_results count must equal "
-                "total_feeders"
-            )
+        if len(self.feeder_results) != self.total_feeders:
+            raise ValueError("feeder_results count must equal total_feeders")
 
         if not isinstance(
             self.apfc_required,
             bool,
         ):
-            raise TypeError(
-                "apfc_required must be a boolean"
-            )
+            raise TypeError("apfc_required must be a boolean")
 
         if not isinstance(
             self.metering_required,
             bool,
         ):
-            raise TypeError(
-                "metering_required must be a boolean"
-            )
+            raise TypeError("metering_required must be a boolean")
 
         if not isinstance(
             self.remote_operation_required,
             bool,
         ):
-            raise TypeError(
-                "remote_operation_required must be a boolean"
-            )
+            raise TypeError("remote_operation_required must be a boolean")
 
         if not isinstance(
             self.status,
             LTPCCSizingStatus,
         ):
-            raise TypeError(
-                "status must be an LTPCCSizingStatus value"
-            )
+            raise TypeError("status must be an LTPCCSizingStatus value")
 
         if not isinstance(
             self.warnings,
             tuple,
         ):
-            raise TypeError(
-                "warnings must be a tuple"
-            )
+            raise TypeError("warnings must be a tuple")
 
         if not all(
             isinstance(
@@ -416,22 +341,12 @@ class LTPCCSizingResult:
             )
             for warning in self.warnings
         ):
-            raise TypeError(
-                "warnings must contain only "
-                "LTPCCWarning records"
-            )
+            raise TypeError("warnings must contain only LTPCCWarning records")
 
-        warning_codes = tuple(
-            warning.code
-            for warning in self.warnings
-        )
+        warning_codes = tuple(warning.code for warning in self.warnings)
 
-        if len(warning_codes) != len(
-            set(warning_codes)
-        ):
-            raise ValueError(
-                "panel warning codes must be unique"
-            )
+        if len(warning_codes) != len(set(warning_codes)):
+            raise ValueError("panel warning codes must be unique")
 
 
 __all__ = [

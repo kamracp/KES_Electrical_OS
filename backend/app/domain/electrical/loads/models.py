@@ -42,15 +42,10 @@ def _require_decimal(
     """Require an exact finite Decimal value."""
 
     if not isinstance(value, Decimal):
-        raise TypeError(
-            f"{field_name} must be a Decimal; "
-            "float values are not permitted"
-        )
+        raise TypeError(f"{field_name} must be a Decimal; float values are not permitted")
 
     if not value.is_finite():
-        raise ValueError(
-            f"{field_name} must be finite"
-        )
+        raise ValueError(f"{field_name} must be finite")
 
 
 def _require_positive_decimal(
@@ -62,9 +57,7 @@ def _require_positive_decimal(
     _require_decimal(field_name, value)
 
     if value <= Decimal("0"):
-        raise ValueError(
-            f"{field_name} must be greater than zero"
-        )
+        raise ValueError(f"{field_name} must be greater than zero")
 
 
 def _require_ratio(
@@ -87,9 +80,7 @@ def _require_ratio(
         expected_range = "greater than 0 and not greater than 1"
 
     if not valid:
-        raise ValueError(
-            f"{field_name} must be {expected_range}"
-        )
+        raise ValueError(f"{field_name} must be {expected_range}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,19 +128,13 @@ class LoadInput:
             raise ValueError("quantity must be greater than zero")
 
         if not isinstance(self.phase_system, PhaseSystem):
-            raise TypeError(
-                "phase_system must be a PhaseSystem value"
-            )
+            raise TypeError("phase_system must be a PhaseSystem value")
 
         if not isinstance(self.scenario, LoadScenario):
-            raise TypeError(
-                "scenario must be a LoadScenario value"
-            )
+            raise TypeError("scenario must be a LoadScenario value")
 
         if not isinstance(self.power_basis, PowerBasis):
-            raise TypeError(
-                "power_basis must be a PowerBasis value"
-            )
+            raise TypeError("power_basis must be a PowerBasis value")
 
         _require_positive_decimal(
             "rated_power_kw",
@@ -180,19 +165,10 @@ class LoadInput:
             allow_zero=True,
         )
 
-        if (
-            self.phase_system is PhaseSystem.DC
-            and self.power_factor != Decimal("1")
-        ):
-            raise ValueError(
-                "DC loads must use a power_factor of 1"
-            )
+        if self.phase_system is PhaseSystem.DC and self.power_factor != Decimal("1"):
+            raise ValueError("DC loads must use a power_factor of 1")
 
-        normalized_notes = (
-            self.notes.strip()
-            if self.notes is not None
-            else None
-        )
+        normalized_notes = self.notes.strip() if self.notes is not None else None
 
         object.__setattr__(self, "code", normalized_code)
         object.__setattr__(self, "name", normalized_name)
@@ -225,27 +201,15 @@ class LoadGroupInput:
             raise ValueError("group name must not be empty")
 
         if not self.loads:
-            raise ValueError(
-                "a load group must contain at least one load"
-            )
+            raise ValueError("a load group must contain at least one load")
 
-        if not all(
-            isinstance(load, LoadInput)
-            for load in self.loads
-        ):
-            raise TypeError(
-                "loads must contain only LoadInput records"
-            )
+        if not all(isinstance(load, LoadInput) for load in self.loads):
+            raise TypeError("loads must contain only LoadInput records")
 
-        load_codes = [
-            load.code
-            for load in self.loads
-        ]
+        load_codes = [load.code for load in self.loads]
 
         if len(load_codes) != len(set(load_codes)):
-            raise ValueError(
-                "load codes must be unique within a group"
-            )
+            raise ValueError("load codes must be unique within a group")
 
         _require_ratio(
             "coincidence_factor",

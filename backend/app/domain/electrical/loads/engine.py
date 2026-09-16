@@ -65,9 +65,7 @@ def _square_root(value: Decimal) -> Decimal:
     """Calculate a high-precision Decimal square root."""
 
     if value < Decimal("0"):
-        raise ValueError(
-            "square root input must not be negative"
-        )
+        raise ValueError("square root input must not be negative")
 
     with localcontext() as context:
         context.prec = 50
@@ -87,10 +85,7 @@ def _calculate_connected_power(
     quantity = Decimal(load.quantity)
 
     if load.power_basis is PowerBasis.MECHANICAL_OUTPUT:
-        per_unit_input_kw = (
-            load.rated_power_kw
-            / load.efficiency
-        )
+        per_unit_input_kw = load.rated_power_kw / load.efficiency
     else:
         per_unit_input_kw = load.rated_power_kw
 
@@ -105,60 +100,33 @@ def _calculate_raw_load(
     with localcontext() as context:
         context.prec = 50
 
-        connected_power_kw = (
-            _calculate_connected_power(load)
-        )
+        connected_power_kw = _calculate_connected_power(load)
 
-        utilized_power_kw = (
-            connected_power_kw
-            * load.utilization_factor
-        )
+        utilized_power_kw = connected_power_kw * load.utilization_factor
 
-        demand_power_kw = (
-            utilized_power_kw
-            * load.demand_factor
-        )
+        demand_power_kw = utilized_power_kw * load.demand_factor
 
         if load.phase_system is PhaseSystem.DC:
             apparent_power_kva = demand_power_kw
             reactive_power_kvar = Decimal("0")
 
-            design_current_a = (
-                demand_power_kw
-                * Decimal("1000")
-                / load.voltage_v
-            )
+            design_current_a = demand_power_kw * Decimal("1000") / load.voltage_v
         else:
-            apparent_power_kva = (
-                demand_power_kw
-                / load.power_factor
-            )
+            apparent_power_kva = demand_power_kw / load.power_factor
 
             reactive_squared = (
-                apparent_power_kva
-                * apparent_power_kva
-                - demand_power_kw
-                * demand_power_kw
+                apparent_power_kva * apparent_power_kva - demand_power_kw * demand_power_kw
             )
 
-            reactive_power_kvar = _square_root(
-                reactive_squared
-            )
+            reactive_power_kvar = _square_root(reactive_squared)
 
             if load.phase_system is PhaseSystem.SINGLE_PHASE:
-                design_current_a = (
-                    apparent_power_kva
-                    * Decimal("1000")
-                    / load.voltage_v
-                )
+                design_current_a = apparent_power_kva * Decimal("1000") / load.voltage_v
             else:
                 design_current_a = (
                     apparent_power_kva
                     * Decimal("1000")
-                    / (
-                        _square_root(Decimal("3"))
-                        * load.voltage_v
-                    )
+                    / (_square_root(Decimal("3")) * load.voltage_v)
                 )
 
     return _RawLoadValues(
@@ -190,31 +158,19 @@ def _build_load_warnings(
             )
         )
 
-    if (
-        load.phase_system is not PhaseSystem.DC
-        and load.power_factor < LOW_POWER_FACTOR_LIMIT
-    ):
+    if load.phase_system is not PhaseSystem.DC and load.power_factor < LOW_POWER_FACTOR_LIMIT:
         warnings.append(
             CalculationWarning(
                 code=LoadWarningCode.LOW_POWER_FACTOR,
-                message=(
-                    "Power factor is below the preferred "
-                    "limit of 0.80."
-                ),
+                message=("Power factor is below the preferred limit of 0.80."),
             )
         )
 
-    if (
-        load.power_basis is PowerBasis.MECHANICAL_OUTPUT
-        and load.efficiency < LOW_EFFICIENCY_LIMIT
-    ):
+    if load.power_basis is PowerBasis.MECHANICAL_OUTPUT and load.efficiency < LOW_EFFICIENCY_LIMIT:
         warnings.append(
             CalculationWarning(
                 code=LoadWarningCode.LOW_EFFICIENCY,
-                message=(
-                    "Equipment efficiency is below the "
-                    "preferred limit of 0.80."
-                ),
+                message=("Equipment efficiency is below the preferred limit of 0.80."),
             )
         )
 
@@ -232,35 +188,19 @@ def _build_load_result(
         raw_values,
     )
 
-    status = (
-        CalculationStatus.WARNING
-        if warnings
-        else CalculationStatus.VALID
-    )
+    status = CalculationStatus.WARNING if warnings else CalculationStatus.VALID
 
     return LoadCalculationResult(
         load_code=load.code,
         load_name=load.name,
         scenario=load.scenario,
         phase_system=load.phase_system,
-        connected_power_kw=_round_power(
-            raw_values.connected_power_kw
-        ),
-        utilized_power_kw=_round_power(
-            raw_values.utilized_power_kw
-        ),
-        demand_power_kw=_round_power(
-            raw_values.demand_power_kw
-        ),
-        apparent_power_kva=_round_power(
-            raw_values.apparent_power_kva
-        ),
-        reactive_power_kvar=_round_power(
-            raw_values.reactive_power_kvar
-        ),
-        design_current_a=_round_current(
-            raw_values.design_current_a
-        ),
+        connected_power_kw=_round_power(raw_values.connected_power_kw),
+        utilized_power_kw=_round_power(raw_values.utilized_power_kw),
+        demand_power_kw=_round_power(raw_values.demand_power_kw),
+        apparent_power_kva=_round_power(raw_values.apparent_power_kva),
+        reactive_power_kvar=_round_power(raw_values.reactive_power_kvar),
+        design_current_a=_round_current(raw_values.design_current_a),
         status=status,
         warnings=warnings,
     )
@@ -277,9 +217,7 @@ def calculate_load(
     """
 
     if not isinstance(load, LoadInput):
-        raise TypeError(
-            "load must be a LoadInput record"
-        )
+        raise TypeError("load must be a LoadInput record")
 
     raw_values = _calculate_raw_load(load)
 
@@ -300,9 +238,7 @@ def calculate_load_group(
     """
 
     if not isinstance(group, LoadGroupInput):
-        raise TypeError(
-            "group must be a LoadGroupInput record"
-        )
+        raise TypeError("group must be a LoadGroupInput record")
 
     raw_calculations = tuple(
         (
@@ -321,81 +257,48 @@ def calculate_load_group(
     )
 
     connected_power_kw = sum(
-        (
-            raw_values.connected_power_kw
-            for _, raw_values in raw_calculations
-        ),
+        (raw_values.connected_power_kw for _, raw_values in raw_calculations),
         Decimal("0"),
     )
 
     pre_coincidence_demand_kw = sum(
-        (
-            raw_values.demand_power_kw
-            for _, raw_values in raw_calculations
-        ),
+        (raw_values.demand_power_kw for _, raw_values in raw_calculations),
         Decimal("0"),
     )
 
     pre_coincidence_reactive_kvar = sum(
-        (
-            raw_values.reactive_power_kvar
-            for _, raw_values in raw_calculations
-        ),
+        (raw_values.reactive_power_kvar for _, raw_values in raw_calculations),
         Decimal("0"),
     )
 
-    demand_power_kw = (
-        pre_coincidence_demand_kw
-        * group.coincidence_factor
-    )
+    demand_power_kw = pre_coincidence_demand_kw * group.coincidence_factor
 
-    reactive_power_kvar = (
-        pre_coincidence_reactive_kvar
-        * group.coincidence_factor
-    )
+    reactive_power_kvar = pre_coincidence_reactive_kvar * group.coincidence_factor
 
     apparent_power_kva = _square_root(
-        demand_power_kw * demand_power_kw
-        + reactive_power_kvar * reactive_power_kvar
+        demand_power_kw * demand_power_kw + reactive_power_kvar * reactive_power_kvar
     )
 
     group_warnings = tuple(
         CalculationWarning(
             code=warning.code,
-            message=(
-                f"{load_result.load_code}: "
-                f"{warning.message}"
-            ),
+            message=(f"{load_result.load_code}: {warning.message}"),
         )
         for load_result in load_results
         for warning in load_result.warnings
     )
 
-    status = (
-        CalculationStatus.WARNING
-        if group_warnings
-        else CalculationStatus.VALID
-    )
+    status = CalculationStatus.WARNING if group_warnings else CalculationStatus.VALID
 
     return LoadGroupCalculationResult(
         group_code=group.code,
         group_name=group.name,
         coincidence_factor=group.coincidence_factor,
-        connected_power_kw=_round_power(
-            connected_power_kw
-        ),
-        pre_coincidence_demand_kw=_round_power(
-            pre_coincidence_demand_kw
-        ),
-        demand_power_kw=_round_power(
-            demand_power_kw
-        ),
-        apparent_power_kva=_round_power(
-            apparent_power_kva
-        ),
-        reactive_power_kvar=_round_power(
-            reactive_power_kvar
-        ),
+        connected_power_kw=_round_power(connected_power_kw),
+        pre_coincidence_demand_kw=_round_power(pre_coincidence_demand_kw),
+        demand_power_kw=_round_power(demand_power_kw),
+        apparent_power_kva=_round_power(apparent_power_kva),
+        reactive_power_kvar=_round_power(reactive_power_kvar),
         load_results=load_results,
         status=status,
         warnings=group_warnings,

@@ -45,9 +45,7 @@ async def test_create_unit_preserves_decimal_precision(
     data = response.json()
 
     assert data["code"] == "kW"
-    assert data["conversion_factor"] == (
-        "1000.000000000000000000"
-    )
+    assert data["conversion_factor"] == ("1000.000000000000000000")
     assert data["is_base_unit"] is False
     assert data["id"]
     assert data["created_at"]
@@ -73,9 +71,7 @@ async def test_list_and_get_unit_preserve_decimal_precision(
 
     assert list_response.status_code == 200
     assert len(list_response.json()) == 1
-    assert list_response.json()[0]["conversion_factor"] == (
-        "1000.000000000000000000"
-    )
+    assert list_response.json()[0]["conversion_factor"] == ("1000.000000000000000000")
 
     get_response = await client.get(
         f"{UNITS_URL}{unit_id}",
@@ -83,9 +79,7 @@ async def test_list_and_get_unit_preserve_decimal_precision(
 
     assert get_response.status_code == 200
     assert get_response.json()["id"] == unit_id
-    assert get_response.json()["conversion_factor"] == (
-        "1000.000000000000000000"
-    )
+    assert get_response.json()["conversion_factor"] == ("1000.000000000000000000")
 
 
 @pytest.mark.api
@@ -115,12 +109,8 @@ async def test_patch_unit_conversion_factor(
 
     updated_unit = patch_response.json()
 
-    assert updated_unit["conversion_factor"] == (
-        "0.001000000000000000"
-    )
-    assert updated_unit["remarks"] == (
-        "Updated exact Decimal factor."
-    )
+    assert updated_unit["conversion_factor"] == ("0.001000000000000000")
+    assert updated_unit["remarks"] == ("Updated exact Decimal factor.")
 
 
 @pytest.mark.api
@@ -142,9 +132,7 @@ async def test_float_conversion_factor_is_rejected(
     errors = response.json()["detail"]
 
     assert any(
-        "conversion_factor must be provided as a decimal string"
-        in error["msg"]
-        for error in errors
+        "conversion_factor must be provided as a decimal string" in error["msg"] for error in errors
     )
 
 

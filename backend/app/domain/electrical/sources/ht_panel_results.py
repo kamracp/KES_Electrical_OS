@@ -30,19 +30,11 @@ class HTPanelWarningCode(StrEnum):
 
     HIGH_BUSBAR_LOADING = "HIGH_BUSBAR_LOADING"
     LOW_BUSBAR_LOADING = "LOW_BUSBAR_LOADING"
-    BREAKING_CAPACITY_MARGIN_LOW = (
-        "BREAKING_CAPACITY_MARGIN_LOW"
-    )
-    SHORT_TIME_WITHSTAND_MARGIN_LOW = (
-        "SHORT_TIME_WITHSTAND_MARGIN_LOW"
-    )
+    BREAKING_CAPACITY_MARGIN_LOW = "BREAKING_CAPACITY_MARGIN_LOW"
+    SHORT_TIME_WITHSTAND_MARGIN_LOW = "SHORT_TIME_WITHSTAND_MARGIN_LOW"
     CT_RATIO_MARGIN_LOW = "CT_RATIO_MARGIN_LOW"
-    ARC_CLASSIFICATION_REQUIRED = (
-        "ARC_CLASSIFICATION_REQUIRED"
-    )
-    REMOTE_OPERATION_RECOMMENDED = (
-        "REMOTE_OPERATION_RECOMMENDED"
-    )
+    ARC_CLASSIFICATION_REQUIRED = "ARC_CLASSIFICATION_REQUIRED"
+    REMOTE_OPERATION_RECOMMENDED = "REMOTE_OPERATION_RECOMMENDED"
 
 
 def _normalize_required_text(
@@ -50,16 +42,12 @@ def _normalize_required_text(
     value: str,
 ) -> str:
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field_name} must be a string"
-        )
+        raise TypeError(f"{field_name} must be a string")
 
     normalized = value.strip()
 
     if not normalized:
-        raise ValueError(
-            f"{field_name} must not be empty"
-        )
+        raise ValueError(f"{field_name} must not be empty")
 
     return normalized
 
@@ -76,9 +64,7 @@ class HTPanelWarning:
             self.code,
             HTPanelWarningCode,
         ):
-            raise TypeError(
-                "code must be an HTPanelWarningCode value"
-            )
+            raise TypeError("code must be an HTPanelWarningCode value")
 
         object.__setattr__(
             self,
@@ -153,17 +139,10 @@ class HTFeederResult:
             self.warnings,
             tuple,
         ):
-            raise TypeError(
-                "warnings must be a tuple"
-            )
+            raise TypeError("warnings must be a tuple")
 
-        if not all(
-            isinstance(warning, HTPanelWarning)
-            for warning in self.warnings
-        ):
-            raise TypeError(
-                "warnings must contain only HTPanelWarning records"
-            )
+        if not all(isinstance(warning, HTPanelWarning) for warning in self.warnings):
+            raise TypeError("warnings must contain only HTPanelWarning records")
 
 
 @dataclass(frozen=True, slots=True)
@@ -220,70 +199,40 @@ class HTPanelSizingResult:
             ),
         )
 
-        if self.total_feeders != (
-            self.active_feeders
-            + self.spare_feeders
-        ):
-            raise ValueError(
-                "total_feeders must equal active_feeders "
-                "plus spare_feeders"
-            )
+        if self.total_feeders != (self.active_feeders + self.spare_feeders):
+            raise ValueError("total_feeders must equal active_feeders plus spare_feeders")
 
         if not isinstance(
             self.feeder_results,
             tuple,
         ):
-            raise TypeError(
-                "feeder_results must be a tuple"
-            )
+            raise TypeError("feeder_results must be a tuple")
 
-        if not all(
-            isinstance(result, HTFeederResult)
-            for result in self.feeder_results
-        ):
-            raise TypeError(
-                "feeder_results must contain only "
-                "HTFeederResult records"
-            )
+        if not all(isinstance(result, HTFeederResult) for result in self.feeder_results):
+            raise TypeError("feeder_results must contain only HTFeederResult records")
 
         if len(self.feeder_results) != self.total_feeders:
-            raise ValueError(
-                "feeder_results count must equal total_feeders"
-            )
+            raise ValueError("feeder_results count must equal total_feeders")
 
         if not isinstance(
             self.status,
             HTPanelSizingStatus,
         ):
-            raise TypeError(
-                "status must be an HTPanelSizingStatus value"
-            )
+            raise TypeError("status must be an HTPanelSizingStatus value")
 
         if not isinstance(
             self.warnings,
             tuple,
         ):
-            raise TypeError(
-                "warnings must be a tuple"
-            )
+            raise TypeError("warnings must be a tuple")
 
-        if not all(
-            isinstance(warning, HTPanelWarning)
-            for warning in self.warnings
-        ):
-            raise TypeError(
-                "warnings must contain only HTPanelWarning records"
-            )
+        if not all(isinstance(warning, HTPanelWarning) for warning in self.warnings):
+            raise TypeError("warnings must contain only HTPanelWarning records")
 
-        warning_codes = tuple(
-            warning.code
-            for warning in self.warnings
-        )
+        warning_codes = tuple(warning.code for warning in self.warnings)
 
         if len(warning_codes) != len(set(warning_codes)):
-            raise ValueError(
-                "panel warning codes must be unique"
-            )
+            raise ValueError("panel warning codes must be unique")
 
 
 __all__ = [

@@ -41,9 +41,7 @@ def make_selectivity_entry(
     *,
     code: str = "SEL-001",
     limit_ka: Decimal = Decimal("35"),
-    verification_status: CoordinationVerificationStatus = (
-        CoordinationVerificationStatus.VERIFIED
-    ),
+    verification_status: CoordinationVerificationStatus = (CoordinationVerificationStatus.VERIFIED),
     upstream_code: str = "ACB-UP-01",
     downstream_code: str = "MCCB-DN-01",
 ) -> CoordinationCatalogueEntry:
@@ -56,8 +54,7 @@ def make_selectivity_entry(
         maximum_selective_current_ka=limit_ka,
         manufacturer_document=(
             "Selectivity Table"
-            if verification_status
-            is CoordinationVerificationStatus.VERIFIED
+            if verification_status is CoordinationVerificationStatus.VERIFIED
             else None
         ),
     )
@@ -71,9 +68,7 @@ def make_type_2_entry(
     return CoordinationCatalogueEntry(
         code="T2-001",
         objective=CoordinationObjective.TYPE_2,
-        verification_status=(
-            CoordinationVerificationStatus.VERIFIED
-        ),
+        verification_status=(CoordinationVerificationStatus.VERIFIED),
         upstream_device=make_device("MCCB-UP-01"),
         downstream_device=make_device("MPCB-DN-01"),
         starter_method=starter_method,
@@ -92,9 +87,7 @@ def make_selectivity_study(
         "prospective_fault_current_ka": Decimal("30"),
         "upstream_device": make_device("ACB-UP-01"),
         "downstream_device": make_device("MCCB-DN-01"),
-        "catalogue_entries": (
-            make_selectivity_entry(),
-        ),
+        "catalogue_entries": (make_selectivity_entry(),),
         "require_verified_entry": True,
     }
 
@@ -105,9 +98,7 @@ def make_selectivity_study(
 
 @pytest.mark.unit
 def test_verified_selectivity_match() -> None:
-    result = calculate_coordination_study(
-        make_selectivity_study()
-    )
+    result = calculate_coordination_study(make_selectivity_study())
 
     assert result.status is CoordinationStudyStatus.VERIFIED
     assert result.coordination_verified is True
@@ -128,8 +119,7 @@ def test_fault_level_exceeding_limit_returns_no_match() -> None:
     assert result.coordination_verified is False
 
     assert any(
-        warning.code is CoordinationWarningCode.NO_MATCHING_ENTRY
-        for warning in result.warnings
+        warning.code is CoordinationWarningCode.NO_MATCHING_ENTRY for warning in result.warnings
     )
 
 
@@ -152,8 +142,7 @@ def test_device_pair_mismatch_returns_no_match() -> None:
     assert evaluation.device_pair_match is False
 
     assert any(
-        warning.code
-        is CoordinationWarningCode.DEVICE_PAIR_MISMATCH
+        warning.code is CoordinationWarningCode.DEVICE_PAIR_MISMATCH
         for warning in evaluation.warnings
     )
 
@@ -164,9 +153,7 @@ def test_unverified_entry_rejected_when_verification_required() -> None:
         make_selectivity_study(
             catalogue_entries=(
                 make_selectivity_entry(
-                    verification_status=(
-                        CoordinationVerificationStatus.UNVERIFIED
-                    ),
+                    verification_status=(CoordinationVerificationStatus.UNVERIFIED),
                 ),
             ),
             require_verified_entry=True,
@@ -182,9 +169,7 @@ def test_unverified_entry_allowed_with_warning() -> None:
         make_selectivity_study(
             catalogue_entries=(
                 make_selectivity_entry(
-                    verification_status=(
-                        CoordinationVerificationStatus.UNVERIFIED
-                    ),
+                    verification_status=(CoordinationVerificationStatus.UNVERIFIED),
                 ),
             ),
             require_verified_entry=False,
@@ -195,8 +180,7 @@ def test_unverified_entry_allowed_with_warning() -> None:
     assert result.coordination_verified is False
 
     assert any(
-        warning.code is CoordinationWarningCode.UNVERIFIED_ENTRY
-        for warning in result.warnings
+        warning.code is CoordinationWarningCode.UNVERIFIED_ENTRY for warning in result.warnings
     )
 
 
@@ -231,9 +215,7 @@ def test_verified_type_2_coordination_match() -> None:
         prospective_fault_current_ka=Decimal("30"),
         upstream_device=make_device("MCCB-UP-01"),
         downstream_device=make_device("MPCB-DN-01"),
-        catalogue_entries=(
-            make_type_2_entry(),
-        ),
+        catalogue_entries=(make_type_2_entry(),),
         required_motor_power_kw=Decimal("45"),
         required_starter_method=StarterMethod.DOL,
         require_verified_entry=True,
@@ -271,8 +253,7 @@ def test_type_2_motor_power_mismatch() -> None:
     evaluation = result.entry_evaluations[0]
 
     assert any(
-        warning.code
-        is CoordinationWarningCode.MOTOR_POWER_MISMATCH
+        warning.code is CoordinationWarningCode.MOTOR_POWER_MISMATCH
         for warning in evaluation.warnings
     )
 

@@ -59,10 +59,7 @@ class LoadCalculationRunRepository:
 
         stmt = (
             select(LoadCalculationRun)
-            .where(
-                LoadCalculationRun.calculation_key
-                == calculation_key
-            )
+            .where(LoadCalculationRun.calculation_key == calculation_key)
             .order_by(
                 LoadCalculationRun.revision_number.desc(),
             )
@@ -81,16 +78,11 @@ class LoadCalculationRunRepository:
 
         stmt = select(
             func.coalesce(
-                func.max(
-                    LoadCalculationRun.revision_number
-                ),
+                func.max(LoadCalculationRun.revision_number),
                 0,
             )
             + 1
-        ).where(
-            LoadCalculationRun.calculation_key
-            == calculation_key
-        )
+        ).where(LoadCalculationRun.calculation_key == calculation_key)
 
         result = await self.db.execute(stmt)
 
@@ -104,10 +96,7 @@ class LoadCalculationRunRepository:
 
         stmt = (
             select(LoadCalculationRun)
-            .where(
-                LoadCalculationRun.content_hash
-                == content_hash
-            )
+            .where(LoadCalculationRun.content_hash == content_hash)
             .order_by(
                 LoadCalculationRun.created_at.desc(),
             )
@@ -126,10 +115,7 @@ class LoadCalculationRunRepository:
 
         stmt = (
             select(LoadCalculationRun)
-            .where(
-                LoadCalculationRun.calculation_key
-                == calculation_key
-            )
+            .where(LoadCalculationRun.calculation_key == calculation_key)
             .order_by(
                 LoadCalculationRun.revision_number.desc(),
             )
@@ -146,10 +132,7 @@ class LoadCalculationRunRepository:
 
         stmt = (
             select(LoadCalculationRun)
-            .where(
-                LoadCalculationRun.approval_status
-                == CalculationApprovalStatus.PENDING.value
-            )
+            .where(LoadCalculationRun.approval_status == CalculationApprovalStatus.PENDING.value)
             .order_by(
                 LoadCalculationRun.submitted_at.asc().nulls_last(),
                 LoadCalculationRun.created_at.asc(),

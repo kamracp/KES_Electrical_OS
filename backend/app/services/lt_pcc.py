@@ -27,13 +27,9 @@ class LTPCCService:
             payload,
             LTPCCSizingRequest,
         ):
-            raise TypeError(
-                "payload must be an LTPCCSizingRequest"
-            )
+            raise TypeError("payload must be an LTPCCSizingRequest")
 
-        return calculate_domain_lt_pcc_sizing(
-            payload.to_domain()
-        )
+        return calculate_domain_lt_pcc_sizing(payload.to_domain())
 
 
 __all__ = [

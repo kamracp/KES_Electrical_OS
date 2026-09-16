@@ -215,10 +215,7 @@ def test_non_positive_generator_demand_is_rejected(
 
     with pytest.raises(
         ValueError,
-        match=(
-            "steady_state_demand_kw "
-            "must be greater than zero"
-        ),
+        match=("steady_state_demand_kw must be greater than zero"),
     ):
         make_generator_input(
             steady_state_demand_kw=value,
@@ -354,10 +351,7 @@ def test_invalid_generator_unit_count_limits_are_rejected(
         (
             "redundancy_mode",
             "NONE",
-            (
-                "redundancy_mode must be a "
-                "GeneratorRedundancyMode value"
-            ),
+            ("redundancy_mode must be a GeneratorRedundancyMode value"),
         ),
         (
             "scenario",
@@ -421,18 +415,12 @@ def test_invalid_generator_rating_collections_are_rejected(
         (
             (1000.0,),
             TypeError,
-            (
-                "available_unit_ratings_kva rating "
-                "must be a Decimal"
-            ),
+            ("available_unit_ratings_kva rating must be a Decimal"),
         ),
         (
             (Decimal("0"),),
             ValueError,
-            (
-                "available_unit_ratings_kva rating "
-                "must be greater than zero"
-            ),
+            ("available_unit_ratings_kva rating must be greater than zero"),
         ),
     ],
 )
@@ -474,10 +462,7 @@ def test_unsorted_generator_ratings_are_rejected() -> None:
 
     with pytest.raises(
         ValueError,
-        match=(
-            "available generator ratings "
-            "must be in ascending order"
-        ),
+        match=("available generator ratings must be in ascending order"),
     ):
         make_generator_input(
             available_unit_ratings_kva=(
@@ -506,19 +491,13 @@ def test_unsorted_generator_ratings_are_rejected() -> None:
             GeneratorRedundancyMode.N_PLUS_1,
             2,
             0,
-            (
-                "N_PLUS_1 redundancy requires "
-                "exactly one standby unit"
-            ),
+            ("N_PLUS_1 redundancy requires exactly one standby unit"),
         ),
         (
             GeneratorRedundancyMode.TWO_N,
             2,
             1,
-            (
-                "TWO_N redundancy requires standby_units "
-                "to equal duty_units"
-            ),
+            ("TWO_N redundancy requires standby_units to equal duty_units"),
         ),
     ],
 )

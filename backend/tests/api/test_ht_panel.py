@@ -1,5 +1,3 @@
-
-
 """
 API tests for HT panel engineering.
 KESE-S2-M9
@@ -138,11 +136,7 @@ async def test_float_engineering_input_is_rejected(
 
     assert isinstance(errors, list)
 
-    assert any(
-        "engineering decimal values must be provided"
-        in error["msg"]
-        for error in errors
-    )
+    assert any("engineering decimal values must be provided" in error["msg"] for error in errors)
 
 
 @pytest.mark.api

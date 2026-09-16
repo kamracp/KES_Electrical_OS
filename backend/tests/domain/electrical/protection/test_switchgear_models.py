@@ -68,9 +68,7 @@ def make_selection(
             instantaneous_pickup_a=Decimal("12000"),
             ground_fault_pickup_a=Decimal("400"),
         ),
-        "candidates": (
-            make_candidate(),
-        ),
+        "candidates": (make_candidate(),),
         "cpwd_reference": "CPWD General Specifications",
         "standard_reference": "IEC 60947-2",
         "manufacturer_reference_required": False,

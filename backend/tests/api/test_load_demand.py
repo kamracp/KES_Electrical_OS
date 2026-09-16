@@ -114,10 +114,7 @@ async def test_low_power_factor_warning_response(
     data = response.json()
 
     assert data["status"] == "WARNING"
-    assert any(
-        warning["code"] == "LOW_POWER_FACTOR"
-        for warning in data["warnings"]
-    )
+    assert any(warning["code"] == "LOW_POWER_FACTOR" for warning in data["warnings"])
 
 
 @pytest.mark.api
@@ -138,11 +135,7 @@ async def test_float_engineering_input_is_rejected(
 
     errors = response.json()["detail"]
 
-    assert any(
-        "engineering decimal values must be provided"
-        in error["msg"]
-        for error in errors
-    )
+    assert any("engineering decimal values must be provided" in error["msg"] for error in errors)
 
 
 @pytest.mark.api
@@ -170,11 +163,7 @@ async def test_invalid_dc_power_factor_is_rejected(
 
     errors = response.json()["detail"]
 
-    assert any(
-        "DC loads must use a power_factor of 1"
-        in error["msg"]
-        for error in errors
-    )
+    assert any("DC loads must use a power_factor of 1" in error["msg"] for error in errors)
 
 
 @pytest.mark.api

@@ -70,20 +70,11 @@ def _calculate_raw_values(
     with localcontext() as context:
         context.prec = 50
 
-        base_demand_kva = (
-            sizing_input.demand_power_kw
-            / sizing_input.demand_power_factor
-        )
+        base_demand_kva = sizing_input.demand_power_kw / sizing_input.demand_power_factor
 
-        future_demand_kva = (
-            base_demand_kva
-            * sizing_input.future_growth_factor
-        )
+        future_demand_kva = base_demand_kva * sizing_input.future_growth_factor
 
-        design_required_kva = (
-            future_demand_kva
-            * sizing_input.design_margin_factor
-        )
+        design_required_kva = future_demand_kva * sizing_input.design_margin_factor
 
         combined_derating_factor = (
             sizing_input.ambient_derating_factor
@@ -91,29 +82,19 @@ def _calculate_raw_values(
             * sizing_input.harmonic_derating_factor
         )
 
-        required_nameplate_capacity_kva = (
-            design_required_kva
-            / combined_derating_factor
-        )
+        required_nameplate_capacity_kva = design_required_kva / combined_derating_factor
 
-        required_unit_rating_kva = (
-            required_nameplate_capacity_kva
-            / Decimal(sizing_input.duty_units)
+        required_unit_rating_kva = required_nameplate_capacity_kva / Decimal(
+            sizing_input.duty_units
         )
 
     return _RawTransformerSizingValues(
         base_demand_kva=base_demand_kva,
         future_demand_kva=future_demand_kva,
         design_required_kva=design_required_kva,
-        combined_derating_factor=(
-            combined_derating_factor
-        ),
-        required_nameplate_capacity_kva=(
-            required_nameplate_capacity_kva
-        ),
-        required_unit_rating_kva=(
-            required_unit_rating_kva
-        ),
+        combined_derating_factor=(combined_derating_factor),
+        required_nameplate_capacity_kva=(required_nameplate_capacity_kva),
+        required_unit_rating_kva=(required_unit_rating_kva),
     )
 
 
@@ -126,8 +107,7 @@ def _select_unit_rating(
     return next(
         (
             rating
-            for rating
-            in sizing_input.available_unit_ratings_kva
+            for rating in sizing_input.available_unit_ratings_kva
             if rating >= required_unit_rating_kva
         ),
         None,
@@ -142,16 +122,10 @@ def _build_no_solution_result(
 
     warnings: list[TransformerSizingWarning] = []
 
-    if (
-        raw_values.combined_derating_factor
-        < Decimal("1")
-    ):
+    if raw_values.combined_derating_factor < Decimal("1"):
         warnings.append(
             TransformerSizingWarning(
-                code=(
-                    TransformerSizingWarningCode
-                    .DERATING_APPLIED
-                ),
+                code=(TransformerSizingWarningCode.DERATING_APPLIED),
                 message=(
                     "Ambient, altitude or harmonic "
                     "derating has increased the required "
@@ -162,10 +136,7 @@ def _build_no_solution_result(
 
     warnings.append(
         TransformerSizingWarning(
-            code=(
-                TransformerSizingWarningCode
-                .NO_STANDARD_RATING_AVAILABLE
-            ),
+            code=(TransformerSizingWarningCode.NO_STANDARD_RATING_AVAILABLE),
             message=(
                 "No available transformer unit rating "
                 "satisfies the calculated capacity "
@@ -178,46 +149,22 @@ def _build_no_solution_result(
         code=sizing_input.code,
         name=sizing_input.name,
         scenario=sizing_input.scenario,
-        redundancy_mode=(
-            sizing_input.redundancy_mode
-        ),
+        redundancy_mode=(sizing_input.redundancy_mode),
         demand_power_kw=sizing_input.demand_power_kw,
-        demand_power_factor=(
-            sizing_input.demand_power_factor
-        ),
-        base_demand_kva=_round_capacity(
-            raw_values.base_demand_kva
-        ),
-        future_growth_factor=(
-            sizing_input.future_growth_factor
-        ),
-        future_demand_kva=_round_capacity(
-            raw_values.future_demand_kva
-        ),
-        design_margin_factor=(
-            sizing_input.design_margin_factor
-        ),
-        design_required_kva=_round_capacity(
-            raw_values.design_required_kva
-        ),
-        combined_derating_factor=_round_capacity(
-            raw_values.combined_derating_factor
-        ),
+        demand_power_factor=(sizing_input.demand_power_factor),
+        base_demand_kva=_round_capacity(raw_values.base_demand_kva),
+        future_growth_factor=(sizing_input.future_growth_factor),
+        future_demand_kva=_round_capacity(raw_values.future_demand_kva),
+        design_margin_factor=(sizing_input.design_margin_factor),
+        design_required_kva=_round_capacity(raw_values.design_required_kva),
+        combined_derating_factor=_round_capacity(raw_values.combined_derating_factor),
         required_nameplate_capacity_kva=(
-            _round_capacity(
-                raw_values
-                .required_nameplate_capacity_kva
-            )
+            _round_capacity(raw_values.required_nameplate_capacity_kva)
         ),
         duty_units=sizing_input.duty_units,
         standby_units=sizing_input.standby_units,
-        total_units=(
-            sizing_input.duty_units
-            + sizing_input.standby_units
-        ),
-        required_unit_rating_kva=_round_capacity(
-            raw_values.required_unit_rating_kva
-        ),
+        total_units=(sizing_input.duty_units + sizing_input.standby_units),
+        required_unit_rating_kva=_round_capacity(raw_values.required_unit_rating_kva),
         selected_unit_rating_kva=None,
         installed_nameplate_capacity_kva=None,
         derated_duty_capacity_kva=None,
@@ -238,15 +185,9 @@ def _build_selected_rating_result(
     with localcontext() as context:
         context.prec = 50
 
-        total_units = (
-            sizing_input.duty_units
-            + sizing_input.standby_units
-        )
+        total_units = sizing_input.duty_units + sizing_input.standby_units
 
-        installed_nameplate_capacity_kva = (
-            selected_unit_rating_kva
-            * Decimal(total_units)
-        )
+        installed_nameplate_capacity_kva = selected_unit_rating_kva * Decimal(total_units)
 
         derated_duty_capacity_kva = (
             selected_unit_rating_kva
@@ -254,57 +195,34 @@ def _build_selected_rating_result(
             * raw_values.combined_derating_factor
         )
 
-        spare_derated_capacity_kva = (
-            derated_duty_capacity_kva
-            - raw_values.design_required_kva
-        )
+        spare_derated_capacity_kva = derated_duty_capacity_kva - raw_values.design_required_kva
 
         loading_percent = (
-            raw_values.design_required_kva
-            / derated_duty_capacity_kva
-            * Decimal("100")
+            raw_values.design_required_kva / derated_duty_capacity_kva * Decimal("100")
         )
 
     warnings: list[TransformerSizingWarning] = []
 
-    if (
-        raw_values.combined_derating_factor
-        < Decimal("1")
-    ):
+    if raw_values.combined_derating_factor < Decimal("1"):
         warnings.append(
             TransformerSizingWarning(
-                code=(
-                    TransformerSizingWarningCode
-                    .DERATING_APPLIED
-                ),
-                message=(
-                    "Ambient, altitude or harmonic "
-                    "derating factors were applied."
-                ),
+                code=(TransformerSizingWarningCode.DERATING_APPLIED),
+                message=("Ambient, altitude or harmonic derating factors were applied."),
             )
         )
 
     if loading_percent >= HIGH_LOADING_LIMIT_PERCENT:
         warnings.append(
             TransformerSizingWarning(
-                code=(
-                    TransformerSizingWarningCode
-                    .HIGH_LOADING
-                ),
-                message=(
-                    "Calculated transformer duty loading "
-                    "is at or above 90 percent."
-                ),
+                code=(TransformerSizingWarningCode.HIGH_LOADING),
+                message=("Calculated transformer duty loading is at or above 90 percent."),
             )
         )
 
     if loading_percent < LOW_LOADING_LIMIT_PERCENT:
         warnings.append(
             TransformerSizingWarning(
-                code=(
-                    TransformerSizingWarningCode
-                    .LOW_LOADING
-                ),
+                code=(TransformerSizingWarningCode.LOW_LOADING),
                 message=(
                     "Calculated transformer duty loading "
                     "is below 40 percent; review possible "
@@ -313,70 +231,33 @@ def _build_selected_rating_result(
             )
         )
 
-    status = (
-        TransformerSizingStatus.WARNING
-        if warnings
-        else TransformerSizingStatus.VALID
-    )
+    status = TransformerSizingStatus.WARNING if warnings else TransformerSizingStatus.VALID
 
     return TransformerSizingResult(
         code=sizing_input.code,
         name=sizing_input.name,
         scenario=sizing_input.scenario,
-        redundancy_mode=(
-            sizing_input.redundancy_mode
-        ),
+        redundancy_mode=(sizing_input.redundancy_mode),
         demand_power_kw=sizing_input.demand_power_kw,
-        demand_power_factor=(
-            sizing_input.demand_power_factor
-        ),
-        base_demand_kva=_round_capacity(
-            raw_values.base_demand_kva
-        ),
-        future_growth_factor=(
-            sizing_input.future_growth_factor
-        ),
-        future_demand_kva=_round_capacity(
-            raw_values.future_demand_kva
-        ),
-        design_margin_factor=(
-            sizing_input.design_margin_factor
-        ),
-        design_required_kva=_round_capacity(
-            raw_values.design_required_kva
-        ),
-        combined_derating_factor=_round_capacity(
-            raw_values.combined_derating_factor
-        ),
+        demand_power_factor=(sizing_input.demand_power_factor),
+        base_demand_kva=_round_capacity(raw_values.base_demand_kva),
+        future_growth_factor=(sizing_input.future_growth_factor),
+        future_demand_kva=_round_capacity(raw_values.future_demand_kva),
+        design_margin_factor=(sizing_input.design_margin_factor),
+        design_required_kva=_round_capacity(raw_values.design_required_kva),
+        combined_derating_factor=_round_capacity(raw_values.combined_derating_factor),
         required_nameplate_capacity_kva=(
-            _round_capacity(
-                raw_values
-                .required_nameplate_capacity_kva
-            )
+            _round_capacity(raw_values.required_nameplate_capacity_kva)
         ),
         duty_units=sizing_input.duty_units,
         standby_units=sizing_input.standby_units,
         total_units=total_units,
-        required_unit_rating_kva=_round_capacity(
-            raw_values.required_unit_rating_kva
-        ),
-        selected_unit_rating_kva=(
-            selected_unit_rating_kva
-        ),
-        installed_nameplate_capacity_kva=(
-            _round_capacity(
-                installed_nameplate_capacity_kva
-            )
-        ),
-        derated_duty_capacity_kva=_round_capacity(
-            derated_duty_capacity_kva
-        ),
-        spare_derated_capacity_kva=_round_capacity(
-            spare_derated_capacity_kva
-        ),
-        loading_percent=_round_percent(
-            loading_percent
-        ),
+        required_unit_rating_kva=_round_capacity(raw_values.required_unit_rating_kva),
+        selected_unit_rating_kva=(selected_unit_rating_kva),
+        installed_nameplate_capacity_kva=(_round_capacity(installed_nameplate_capacity_kva)),
+        derated_duty_capacity_kva=_round_capacity(derated_duty_capacity_kva),
+        spare_derated_capacity_kva=_round_capacity(spare_derated_capacity_kva),
+        loading_percent=_round_percent(loading_percent),
         status=status,
         warnings=tuple(warnings),
     )
@@ -396,20 +277,13 @@ def calculate_transformer_sizing(
         sizing_input,
         TransformerSizingInput,
     ):
-        raise TypeError(
-            "sizing_input must be a "
-            "TransformerSizingInput record"
-        )
+        raise TypeError("sizing_input must be a TransformerSizingInput record")
 
-    raw_values = _calculate_raw_values(
-        sizing_input
-    )
+    raw_values = _calculate_raw_values(sizing_input)
 
-    selected_unit_rating_kva = (
-        _select_unit_rating(
-            sizing_input,
-            raw_values.required_unit_rating_kva,
-        )
+    selected_unit_rating_kva = _select_unit_rating(
+        sizing_input,
+        raw_values.required_unit_rating_kva,
     )
 
     if selected_unit_rating_kva is None:

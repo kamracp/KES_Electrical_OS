@@ -166,35 +166,21 @@ class SwitchgearCandidate:
         )
 
         if not isinstance(self.manufacturer, ManufacturerSource):
-            raise TypeError(
-                "manufacturer must be a ManufacturerSource value"
-            )
+            raise TypeError("manufacturer must be a ManufacturerSource value")
 
         if not isinstance(self.device_type, SwitchgearDeviceType):
-            raise TypeError(
-                "device_type must be a SwitchgearDeviceType value"
-            )
+            raise TypeError("device_type must be a SwitchgearDeviceType value")
 
         if not isinstance(self.trip_unit_type, SwitchgearTripUnitType):
-            raise TypeError(
-                "trip_unit_type must be a SwitchgearTripUnitType value"
-            )
+            raise TypeError("trip_unit_type must be a SwitchgearTripUnitType value")
 
         for field_name, value in {
             "frame_current_a": self.frame_current_a,
             "rated_current_a": self.rated_current_a,
-            "rated_operational_voltage_v": (
-                self.rated_operational_voltage_v
-            ),
-            "ultimate_breaking_capacity_ka": (
-                self.ultimate_breaking_capacity_ka
-            ),
-            "service_breaking_capacity_ka": (
-                self.service_breaking_capacity_ka
-            ),
-            "short_time_withstand_current_ka": (
-                self.short_time_withstand_current_ka
-            ),
+            "rated_operational_voltage_v": (self.rated_operational_voltage_v),
+            "ultimate_breaking_capacity_ka": (self.ultimate_breaking_capacity_ka),
+            "service_breaking_capacity_ka": (self.service_breaking_capacity_ka),
+            "short_time_withstand_current_ka": (self.short_time_withstand_current_ka),
         }.items():
             require_positive_decimal(field_name, value)
 
@@ -204,41 +190,24 @@ class SwitchgearCandidate:
         )
 
         if self.rated_current_a > self.frame_current_a:
-            raise ValueError(
-                "rated_current_a must not exceed frame_current_a"
-            )
+            raise ValueError("rated_current_a must not exceed frame_current_a")
 
-        if (
-            self.service_breaking_capacity_ka
-            > self.ultimate_breaking_capacity_ka
-        ):
-            raise ValueError(
-                "service breaking capacity must not exceed "
-                "ultimate breaking capacity"
-            )
+        if self.service_breaking_capacity_ka > self.ultimate_breaking_capacity_ka:
+            raise ValueError("service breaking capacity must not exceed ultimate breaking capacity")
 
-        calculated_ratio = (
-            self.service_breaking_capacity_ka
-            / self.ultimate_breaking_capacity_ka
-        )
+        calculated_ratio = self.service_breaking_capacity_ka / self.ultimate_breaking_capacity_ka
 
         if calculated_ratio != self.service_breaking_ratio:
-            raise ValueError(
-                "service_breaking_ratio must equal Ics divided by Icu"
-            )
+            raise ValueError("service_breaking_ratio must equal Ics divided by Icu")
 
         if self.number_of_poles not in {1, 2, 3, 4}:
-            raise ValueError(
-                "number_of_poles must be 1, 2, 3 or 4"
-            )
+            raise ValueError("number_of_poles must be 1, 2, 3 or 4")
 
         if not isinstance(self.withdrawable, bool):
             raise TypeError("withdrawable must be a boolean")
 
         if not isinstance(self.communication_capable, bool):
-            raise TypeError(
-                "communication_capable must be a boolean"
-            )
+            raise TypeError("communication_capable must be a boolean")
 
 
 @dataclass(frozen=True, slots=True)
@@ -328,26 +297,19 @@ class SwitchgearSelectionInput:
             self.application,
             SwitchgearApplication,
         ):
-            raise TypeError(
-                "application must be a SwitchgearApplication value"
-            )
+            raise TypeError("application must be a SwitchgearApplication value")
 
         if not isinstance(
             self.required_device_type,
             SwitchgearDeviceType,
         ):
-            raise TypeError(
-                "required_device_type must be a "
-                "SwitchgearDeviceType value"
-            )
+            raise TypeError("required_device_type must be a SwitchgearDeviceType value")
 
         if not isinstance(
             self.coordination_type,
             CoordinationType,
         ):
-            raise TypeError(
-                "coordination_type must be a CoordinationType value"
-            )
+            raise TypeError("coordination_type must be a CoordinationType value")
 
         require_positive_decimal(
             "system_voltage_v",
@@ -371,53 +333,33 @@ class SwitchgearSelectionInput:
         )
 
         if self.number_of_poles not in {1, 2, 3, 4}:
-            raise ValueError(
-                "number_of_poles must be 1, 2, 3 or 4"
-            )
+            raise ValueError("number_of_poles must be 1, 2, 3 or 4")
 
         if self.protection_settings is not None and not isinstance(
             self.protection_settings,
             ProtectionSettingsInput,
         ):
-            raise TypeError(
-                "protection_settings must be a "
-                "ProtectionSettingsInput record or None"
-            )
+            raise TypeError("protection_settings must be a ProtectionSettingsInput record or None")
 
         if not isinstance(self.candidates, tuple):
             raise TypeError("candidates must be a tuple")
 
         if not self.candidates:
-            raise ValueError(
-                "at least one switchgear candidate is required"
-            )
+            raise ValueError("at least one switchgear candidate is required")
 
-        if not all(
-            isinstance(candidate, SwitchgearCandidate)
-            for candidate in self.candidates
-        ):
-            raise TypeError(
-                "candidates must contain only "
-                "SwitchgearCandidate records"
-            )
+        if not all(isinstance(candidate, SwitchgearCandidate) for candidate in self.candidates):
+            raise TypeError("candidates must contain only SwitchgearCandidate records")
 
-        candidate_codes = tuple(
-            candidate.code
-            for candidate in self.candidates
-        )
+        candidate_codes = tuple(candidate.code for candidate in self.candidates)
 
         if len(candidate_codes) != len(set(candidate_codes)):
-            raise ValueError(
-                "switchgear candidate codes must be unique"
-            )
+            raise ValueError("switchgear candidate codes must be unique")
 
         if not isinstance(
             self.manufacturer_reference_required,
             bool,
         ):
-            raise TypeError(
-                "manufacturer_reference_required must be a boolean"
-            )
+            raise TypeError("manufacturer_reference_required must be a boolean")
 
         if (
             self.coordination_type is not CoordinationType.NONE
@@ -425,8 +367,7 @@ class SwitchgearSelectionInput:
             and self.downstream_device_code is None
         ):
             raise ValueError(
-                "coordination selection requires an upstream "
-                "or downstream device reference"
+                "coordination selection requires an upstream or downstream device reference"
             )
 
 

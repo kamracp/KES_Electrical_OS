@@ -84,18 +84,10 @@ def _calculate_temperature_corrected_voltage(
 ) -> Decimal:
     """Apply the module voltage temperature coefficient."""
 
-    temperature_difference_c = (
-        design_temperature_c
-        - STC_TEMPERATURE_C
-    )
+    temperature_difference_c = design_temperature_c - STC_TEMPERATURE_C
 
-    correction_factor = (
-        Decimal("1")
-        + (
-            temperature_coefficient_percent_per_c
-            / Decimal("100")
-            * temperature_difference_c
-        )
+    correction_factor = Decimal("1") + (
+        temperature_coefficient_percent_per_c / Decimal("100") * temperature_difference_c
     )
 
     return base_voltage_v * correction_factor
@@ -110,18 +102,15 @@ def _calculate_raw_values(
         context.prec = 50
 
         future_required_ac_output_kw = (
-            sizing_input.required_ac_output_kw
-            * sizing_input.future_growth_factor
+            sizing_input.required_ac_output_kw * sizing_input.future_growth_factor
         )
 
         design_required_ac_output_kw = (
-            future_required_ac_output_kw
-            * sizing_input.design_margin_factor
+            future_required_ac_output_kw * sizing_input.design_margin_factor
         )
 
         required_inverter_capacity_kw = (
-            design_required_ac_output_kw
-            / sizing_input.ac_efficiency_factor
+            design_required_ac_output_kw / sizing_input.ac_efficiency_factor
         )
 
         required_dc_array_capacity_kwp = (
@@ -130,34 +119,24 @@ def _calculate_raw_values(
             / sizing_input.dc_efficiency_factor
         )
 
-        cold_corrected_module_voc_v = (
-            _calculate_temperature_corrected_voltage(
-                sizing_input.module_open_circuit_voltage_v,
-                sizing_input
-                .temperature_coefficient_voc_percent_per_c,
-                sizing_input.minimum_design_temperature_c,
-            )
+        cold_corrected_module_voc_v = _calculate_temperature_corrected_voltage(
+            sizing_input.module_open_circuit_voltage_v,
+            sizing_input.temperature_coefficient_voc_percent_per_c,
+            sizing_input.minimum_design_temperature_c,
         )
 
-        hot_corrected_module_vmp_v = (
-            _calculate_temperature_corrected_voltage(
-                sizing_input.module_maximum_power_voltage_v,
-                sizing_input
-                .temperature_coefficient_vmp_percent_per_c,
-                sizing_input.maximum_cell_temperature_c,
-            )
+        hot_corrected_module_vmp_v = _calculate_temperature_corrected_voltage(
+            sizing_input.module_maximum_power_voltage_v,
+            sizing_input.temperature_coefficient_vmp_percent_per_c,
+            sizing_input.maximum_cell_temperature_c,
         )
 
         maximum_modules_per_string = int(
-            sizing_input.inverter_max_dc_voltage_v
-            / cold_corrected_module_voc_v
+            sizing_input.inverter_max_dc_voltage_v / cold_corrected_module_voc_v
         )
 
-        minimum_modules_per_string = (
-            _ceiling_decimal_to_int(
-                sizing_input.inverter_mppt_min_voltage_v
-                / hot_corrected_module_vmp_v
-            )
+        minimum_modules_per_string = _ceiling_decimal_to_int(
+            sizing_input.inverter_mppt_min_voltage_v / hot_corrected_module_vmp_v
         )
 
         modules_per_string = min(
@@ -169,73 +148,42 @@ def _calculate_raw_values(
         )
 
         total_modules = _ceiling_decimal_to_int(
-            required_dc_array_capacity_kwp
-            * Decimal("1000")
-            / sizing_input.module_rated_power_wp
+            required_dc_array_capacity_kwp * Decimal("1000") / sizing_input.module_rated_power_wp
         )
 
         total_strings = _ceiling_decimal_to_int(
-            Decimal(total_modules)
-            / Decimal(modules_per_string)
+            Decimal(total_modules) / Decimal(modules_per_string)
         )
 
         strings_per_mppt = _ceiling_decimal_to_int(
             Decimal(total_strings)
-            / (
-                Decimal(sizing_input.mppt_count)
-                * Decimal(sizing_input.duty_inverters)
-            )
+            / (Decimal(sizing_input.mppt_count) * Decimal(sizing_input.duty_inverters))
         )
 
-        cold_string_voc_v = (
-            cold_corrected_module_voc_v
-            * Decimal(modules_per_string)
-        )
+        cold_string_voc_v = cold_corrected_module_voc_v * Decimal(modules_per_string)
 
-        hot_string_vmp_v = (
-            hot_corrected_module_vmp_v
-            * Decimal(modules_per_string)
-        )
+        hot_string_vmp_v = hot_corrected_module_vmp_v * Decimal(modules_per_string)
 
-        required_unit_rating_kw = (
-            required_inverter_capacity_kw
-            / Decimal(sizing_input.duty_inverters)
+        required_unit_rating_kw = required_inverter_capacity_kw / Decimal(
+            sizing_input.duty_inverters
         )
 
     return _RawPVSizingValues(
-        future_required_ac_output_kw=(
-            future_required_ac_output_kw
-        ),
-        design_required_ac_output_kw=(
-            design_required_ac_output_kw
-        ),
-        required_dc_array_capacity_kwp=(
-            required_dc_array_capacity_kwp
-        ),
-        cold_corrected_module_voc_v=(
-            cold_corrected_module_voc_v
-        ),
-        hot_corrected_module_vmp_v=(
-            hot_corrected_module_vmp_v
-        ),
-        maximum_modules_per_string=(
-            maximum_modules_per_string
-        ),
-        minimum_modules_per_string=(
-            minimum_modules_per_string
-        ),
+        future_required_ac_output_kw=(future_required_ac_output_kw),
+        design_required_ac_output_kw=(design_required_ac_output_kw),
+        required_dc_array_capacity_kwp=(required_dc_array_capacity_kwp),
+        cold_corrected_module_voc_v=(cold_corrected_module_voc_v),
+        hot_corrected_module_vmp_v=(hot_corrected_module_vmp_v),
+        maximum_modules_per_string=(maximum_modules_per_string),
+        minimum_modules_per_string=(minimum_modules_per_string),
         modules_per_string=modules_per_string,
         total_modules=total_modules,
         total_strings=total_strings,
         strings_per_mppt=strings_per_mppt,
         cold_string_voc_v=cold_string_voc_v,
         hot_string_vmp_v=hot_string_vmp_v,
-        required_inverter_capacity_kw=(
-            required_inverter_capacity_kw
-        ),
-        required_unit_rating_kw=(
-            required_unit_rating_kw
-        ),
+        required_inverter_capacity_kw=(required_inverter_capacity_kw),
+        required_unit_rating_kw=(required_unit_rating_kw),
     )
 
 
@@ -248,8 +196,7 @@ def _select_inverter_rating(
     return next(
         (
             rating
-            for rating
-            in sizing_input.available_inverter_ratings_kw
+            for rating in sizing_input.available_inverter_ratings_kw
             if rating >= required_unit_rating_kw
         ),
         None,
@@ -264,10 +211,7 @@ def _build_common_warnings(
 
     warnings: list[PVSizingWarning] = []
 
-    if (
-        raw_values.cold_string_voc_v
-        > sizing_input.inverter_max_dc_voltage_v
-    ):
+    if raw_values.cold_string_voc_v > sizing_input.inverter_max_dc_voltage_v:
         warnings.append(
             PVSizingWarning(
                 code=PVSizingWarningCode.COLD_VOC_LIMIT,
@@ -278,39 +222,24 @@ def _build_common_warnings(
             )
         )
 
-    if (
-        raw_values.hot_string_vmp_v
-        < sizing_input.inverter_mppt_min_voltage_v
-    ):
+    if raw_values.hot_string_vmp_v < sizing_input.inverter_mppt_min_voltage_v:
         warnings.append(
             PVSizingWarning(
-                code=(
-                    PVSizingWarningCode
-                    .HOT_VMP_BELOW_MPPT
-                ),
+                code=(PVSizingWarningCode.HOT_VMP_BELOW_MPPT),
                 message=(
-                    "Hot-condition string operating voltage "
-                    "is below the inverter MPPT minimum."
+                    "Hot-condition string operating voltage is below the inverter MPPT minimum."
                 ),
             )
         )
 
-    string_input_current_a = (
-        sizing_input.module_short_circuit_current_a
-        * Decimal(raw_values.strings_per_mppt)
+    string_input_current_a = sizing_input.module_short_circuit_current_a * Decimal(
+        raw_values.strings_per_mppt
     )
 
-    if (
-        string_input_current_a
-        > sizing_input
-        .inverter_max_input_current_per_mppt_a
-    ):
+    if string_input_current_a > sizing_input.inverter_max_input_current_per_mppt_a:
         warnings.append(
             PVSizingWarning(
-                code=(
-                    PVSizingWarningCode
-                    .STRING_CURRENT_LIMIT
-                ),
+                code=(PVSizingWarningCode.STRING_CURRENT_LIMIT),
                 message=(
                     "Calculated PV string current per MPPT "
                     "exceeds the inverter input-current limit."
@@ -321,24 +250,15 @@ def _build_common_warnings(
     if sizing_input.export_limit_kw is not None:
         warnings.append(
             PVSizingWarning(
-                code=(
-                    PVSizingWarningCode
-                    .EXPORT_LIMIT_APPLIED
-                ),
-                message=(
-                    "An active-power export limit is applied "
-                    "to the Solar PV system."
-                ),
+                code=(PVSizingWarningCode.EXPORT_LIMIT_APPLIED),
+                message=("An active-power export limit is applied to the Solar PV system."),
             )
         )
 
     if sizing_input.dg_coexistence:
         warnings.append(
             PVSizingWarning(
-                code=(
-                    PVSizingWarningCode
-                    .DG_COORDINATION_REQUIRED
-                ),
+                code=(PVSizingWarningCode.DG_COORDINATION_REQUIRED),
                 message=(
                     "PV and generator coexistence requires "
                     "a dedicated control and protection study."
@@ -355,9 +275,7 @@ def calculate_pv_sizing(
     """Calculate and select a Solar PV source arrangement."""
 
     if not isinstance(sizing_input, PVSizingInput):
-        raise TypeError(
-            "sizing_input must be a PVSizingInput record"
-        )
+        raise TypeError("sizing_input must be a PVSizingInput record")
 
     raw_values = _calculate_raw_values(sizing_input)
 
@@ -371,18 +289,12 @@ def calculate_pv_sizing(
         raw_values,
     )
 
-    total_inverters = (
-        sizing_input.duty_inverters
-        + sizing_input.redundant_inverters
-    )
+    total_inverters = sizing_input.duty_inverters + sizing_input.redundant_inverters
 
     if selected_unit_rating_kw is None:
         warnings.append(
             PVSizingWarning(
-                code=(
-                    PVSizingWarningCode
-                    .NO_STANDARD_INVERTER_RATING
-                ),
+                code=(PVSizingWarningCode.NO_STANDARD_INVERTER_RATING),
                 message=(
                     "No available inverter rating satisfies "
                     "the calculated unit capacity requirement."
@@ -395,29 +307,17 @@ def calculate_pv_sizing(
             name=sizing_input.name,
             scenario=sizing_input.scenario,
             system_type=sizing_input.system_type,
-            phase_configuration=(
-                sizing_input.phase_configuration
-            ),
+            phase_configuration=(sizing_input.phase_configuration),
             redundancy_mode=sizing_input.redundancy_mode,
-            battery_configuration=(
-                sizing_input.battery_configuration
-            ),
-            required_ac_output_kw=(
-                sizing_input.required_ac_output_kw
-            ),
-            future_required_ac_output_kw=_round_decimal(
-                raw_values.future_required_ac_output_kw
-            ),
-            design_required_ac_output_kw=_round_decimal(
-                raw_values.design_required_ac_output_kw
-            ),
+            battery_configuration=(sizing_input.battery_configuration),
+            required_ac_output_kw=(sizing_input.required_ac_output_kw),
+            future_required_ac_output_kw=_round_decimal(raw_values.future_required_ac_output_kw),
+            design_required_ac_output_kw=_round_decimal(raw_values.design_required_ac_output_kw),
             target_dc_ac_ratio=sizing_input.target_dc_ac_ratio,
             required_dc_array_capacity_kwp=_round_decimal(
                 raw_values.required_dc_array_capacity_kwp
             ),
-            module_rated_power_wp=(
-                sizing_input.module_rated_power_wp
-            ),
+            module_rated_power_wp=(sizing_input.module_rated_power_wp),
             total_modules=raw_values.total_modules,
             modules_per_string=raw_values.modules_per_string,
             total_strings=raw_values.total_strings,
@@ -438,20 +338,12 @@ def calculate_pv_sizing(
                 raw_values.hot_string_vmp_v,
                 VOLTAGE_QUANTUM,
             ),
-            string_short_circuit_current_a=(
-                sizing_input.module_short_circuit_current_a
-            ),
-            required_inverter_capacity_kw=_round_decimal(
-                raw_values.required_inverter_capacity_kw
-            ),
-            required_unit_rating_kw=_round_decimal(
-                raw_values.required_unit_rating_kw
-            ),
+            string_short_circuit_current_a=(sizing_input.module_short_circuit_current_a),
+            required_inverter_capacity_kw=_round_decimal(raw_values.required_inverter_capacity_kw),
+            required_unit_rating_kw=_round_decimal(raw_values.required_unit_rating_kw),
             selected_unit_rating_kw=None,
             duty_inverters=sizing_input.duty_inverters,
-            redundant_inverters=(
-                sizing_input.redundant_inverters
-            ),
+            redundant_inverters=(sizing_input.redundant_inverters),
             total_inverters=total_inverters,
             installed_duty_capacity_kw=None,
             total_installed_capacity_kw=None,
@@ -463,33 +355,19 @@ def calculate_pv_sizing(
             warnings=tuple(warnings),
         )
 
-    installed_duty_capacity_kw = (
-        selected_unit_rating_kw
-        * Decimal(sizing_input.duty_inverters)
-    )
+    installed_duty_capacity_kw = selected_unit_rating_kw * Decimal(sizing_input.duty_inverters)
 
-    total_installed_capacity_kw = (
-        selected_unit_rating_kw
-        * Decimal(total_inverters)
-    )
+    total_installed_capacity_kw = selected_unit_rating_kw * Decimal(total_inverters)
 
-    actual_dc_ac_ratio = (
-        raw_values.required_dc_array_capacity_kwp
-        / installed_duty_capacity_kw
-    )
+    actual_dc_ac_ratio = raw_values.required_dc_array_capacity_kwp / installed_duty_capacity_kw
 
-    spare_ac_capacity_kw = (
-        installed_duty_capacity_kw
-        - raw_values.required_inverter_capacity_kw
-    )
+    spare_ac_capacity_kw = installed_duty_capacity_kw - raw_values.required_inverter_capacity_kw
 
     if actual_dc_ac_ratio > HIGH_DC_AC_RATIO:
         warnings.append(
             PVSizingWarning(
                 code=PVSizingWarningCode.HIGH_DC_AC_RATIO,
-                message=(
-                    "Calculated DC-to-AC ratio is above 1.40."
-                ),
+                message=("Calculated DC-to-AC ratio is above 1.40."),
             )
         )
 
@@ -497,17 +375,11 @@ def calculate_pv_sizing(
         warnings.append(
             PVSizingWarning(
                 code=PVSizingWarningCode.LOW_DC_AC_RATIO,
-                message=(
-                    "Calculated DC-to-AC ratio is below 0.90."
-                ),
+                message=("Calculated DC-to-AC ratio is below 0.90."),
             )
         )
 
-    status = (
-        PVSizingStatus.WARNING
-        if warnings
-        else PVSizingStatus.VALID
-    )
+    status = PVSizingStatus.WARNING if warnings else PVSizingStatus.VALID
 
     return PVSizingResult(
         code=sizing_input.code,
@@ -518,16 +390,10 @@ def calculate_pv_sizing(
         redundancy_mode=sizing_input.redundancy_mode,
         battery_configuration=sizing_input.battery_configuration,
         required_ac_output_kw=sizing_input.required_ac_output_kw,
-        future_required_ac_output_kw=_round_decimal(
-            raw_values.future_required_ac_output_kw
-        ),
-        design_required_ac_output_kw=_round_decimal(
-            raw_values.design_required_ac_output_kw
-        ),
+        future_required_ac_output_kw=_round_decimal(raw_values.future_required_ac_output_kw),
+        design_required_ac_output_kw=_round_decimal(raw_values.design_required_ac_output_kw),
         target_dc_ac_ratio=sizing_input.target_dc_ac_ratio,
-        required_dc_array_capacity_kwp=_round_decimal(
-            raw_values.required_dc_array_capacity_kwp
-        ),
+        required_dc_array_capacity_kwp=_round_decimal(raw_values.required_dc_array_capacity_kwp),
         module_rated_power_wp=sizing_input.module_rated_power_wp,
         total_modules=raw_values.total_modules,
         modules_per_string=raw_values.modules_per_string,
@@ -549,32 +415,20 @@ def calculate_pv_sizing(
             raw_values.hot_string_vmp_v,
             VOLTAGE_QUANTUM,
         ),
-        string_short_circuit_current_a=(
-            sizing_input.module_short_circuit_current_a
-        ),
-        required_inverter_capacity_kw=_round_decimal(
-            raw_values.required_inverter_capacity_kw
-        ),
-        required_unit_rating_kw=_round_decimal(
-            raw_values.required_unit_rating_kw
-        ),
+        string_short_circuit_current_a=(sizing_input.module_short_circuit_current_a),
+        required_inverter_capacity_kw=_round_decimal(raw_values.required_inverter_capacity_kw),
+        required_unit_rating_kw=_round_decimal(raw_values.required_unit_rating_kw),
         selected_unit_rating_kw=selected_unit_rating_kw,
         duty_inverters=sizing_input.duty_inverters,
         redundant_inverters=sizing_input.redundant_inverters,
         total_inverters=total_inverters,
-        installed_duty_capacity_kw=_round_decimal(
-            installed_duty_capacity_kw
-        ),
-        total_installed_capacity_kw=_round_decimal(
-            total_installed_capacity_kw
-        ),
+        installed_duty_capacity_kw=_round_decimal(installed_duty_capacity_kw),
+        total_installed_capacity_kw=_round_decimal(total_installed_capacity_kw),
         actual_dc_ac_ratio=_round_decimal(
             actual_dc_ac_ratio,
             RATIO_QUANTUM,
         ),
-        spare_ac_capacity_kw=_round_decimal(
-            spare_ac_capacity_kw
-        ),
+        spare_ac_capacity_kw=_round_decimal(spare_ac_capacity_kw),
         export_limit_kw=sizing_input.export_limit_kw,
         dg_coexistence=sizing_input.dg_coexistence,
         status=status,
