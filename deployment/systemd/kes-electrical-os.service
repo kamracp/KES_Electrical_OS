@@ -18,7 +18,7 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/opt/kes-electrical-os/backend
 EnvironmentFile=/opt/kes-electrical-os/backend/.env
-ExecStart=/opt/kes-electrical-os/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8040 --workers 2 --proxy-headers --forwarded-allow-ips=127.0.0.1
+ExecStart=/opt/kes-electrical-os/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8040 --workers 1 --proxy-headers --forwarded-allow-ips=127.0.0.1
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=20
