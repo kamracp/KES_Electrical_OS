@@ -4,8 +4,8 @@ Authoritative status record. Updated at the close of every slice; chat history i
 source of truth. Read with `AGENTS.md`, `docs/references/electrical-master-reference-register.md`
 and `docs/references/reference-gap-register.md`.
 
-Baseline: `master` = `origin/master` at `4aa4316` (2026-09-16). Backend regression 875 passed;
-frontend 74 tests, typecheck, oxlint and Vite build passed.
+Baseline: `master` = `origin/master` at `59b9e4c` (2026-09-17). Backend regression 892 passed;
+frontend 74 tests, typecheck, oxlint and Vite build passed; jurisdiction-profile live smoke passed (IN, US, IEC).
 
 ## Product direction (decided 2026-09-16)
 
@@ -28,7 +28,7 @@ frontend 74 tests, typecheck, oxlint and Vite build passed.
 | P0 Governance | Active | Register `6100ce5`; `AGENTS.md` `bfd17b1`; CPWD 2023 verified `6e82126`, `88e30ab`; gap register `4aa4316`; this file. Remaining: ADR-0001 ID reconciliation (GAP-011), jurisdiction ADR (GAP-012), vendor-neutral register row (GAP-009) |
 | P1 Backend foundation | Implemented | health/version, async DB, Alembic, pytest |
 | P2 Units and standards | CRUD implemented; full registry pending | idempotent reference seed and applicability gate not built |
-| P3 Org / RBAC / design basis | Planned | jurisdiction profile field will live here (GAP-004, GAP-012) |
+| P3 Org / RBAC / design basis | Planned | jurisdiction profile now selectable per cable study (`jurisdiction_profile`, default IN); the project-level design-basis field is still to come (GAP-004, GAP-012) |
 | P4 Load and demand | Backend/API implemented; UI pending | |
 | P5 Sources (Tx/DG/UPS/PV) | Backend/API implemented; UI pending | |
 | P6 Network / fault | Backend implemented; **UI is a placeholder** | Prompt v2.0 says "Fault UI implemented" — incorrect. `FaultStudyPage` renders no form; `FaultStudyForm` exists unwired. Engine string `IEC 60909-0:2026` unverified (GAP-007) |
@@ -40,11 +40,13 @@ frontend 74 tests, typecheck, oxlint and Vite build passed.
 
 ## Active slice
 
-None. Slice C (CPWD controlled-copy registration) closed at `4aa4316`.
+None. Slice E (jurisdiction profile, GAP-012 first step + GAP-010) closed at `59b9e4c`; derating-warning
+slice negative case confirmed in the same smoke.
 
 ## Next slices (in order)
 
-1. **Slice E — Jurisdiction profile (GAP-012, GAP-010).** `JurisdictionProfile` enum and profile
+1. ~~Slice E — Jurisdiction profile~~ DONE `759ec99`..`59b9e4c` (17 Sep). Follow-up GAP-013: references from profile.
+1a. **(was Slice E)** `JurisdictionProfile` enum and profile
    data (reference ambient air/ground, precedence chain, defaults) → `jurisdiction_profile` on the
    cable request (default `IN`) and `reference_verification_status` on responses → cable engine reads
    reference ambient through the profile → tests → frontend zod enum, `<select>` in
