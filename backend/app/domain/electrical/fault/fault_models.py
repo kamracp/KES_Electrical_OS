@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
 
+from app.domain.electrical.jurisdiction.jurisdiction_models import JurisdictionProfile
 from app.domain.electrical.sources.common import (
     normalize_optional_text,
     normalize_required_text,
@@ -356,8 +357,11 @@ class ShortCircuitStudyInput:
 
     frequency_hz: Decimal = Decimal("50")
     operating_state_code: str | None = None
-    standard_reference: str = "IEC 60909-0:2026"
-    earth_current_reference: str = "IEC 60909-3:2009"
+    jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
+    # Governing references come from the jurisdiction profile. Supplying both here
+    # is a project override and is reported as a deviation on the result.
+    standard_reference: str | None = None
+    earth_current_reference: str | None = None
     notes: str | None = None
 
     def __post_init__(self) -> None:
@@ -365,18 +369,23 @@ class ShortCircuitStudyInput:
 
         object.__setattr__(self, "code", normalize_required_text("code", self.code))
         object.__setattr__(self, "name", normalize_required_text("name", self.name))
-        for field_name in ("operating_state_code", "notes"):
+        for field_name in (
+            "operating_state_code",
+            "notes",
+            "standard_reference",
+            "earth_current_reference",
+        ):
             object.__setattr__(
                 self,
                 field_name,
                 normalize_optional_text(field_name, getattr(self, field_name)),
             )
-        for field_name in ("standard_reference", "earth_current_reference"):
-            object.__setattr__(
-                self,
-                field_name,
-                normalize_required_text(field_name, getattr(self, field_name)),
+        if (self.standard_reference is None) != (self.earth_current_reference is None):
+            raise ValueError(
+                "standard_reference and earth_current_reference must be overridden together"
             )
+        if not isinstance(self.jurisdiction_profile, JurisdictionProfile):
+            raise TypeError("jurisdiction_profile must be a JurisdictionProfile value")
 
         if not isinstance(self.calculation_case, ShortCircuitCase):
             raise TypeError("calculation_case must be a ShortCircuitCase value")

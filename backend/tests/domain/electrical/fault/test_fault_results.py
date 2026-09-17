@@ -17,6 +17,7 @@ from app.domain.electrical.fault.fault_models import (
 from app.domain.electrical.fault.fault_results import (
     EquivalentSequenceImpedanceResult,
     FaultEngineeringWarning,
+    FaultReferenceSource,
     FaultResultStatus,
     FaultSequence,
     FaultSourceContributionResult,
@@ -190,8 +191,10 @@ def test_create_valid_calculated_result() -> None:
 
     assert result.status is FaultResultStatus.CALCULATED
     assert result.initial_symmetrical_short_circuit_current_ka == Decimal("22.50")
-    assert result.standard_reference == "IEC 60909-0:2026"
-    assert result.earth_current_reference == "IEC 60909-3:2009"
+    # Bare results carry no references until the engine resolves them (GAP-014).
+    assert result.standard_reference is None
+    assert result.earth_current_reference is None
+    assert result.reference_source is FaultReferenceSource.NOT_ESTABLISHED
 
 
 @pytest.mark.unit
@@ -358,6 +361,7 @@ def test_study_text_fields_are_normalized() -> None:
         fault_bus_code="  BUS-02  ",
         standard_reference="  IEC 60909-0:2026  ",
         earth_current_reference="  IEC 60909-3:2009  ",
+        reference_source=FaultReferenceSource.PROFILE,
         operating_state_code="  STATE-NORMAL  ",
         notes="   ",
     )

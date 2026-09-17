@@ -21,6 +21,7 @@ from app.domain.electrical.fault.fault_network import (
 from app.domain.electrical.fault.fault_results import (
     EquivalentSequenceImpedanceResult,
     FaultEngineeringWarning,
+    FaultReferenceSource,
     FaultResultStatus,
     FaultSequence,
     FaultSourceContributionResult,
@@ -28,6 +29,7 @@ from app.domain.electrical.fault.fault_results import (
     FaultWarningSeverity,
     ShortCircuitStudyResult,
 )
+from app.domain.electrical.jurisdiction.jurisdiction_profiles import get_profile
 
 CURRENT_QUANTUM = Decimal("0.000000001")
 IMPEDANCE_QUANTUM = Decimal("0.000000001")
@@ -240,6 +242,69 @@ def _equivalent_sequence_result(
         path_reference_codes=(),
         blocking_reference_codes=(reduction.blocking_reference_codes),
     )
+
+
+@dataclass(frozen=True, slots=True)
+class _ResolvedReferences:
+    """Governing references resolved for one study, with any deviation warning."""
+
+    standard_reference: str | None
+    earth_current_reference: str | None
+    source: FaultReferenceSource
+
+
+def _resolve_references(
+    study: ShortCircuitStudyInput,
+    warnings: list[FaultEngineeringWarning],
+) -> _ResolvedReferences:
+    """Take governing references from the profile; a request override is a deviation."""
+
+    profile = get_profile(study.jurisdiction_profile)
+    registered = profile.fault_governing_references
+
+    if study.standard_reference is None:
+        if registered is None:
+            _append_warning(
+                warnings,
+                code=FaultWarningCode.GOVERNING_REFERENCE_NOT_ESTABLISHED,
+                severity=FaultWarningSeverity.WARNING,
+                message=(
+                    f"Jurisdiction profile {profile.profile.value} has no registered "
+                    "fault-calculation references; short-circuit and earth-current "
+                    "references are pending"
+                ),
+            )
+            return _ResolvedReferences(None, None, FaultReferenceSource.NOT_ESTABLISHED)
+        return _ResolvedReferences(
+            registered.short_circuit_reference,
+            registered.earth_current_reference,
+            FaultReferenceSource.PROFILE,
+        )
+
+    # Input validation guarantees both overrides are present together.
+    overridden = (study.standard_reference, study.earth_current_reference)
+    if registered is not None and overridden == (
+        registered.short_circuit_reference,
+        registered.earth_current_reference,
+    ):
+        return _ResolvedReferences(*overridden, FaultReferenceSource.PROFILE)
+
+    registered_text = (
+        f"{registered.short_circuit_reference} / {registered.earth_current_reference}"
+        if registered is not None
+        else "none registered"
+    )
+    _append_warning(
+        warnings,
+        code=FaultWarningCode.GOVERNING_REFERENCE_OVERRIDDEN,
+        severity=FaultWarningSeverity.WARNING,
+        message=(
+            f"Governing references overridden by the request "
+            f"({overridden[0]} / {overridden[1]}); profile {profile.profile.value} "
+            f"carries {registered_text}"
+        ),
+    )
+    return _ResolvedReferences(*overridden, FaultReferenceSource.REQUEST_OVERRIDE)
 
 
 def _append_warning(
@@ -951,6 +1016,8 @@ def calculate_short_circuit(
         )
 
         warnings: list[FaultEngineeringWarning] = []
+        references = _resolve_references(study, warnings)
+        verification_status = get_profile(study.jurisdiction_profile).reference_data_status
 
         if (
             study.fault.fault_type
@@ -1024,8 +1091,11 @@ def calculate_short_circuit(
                 sequence_results=(sequence_results),
                 source_contributions=(excluded_sources),
                 warnings=tuple(warnings),
-                standard_reference=(study.standard_reference),
-                earth_current_reference=(study.earth_current_reference),
+                standard_reference=references.standard_reference,
+                earth_current_reference=references.earth_current_reference,
+                reference_source=references.source,
+                jurisdiction_profile=study.jurisdiction_profile,
+                reference_verification_status=verification_status,
                 operating_state_code=(study.operating_state_code),
                 notes=(study.notes),
             )
@@ -1106,8 +1176,11 @@ def calculate_short_circuit(
             sequence_results=(sequence_results),
             source_contributions=(source_contributions),
             warnings=tuple(warnings),
-            standard_reference=(study.standard_reference),
-            earth_current_reference=(study.earth_current_reference),
+            standard_reference=references.standard_reference,
+            earth_current_reference=references.earth_current_reference,
+            reference_source=references.source,
+            jurisdiction_profile=study.jurisdiction_profile,
+            reference_verification_status=verification_status,
             operating_state_code=(study.operating_state_code),
             notes=(study.notes),
         )

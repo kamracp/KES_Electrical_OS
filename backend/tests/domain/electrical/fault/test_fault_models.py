@@ -22,6 +22,7 @@ from app.domain.electrical.fault.fault_models import (
     ShortCircuitStudyInput,
     SourceRepresentation,
 )
+from app.domain.electrical.jurisdiction import JurisdictionProfile
 
 
 def make_impedance(
@@ -158,8 +159,10 @@ def test_create_valid_short_circuit_study() -> None:
     assert study.calculation_case is ShortCircuitCase.MAXIMUM
     assert study.fault.fault_type is FaultType.THREE_PHASE
     assert study.frequency_hz == Decimal("50")
-    assert study.standard_reference == "IEC 60909-0:2026"
-    assert study.earth_current_reference == "IEC 60909-3:2009"
+    # References are profile-derived (GAP-014); the input carries no defaults.
+    assert study.standard_reference is None
+    assert study.earth_current_reference is None
+    assert study.jurisdiction_profile is JurisdictionProfile.IN
 
 
 @pytest.mark.unit
