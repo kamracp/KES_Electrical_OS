@@ -5,15 +5,15 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { CableSizingRequest, CableSizingResponse } from "../services/cable";
+import type { CableRunResponse, CableSizingRequest, CableSizingResponse } from "../services/cable";
 import { useCableSizing } from "./useCableSizing";
 
-const calculateCableSizingMock = vi.hoisted(() =>
-  vi.fn<(payload: CableSizingRequest, signal?: AbortSignal) => Promise<CableSizingResponse>>(),
+const createCableRunMock = vi.hoisted(() =>
+  vi.fn<(payload: CableSizingRequest, signal?: AbortSignal) => Promise<CableRunResponse>>(),
 );
 
 vi.mock("../services/cable", () => ({
-  calculateCableSizing: calculateCableSizingMock,
+  createCableRun: createCableRunMock,
 }));
 
 const request = {
@@ -37,6 +37,29 @@ const response = {
   notes: null,
 } as CableSizingResponse;
 
+const sampleRun = {
+  id: "48a782d0-4331-4aa2-bcd0-f24f5016334a",
+  module_code: "EOS-06",
+  calculation_type: "CABLE_SIZING",
+  calculation_key: "CBL-001",
+  revision_number: 1,
+  run_status: "COMPLETED",
+  approval_status: "NOT_SUBMITTED",
+  engine_version: "cable-engine 0.1.0",
+  design_check_status: "DESIGN_CHECK_PASSED",
+  jurisdiction_profile: "IN",
+  reference_verification_status: "UNVERIFIED",
+  content_hash: "e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e280",
+  calculated_by: null,
+  calculated_at: "2026-09-17T12:00:00+00:00",
+  created_at: "2026-09-17T12:00:00+00:00",
+  is_immutable: false,
+  supersedes_run_id: null,
+  notes: null,
+};
+
+const runResponse = { run: sampleRun, result: response } as CableRunResponse;
+
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
@@ -47,7 +70,7 @@ function createWrapper() {
 }
 
 beforeEach(() => {
-  calculateCableSizingMock.mockReset();
+  createCableRunMock.mockReset();
 });
 
 afterEach(() => {
@@ -56,7 +79,7 @@ afterEach(() => {
 
 describe("useCableSizing", () => {
   it("returns the service result unchanged on success", async () => {
-    calculateCableSizingMock.mockResolvedValue(response);
+    createCableRunMock.mockResolvedValue(runResponse);
     const { result } = renderHook(() => useCableSizing(), { wrapper: createWrapper() });
 
     expect(result.current.result).toBeNull();
@@ -69,13 +92,13 @@ describe("useCableSizing", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.result).toEqual(response);
     expect(result.current.error).toBeNull();
-    expect(calculateCableSizingMock).toHaveBeenCalledTimes(1);
-    expect(calculateCableSizingMock.mock.calls[0]?.[0]).toBe(request);
-    expect(calculateCableSizingMock.mock.calls[0]?.[1]).toBeInstanceOf(AbortSignal);
+    expect(createCableRunMock).toHaveBeenCalledTimes(1);
+    expect(createCableRunMock.mock.calls[0]?.[0]).toBe(request);
+    expect(createCableRunMock.mock.calls[0]?.[1]).toBeInstanceOf(AbortSignal);
   });
 
   it("exposes a service error without transforming it", async () => {
-    calculateCableSizingMock.mockRejectedValue(new Error("body.circuit.design_current_a: Input should be greater than 0"));
+    createCableRunMock.mockRejectedValue(new Error("body.circuit.design_current_a: Input should be greater than 0"));
     const { result } = renderHook(() => useCableSizing(), { wrapper: createWrapper() });
 
     await act(async () => {
@@ -91,18 +114,18 @@ describe("useCableSizing", () => {
 
   it("aborts the previous request when a new one is submitted", async () => {
     const signals: AbortSignal[] = [];
-    calculateCableSizingMock.mockImplementation((_payload, signal) => {
+    createCableRunMock.mockImplementation((_payload, signal) => {
       if (signal) signals.push(signal);
-      return new Promise<CableSizingResponse>((resolve, reject) => {
+      return new Promise<CableRunResponse>((resolve, reject) => {
         signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
-        setTimeout(() => resolve(response), 5);
+        setTimeout(() => resolve(runResponse), 5);
       });
     });
     const { result } = renderHook(() => useCableSizing(), { wrapper: createWrapper() });
 
-    let first: Promise<CableSizingResponse> | undefined;
+    let first: Promise<CableRunResponse> | undefined;
     act(() => {
-      first = result.current.calculate(request).catch(() => response);
+      first = result.current.calculate(request).catch(() => runResponse);
     });
     await act(async () => {
       await result.current.calculate(request);
@@ -116,9 +139,9 @@ describe("useCableSizing", () => {
 
   it("aborts the in-flight request on unmount", async () => {
     let captured: AbortSignal | undefined;
-    calculateCableSizingMock.mockImplementation(
+    createCableRunMock.mockImplementation(
       (_payload, signal) =>
-        new Promise<CableSizingResponse>((_resolve, reject) => {
+        new Promise<CableRunResponse>((_resolve, reject) => {
           captured = signal;
           signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
         }),
@@ -128,7 +151,7 @@ describe("useCableSizing", () => {
     act(() => {
       void result.current.calculate(request).catch(() => undefined);
     });
-    await waitFor(() => expect(calculateCableSizingMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(createCableRunMock).toHaveBeenCalledTimes(1));
     expect(captured?.aborted).toBe(false);
 
     unmount();
@@ -137,7 +160,7 @@ describe("useCableSizing", () => {
   });
 
   it("clears result and error on reset", async () => {
-    calculateCableSizingMock.mockResolvedValue(response);
+    createCableRunMock.mockResolvedValue(runResponse);
     const { result } = renderHook(() => useCableSizing(), { wrapper: createWrapper() });
 
     await act(async () => {

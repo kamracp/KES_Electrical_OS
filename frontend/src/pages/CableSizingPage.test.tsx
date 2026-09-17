@@ -6,17 +6,17 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { CableSizingRequest, CableSizingResponse } from "../services/cable";
+import type { CableRunResponse, CableSizingRequest, CableSizingResponse } from "../services/cable";
 import { CableSizingPage } from "./CableSizingPage";
 
-const calculateCableSizingMock = vi.hoisted(() =>
-  vi.fn<(payload: CableSizingRequest, signal?: AbortSignal) => Promise<CableSizingResponse>>(),
+const createCableRunMock = vi.hoisted(() =>
+  vi.fn<(payload: CableSizingRequest, signal?: AbortSignal) => Promise<CableRunResponse>>(),
 );
 
 // Partial mock: the form still needs the real cableSizingRequestSchema export.
 vi.mock("../services/cable", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../services/cable")>();
-  return { ...actual, calculateCableSizing: calculateCableSizingMock };
+  return { ...actual, createCableRun: createCableRunMock };
 });
 
 const response: CableSizingResponse = {
@@ -48,6 +48,29 @@ const response: CableSizingResponse = {
   reference_verification_status: "UNVERIFIED",
   notes: null,
 };
+
+const sampleRun = {
+  id: "48a782d0-4331-4aa2-bcd0-f24f5016334a",
+  module_code: "EOS-06",
+  calculation_type: "CABLE_SIZING",
+  calculation_key: "CBL-001",
+  revision_number: 1,
+  run_status: "COMPLETED",
+  approval_status: "NOT_SUBMITTED",
+  engine_version: "cable-engine 0.1.0",
+  design_check_status: "DESIGN_CHECK_PASSED",
+  jurisdiction_profile: "IN",
+  reference_verification_status: "UNVERIFIED",
+  content_hash: "e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e280",
+  calculated_by: null,
+  calculated_at: "2026-09-17T12:00:00+00:00",
+  created_at: "2026-09-17T12:00:00+00:00",
+  is_immutable: false,
+  supersedes_run_id: null,
+  notes: null,
+};
+
+const runResponse: CableRunResponse = { run: sampleRun, result: response };
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -92,7 +115,7 @@ function calculationState(): string | null | undefined {
 }
 
 beforeEach(() => {
-  calculateCableSizingMock.mockReset();
+  createCableRunMock.mockReset();
 });
 
 afterEach(() => {
@@ -111,10 +134,10 @@ describe("CableSizingPage", () => {
   });
 
   it("locks the form while the calculation is pending, then renders result and warning panels", async () => {
-    let resolveCalculation: (value: CableSizingResponse) => void = () => undefined;
-    calculateCableSizingMock.mockImplementation(
+    let resolveCalculation: (value: CableRunResponse) => void = () => undefined;
+    createCableRunMock.mockImplementation(
       () =>
-        new Promise<CableSizingResponse>((resolve) => {
+        new Promise<CableRunResponse>((resolve) => {
           resolveCalculation = resolve;
         }),
     );
@@ -126,10 +149,10 @@ describe("CableSizingPage", () => {
     await waitFor(() => expect(calculationState()).toBe("pending"));
     expect(screen.getByRole("status")).toHaveTextContent("Calculating cable size");
     expect(screen.getByRole("button", { name: "Calculate cable sizing" })).toBeDisabled();
-    expect(calculateCableSizingMock).toHaveBeenCalledTimes(1);
-    expect(calculateCableSizingMock.mock.calls[0]?.[0]).toMatchObject({ code: "CBL-001" });
+    expect(createCableRunMock).toHaveBeenCalledTimes(1);
+    expect(createCableRunMock.mock.calls[0]?.[0]).toMatchObject({ code: "CBL-001" });
 
-    resolveCalculation(response);
+    resolveCalculation(runResponse);
 
     await waitFor(() => expect(calculationState()).toBe("success"));
     expect(screen.getByRole("article", { name: "Cable sizing result" })).toBeInTheDocument();
@@ -141,7 +164,7 @@ describe("CableSizingPage", () => {
   });
 
   it("clears the results back to the idle state", async () => {
-    calculateCableSizingMock.mockResolvedValue(response);
+    createCableRunMock.mockResolvedValue(runResponse);
     renderPage();
 
     fillMinimumValidDraft();
@@ -155,7 +178,7 @@ describe("CableSizingPage", () => {
   });
 
   it("shows the service error as an alert and re-enables the form", async () => {
-    calculateCableSizingMock.mockRejectedValue(
+    createCableRunMock.mockRejectedValue(
       new Error("body.circuit.design_current_a: Input should be greater than 0"),
     );
     renderPage();

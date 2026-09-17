@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import {
-  calculateCableSizing,
+  createCableRun,
+  type CableRunResponse,
   type CableSizingRequest,
-  type CableSizingResponse,
 } from "../services/cable";
 
 /**
@@ -13,19 +13,19 @@ import {
  * - One in-flight request at a time: a new submit aborts the previous one.
  * - The in-flight request is aborted on unmount so no state update lands on
  *   an unmounted component.
- * - Results, errors and warnings are returned exactly as the service parsed
- *   them; nothing is reformatted here.
+ * - Every calculation is persisted as a run (Master Prompt v2.1 item 15);
+ *   the typed result and the run summary are exposed exactly as parsed.
  */
 export function useCableSizing() {
   const controllerRef = useRef<AbortController | null>(null);
 
-  const mutation = useMutation<CableSizingResponse, Error, CableSizingRequest>({
-    mutationKey: ["electrical", "cable", "calculate"],
+  const mutation = useMutation<CableRunResponse, Error, CableSizingRequest>({
+    mutationKey: ["electrical", "cable", "runs", "create"],
     mutationFn: (payload) => {
       controllerRef.current?.abort();
       const controller = new AbortController();
       controllerRef.current = controller;
-      return calculateCableSizing(payload, controller.signal);
+      return createCableRun(payload, controller.signal);
     },
   });
 
@@ -48,7 +48,8 @@ export function useCableSizing() {
   return {
     calculate,
     reset,
-    result: mutation.data ?? null,
+    result: mutation.data?.result ?? null,
+    run: mutation.data?.run ?? null,
     error: mutation.error,
     isPending: mutation.isPending,
     isSuccess: mutation.isSuccess,
