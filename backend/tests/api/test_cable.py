@@ -253,3 +253,61 @@ async def test_cable_unknown_profile_is_rejected(
     response = await client.post(CABLE_SIZING_URL, json=payload)
 
     assert response.status_code == 422
+
+
+@pytest.mark.api
+async def test_cable_india_profile_reports_profile_references(client: AsyncClient) -> None:
+    response = await client.post(CABLE_SIZING_URL, json=cable_payload())
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["standard_reference"] == "IEC 60364-5-52"
+    assert data["ampacity_reference"] == "IEC 60287"
+    assert data["reference_source"] == "PROFILE"
+
+
+@pytest.mark.api
+async def test_cable_unresolved_profile_reports_no_governing_references(
+    client: AsyncClient,
+) -> None:
+    payload = cable_payload()
+    payload["jurisdiction_profile"] = "US"
+    payload.pop("standard_reference", None)
+    payload.pop("ampacity_reference", None)
+
+    response = await client.post(CABLE_SIZING_URL, json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["standard_reference"] is None
+    assert data["ampacity_reference"] is None
+    assert data["reference_source"] == "NOT_ESTABLISHED"
+    codes = {warning["code"] for warning in data["warnings"]}
+    assert "GOVERNING_REFERENCE_NOT_ESTABLISHED" in codes
+
+
+@pytest.mark.api
+async def test_cable_reference_override_is_reported_as_deviation(client: AsyncClient) -> None:
+    payload = cable_payload()
+    payload["standard_reference"] = "IS 3961"
+    payload["ampacity_reference"] = "IS 3961 Part 2"
+
+    response = await client.post(CABLE_SIZING_URL, json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["standard_reference"] == "IS 3961"
+    assert data["reference_source"] == "REQUEST_OVERRIDE"
+    codes = {warning["code"] for warning in data["warnings"]}
+    assert "GOVERNING_REFERENCE_OVERRIDDEN" in codes
+
+
+@pytest.mark.api
+async def test_cable_single_reference_override_is_rejected(client: AsyncClient) -> None:
+    payload = cable_payload()
+    payload.pop("ampacity_reference", None)
+    payload["standard_reference"] = "IS 3961"
+
+    response = await client.post(CABLE_SIZING_URL, json=payload)
+
+    assert response.status_code == 422
