@@ -31,6 +31,7 @@ type FaultStudyDraft = {
   sourceReactanceOhm: string;
   currentContributionKa: string;
   frequencyHz: string;
+  jurisdictionProfile: string;
 };
 
 const initialDraft: FaultStudyDraft = {
@@ -54,6 +55,7 @@ const initialDraft: FaultStudyDraft = {
   sourceReactanceOhm: "",
   currentContributionKa: "",
   frequencyHz: "",
+  jurisdictionProfile: "IN",
 };
 
 export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormProps) {
@@ -112,6 +114,7 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
         },
       ],
       frequency_hz: draft.frequencyHz || undefined,
+      jurisdiction_profile: draft.jurisdictionProfile,
     };
 
     const parsed = shortCircuitStudyRequestSchema.safeParse(payload);
@@ -191,6 +194,26 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
             onChange={(event) => updateField("frequencyHz", event.target.value)}
           />
         </label>
+
+        <label>
+          Jurisdiction profile
+          <select
+            name="jurisdictionProfile"
+            value={draft.jurisdictionProfile}
+            onChange={(event) => updateField("jurisdictionProfile", event.target.value)}
+          >
+            <option value="IN">India (CEA Regulations, IS, CPWD)</option>
+            <option value="IEC">IEC (international, no national layer)</option>
+            <option value="UK">United Kingdom (BS 7671) - reference data pending</option>
+            <option value="EU">European Union (HD 60364) - reference data pending</option>
+            <option value="US">United States (NEC / NFPA 70) - reference data pending</option>
+            <option value="AU_NZ">Australia / New Zealand (AS/NZS 3000) - reference data pending</option>
+          </select>
+        </label>
+        <p>
+          The jurisdiction profile selects the governing short-circuit and earth-current
+          references; engine physics does not change with the profile.
+        </p>
       </fieldset>
 
       <fieldset disabled={disabled}>
