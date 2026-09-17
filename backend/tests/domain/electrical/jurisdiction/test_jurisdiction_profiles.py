@@ -5,6 +5,7 @@ from decimal import Decimal
 import pytest
 
 from app.domain.electrical.jurisdiction import (
+    FaultGoverningReferences,
     GoverningReferences,
     JurisdictionProfile,
     JurisdictionProfileData,
@@ -157,3 +158,33 @@ def test_unresolved_profiles_carry_no_governing_references() -> None:
     for data in unresolved:
         assert data.governing_references is None, data.profile
         assert data.has_governing_references is False, data.profile
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("field_name", ["short_circuit_reference", "earth_current_reference"])
+def test_fault_governing_references_reject_blank_text(field_name: str) -> None:
+    values = {"short_circuit_reference": "IEC 60909-0", "earth_current_reference": "IEC 60909-3"}
+    values[field_name] = ""
+    with pytest.raises(ValueError, match=field_name):
+        FaultGoverningReferences(**values)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("profile", [JurisdictionProfile.IN, JurisdictionProfile.IEC])
+def test_iec_based_profiles_carry_fault_references_without_edition_years(
+    profile: JurisdictionProfile,
+) -> None:
+    data = get_profile(profile)
+    assert data.has_fault_governing_references is True
+    assert data.fault_governing_references == FaultGoverningReferences(
+        short_circuit_reference="IEC 60909-0",
+        earth_current_reference="IEC 60909-3",
+    )
+
+
+@pytest.mark.unit
+def test_unresolved_profiles_carry_no_fault_governing_references() -> None:
+    for data in PROFILES.values():
+        if data.reference_data_status is ReferenceVerificationStatus.UNRESOLVED:
+            assert data.fault_governing_references is None, data.profile
+            assert data.has_fault_governing_references is False, data.profile
