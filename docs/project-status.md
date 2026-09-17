@@ -46,27 +46,26 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 | 2026-09-17 | `dbbeced` | GAP-013 release: profile-derived cable references via `scripts/deploy.sh`; gate green; US-profile smoke shows pending references and the not-registered warning |
 | 2026-09-17 | `d874622` | Fault UI release (EOS-04 Live): hook, warning panel, result panel, page wiring, nav/home status, field-path validation messages via `scripts/deploy.sh`; gate green; live smoke SC-MSB-01 (Ik'' 35.22 kA, kappa 1.698, X/R 8.15) and SC-MSB-03 current-injection 2.5 kA |
 | 2026-09-17 | `0dc673d` | GAP-014 release: fault references profile-derived, jurisdiction profile on the fault study via `scripts/deploy.sh`; gate green; live smoke SC-MSB-01 on IN (IEC 60909-0 / 60909-3, Unverified) and US (Reference pending, Not established, not-registered warning), Ik'' 35.22 kA on both |
+| 2026-09-17 | `bc22fda` | Fault form release: optional negative-/zero-sequence source impedances; live smoke SC-MSB-02 single-phase-to-earth minimum I_k1 32.915 kA (hand check 32.9 kA), all three sequences available |
 | 2026-09-17 | `5ee3188` | First release: https://electrical.kamraengineeringsolution.com — server prep per runbook §1, `scripts/deploy.sh` green (origin + public health), Certbot cert added after the zone SSL mode incident; nginx site recorded at `e47a9c7` |
 
 ## Active slice
 
-**Fault UI slice (EOS-04)** — frontend released at `d874622` (17 Sep); GAP-014 CLOSED at `e2338a6` (fault references profile-derived, `jurisdiction_profile` on the fault study, form select, References panel rows; backend 918 / frontend 95 tests) — released as `0dc673d` (see Releases). Remaining in this slice: (1) form scope — negative- and zero-sequence source impedances so unbalanced faults run (today the form sends positive sequence only and the engine correctly rejects TWO_PHASE / earth faults with 422), and a second source so transformer + motor contribution can be studied; (2) final release and close. Smoke set: SC-MSB-01 (415 V, solidly earthed, utility R 0.00087 / X 0.00709 ohm, three-phase maximum), SC-MSB-02 (single-phase-to-earth, minimum — runs only after (1)), SC-MSB-03 (asynchronous motor, current injection 2.5 kA); US-profile smoke expects "Reference pending" on both fault references.
+None. **Fault UI slice (EOS-04) CLOSED at `bc22fda`** (17 Sep): `useFaultStudy`, `FaultWarningPanel`,
+`FaultStudyResultPanel`, `FaultStudyPage` wired to the real form, nav/home show Live, field-path validation
+messages, jurisdiction profile on the fault study, GAP-014 profile-derived references, optional Z2/Z0 source
+impedances. Backend 918 / frontend 95 tests. Live smoke: SC-MSB-01 three-phase 35.22 kA (IN and US profiles),
+SC-MSB-02 single-phase-to-earth 32.915 kA, SC-MSB-03 current injection 2.5 kA — all matched hand calculations.
+Deferred to "Fault UI v2" (backlog): multiple sources per study (transformer + motor), branches, source decay data
+for breaking/steady-state/thermal currents, page styling (tables and `<dl>` are unstyled). Known tooling item:
+the frontend vitest gate is flaky under load (5000 ms timeout on `CableSizingResultPanel.test.tsx`) — raise
+`testTimeout` in the vitest config.
 
-Previously: GAP-013 closed at `a2797ee` (17 Sep): governing references are profile-derived. `GoverningReferences`
-lives on the jurisdiction profile (IN/IEC carry IEC 60364-5-52 / IEC 60287 as UNVERIFIED; UK/EU/US/AU_NZ carry
-none). The cable engine resolves references profile-first; request references are optional overrides that must
-be given together and are reported as `REQUEST_OVERRIDE` deviations with a `GOVERNING_REFERENCE_OVERRIDDEN`
-warning; an unresolved profile without override yields `NOT_ESTABLISHED` and a
-`GOVERNING_REFERENCE_NOT_ESTABLISHED` warning. Contract gained `reference_source`; the References panel renders
-"Reference pending" for null references. Backend 909 tests, frontend 82 tests. Deployed at `dbbeced` (see Releases).
-
-Navigation shell (Slice F) closed at `fdb8023` (17 Sep); note commits `bd22162` and `169dcd6` carry the same
-message (the second is the home-page test).
+Previously: GAP-013 closed at `a2797ee`; navigation shell (Slice F) closed at `fdb8023`.
 
 ## Next slices (in order)
 
-1. **Fault UI slice on the Cable pattern** (EOS-04): service/hook/form/result panel/warning panel/page, and
-   close GAP-014 (fault `standard_reference` profile-derived; resolve the IEC 60909-0 edition first).
+1. ~~Fault UI slice~~ DONE `bc22fda` (17 Sep). Follow-up: Fault UI v2 (see Active slice), vitest testTimeout.
 2. **Derating factors optional** — blank ambient/grouping factor must not silently mean 1.0.
 3. CPWD Part IV and Part VII controlled copies (GAP-002, GAP-003); IS 3961/1554/7098 register rows (GAP-008);
    ADR for jurisdiction profiles; Master Prompt v2.1 amendment.
