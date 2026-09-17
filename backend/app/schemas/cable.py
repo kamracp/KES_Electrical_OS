@@ -206,11 +206,11 @@ class CableInstallationInputSchema(BaseModel):
 
     method: InstallationMethod
     ambient_temperature_c: NonNegativeExactDecimal
-    ambient_derating_factor: RatioExactDecimal = Field(default=Decimal("1"))
-    grouping_derating_factor: RatioExactDecimal = Field(default=Decimal("1"))
-    thermal_insulation_factor: RatioExactDecimal = Field(default=Decimal("1"))
-    depth_derating_factor: RatioExactDecimal = Field(default=Decimal("1"))
-    soil_thermal_resistivity_factor: RatioExactDecimal = Field(default=Decimal("1"))
+    ambient_derating_factor: RatioExactDecimal | None = Field(default=None)
+    grouping_derating_factor: RatioExactDecimal | None = Field(default=None)
+    thermal_insulation_factor: RatioExactDecimal | None = Field(default=None)
+    depth_derating_factor: RatioExactDecimal | None = Field(default=None)
+    soil_thermal_resistivity_factor: RatioExactDecimal | None = Field(default=None)
     grouped_circuits: StrictInt = Field(default=1, ge=1)
     burial_depth_m: PositiveExactDecimal | None = None
     soil_thermal_resistivity_k_m_per_w: PositiveExactDecimal | None = None
@@ -370,6 +370,8 @@ class CableAmpacityResultSchema(BaseModel):
 
     tabulated_ampacity_a_per_run: Decimal
     combined_derating_factor: Decimal
+    derating_established: bool
+    unestablished_derating_factors: list[str]
     derated_ampacity_a_per_run: Decimal
     parallel_runs: int
     total_installed_ampacity_a: Decimal
@@ -383,6 +385,8 @@ class CableAmpacityResultSchema(BaseModel):
         return cls(
             tabulated_ampacity_a_per_run=result.tabulated_ampacity_a_per_run,
             combined_derating_factor=result.combined_derating_factor,
+            derating_established=result.derating_established,
+            unestablished_derating_factors=list(result.unestablished_derating_factors),
             derated_ampacity_a_per_run=result.derated_ampacity_a_per_run,
             parallel_runs=result.parallel_runs,
             total_installed_ampacity_a=result.total_installed_ampacity_a,
