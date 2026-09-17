@@ -192,6 +192,18 @@ class CableConstructionInput:
             raise ValueError("reduced_neutral_permitted requires neutral_required")
 
 
+# Derating factors the user must establish independently from the applicable standard.
+# A None factor is "not established": the design check continues with unity for the
+# physics only, and the result must carry REVIEW_REQUIRED (Master Prompt v2.1 §4.10).
+DERATING_FACTOR_FIELDS: tuple[str, ...] = (
+    "ambient_derating_factor",
+    "grouping_derating_factor",
+    "thermal_insulation_factor",
+    "depth_derating_factor",
+    "soil_thermal_resistivity_factor",
+)
+
+
 @dataclass(frozen=True, slots=True)
 class CableInstallationInput:
     """Installation environment and independently established derating factors."""
@@ -199,11 +211,11 @@ class CableInstallationInput:
     method: InstallationMethod
     ambient_temperature_c: Decimal
 
-    ambient_derating_factor: Decimal = Decimal("1")
-    grouping_derating_factor: Decimal = Decimal("1")
-    thermal_insulation_factor: Decimal = Decimal("1")
-    depth_derating_factor: Decimal = Decimal("1")
-    soil_thermal_resistivity_factor: Decimal = Decimal("1")
+    ambient_derating_factor: Decimal | None = None
+    grouping_derating_factor: Decimal | None = None
+    thermal_insulation_factor: Decimal | None = None
+    depth_derating_factor: Decimal | None = None
+    soil_thermal_resistivity_factor: Decimal | None = None
 
     grouped_circuits: int = 1
     burial_depth_m: Decimal | None = None
@@ -218,14 +230,10 @@ class CableInstallationInput:
 
         require_non_negative_decimal("ambient_temperature_c", self.ambient_temperature_c)
 
-        for field_name in (
-            "ambient_derating_factor",
-            "grouping_derating_factor",
-            "thermal_insulation_factor",
-            "depth_derating_factor",
-            "soil_thermal_resistivity_factor",
-        ):
-            require_ratio(field_name, getattr(self, field_name))
+        for field_name in DERATING_FACTOR_FIELDS:
+            factor = getattr(self, field_name)
+            if factor is not None:
+                require_ratio(field_name, factor)
 
         if not isinstance(self.grouped_circuits, int) or isinstance(self.grouped_circuits, bool):
             raise TypeError("grouped_circuits must be an integer")
@@ -252,16 +260,31 @@ class CableInstallationInput:
             raise ValueError("burial and soil data require a D1 or D2 installation method")
 
     @property
-    def combined_derating_factor(self) -> Decimal:
-        """Return the product of all independent derating factors."""
+    def unestablished_derating_factors(self) -> tuple[str, ...]:
+        """Return the names of derating factors the user has not established."""
 
-        return (
-            self.ambient_derating_factor
-            * self.grouping_derating_factor
-            * self.thermal_insulation_factor
-            * self.depth_derating_factor
-            * self.soil_thermal_resistivity_factor
-        )
+        return tuple(name for name in DERATING_FACTOR_FIELDS if getattr(self, name) is None)
+
+    @property
+    def derating_established(self) -> bool:
+        """Return True when every derating factor was established by the user."""
+
+        return not self.unestablished_derating_factors
+
+    @property
+    def combined_derating_factor(self) -> Decimal:
+        """Return the product of the established derating factors.
+
+        An unestablished factor contributes unity so the design check can run;
+        the engine reports it through ``unestablished_derating_factors``.
+        """
+
+        product = Decimal("1")
+        for name in DERATING_FACTOR_FIELDS:
+            factor = getattr(self, name)
+            if factor is not None:
+                product *= factor
+        return product
 
 
 @dataclass(frozen=True, slots=True)
