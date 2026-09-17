@@ -55,7 +55,6 @@ def fault_payload() -> dict[str, object]:
         ],
         "branches": [],
         "frequency_hz": "50",
-        "standard_reference": "IEC 60909-0:2026",
         "notes": "Main 11 kV fault study.",
     }
 
@@ -177,5 +176,61 @@ async def test_fault_unknown_bus_reference_is_rejected(
         FAULT_URL,
         json=payload,
     )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.api
+async def test_fault_india_profile_reports_profile_references(client: AsyncClient) -> None:
+    response = await client.post(FAULT_URL, json=fault_payload())
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["jurisdiction_profile"] == "IN"
+    assert data["reference_verification_status"] == "UNVERIFIED"
+    assert data["standard_reference"] == "IEC 60909-0"
+    assert data["earth_current_reference"] == "IEC 60909-3"
+    assert data["reference_source"] == "PROFILE"
+
+
+@pytest.mark.api
+async def test_fault_unresolved_profile_reports_no_governing_references(
+    client: AsyncClient,
+) -> None:
+    payload = fault_payload()
+    payload["jurisdiction_profile"] = "US"
+
+    response = await client.post(FAULT_URL, json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["jurisdiction_profile"] == "US"
+    assert data["reference_verification_status"] == "UNRESOLVED"
+    assert data["standard_reference"] is None
+    assert data["earth_current_reference"] is None
+    assert data["reference_source"] == "NOT_ESTABLISHED"
+    assert "GOVERNING_REFERENCE_NOT_ESTABLISHED" in {w["code"] for w in data["warnings"]}
+
+
+@pytest.mark.api
+async def test_fault_reference_override_is_reported_as_deviation(client: AsyncClient) -> None:
+    payload = fault_payload()
+    payload["standard_reference"] = "IEEE C37.010"
+    payload["earth_current_reference"] = "IEEE C37.010"
+
+    response = await client.post(FAULT_URL, json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["reference_source"] == "REQUEST_OVERRIDE"
+    assert "GOVERNING_REFERENCE_OVERRIDDEN" in {w["code"] for w in data["warnings"]}
+
+
+@pytest.mark.api
+async def test_fault_single_reference_override_is_rejected(client: AsyncClient) -> None:
+    payload = fault_payload()
+    payload["standard_reference"] = "IEEE C37.010"
+
+    response = await client.post(FAULT_URL, json=payload)
 
     assert response.status_code == 422

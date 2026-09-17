@@ -39,6 +39,11 @@ from app.domain.electrical.fault import (
     ShortCircuitStudyResult,
     SourceRepresentation,
 )
+from app.domain.electrical.fault.fault_results import FaultReferenceSource
+from app.domain.electrical.jurisdiction import (
+    JurisdictionProfile,
+    ReferenceVerificationStatus,
+)
 
 
 def _reject_float(value: object) -> object:
@@ -407,21 +412,24 @@ class ShortCircuitStudyRequest(_RequestBase):
         max_length=80,
     )
 
-    standard_reference: str = Field(
-        default="IEC 60909-0:2026",
-        min_length=1,
-        max_length=200,
-    )
-    earth_current_reference: str = Field(
-        default="IEC 60909-3:2009",
-        min_length=1,
-        max_length=200,
-    )
+    jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
+    # Governing references default to the jurisdiction profile; supplying both is a
+    # project override reported as a deviation on the result.
+    standard_reference: str | None = Field(default=None, min_length=1, max_length=200)
+    earth_current_reference: str | None = Field(default=None, min_length=1, max_length=200)
 
     notes: str | None = Field(
         default=None,
         max_length=2000,
     )
+
+    @model_validator(mode="after")
+    def _references_overridden_together(self) -> Self:
+        if (self.standard_reference is None) != (self.earth_current_reference is None):
+            raise ValueError(
+                "standard_reference and earth_current_reference must be provided together"
+            )
+        return self
 
     def to_domain(self) -> ShortCircuitStudyInput:
         """Convert request to immutable fault-study input."""
@@ -436,6 +444,7 @@ class ShortCircuitStudyRequest(_RequestBase):
             branches=tuple(branch.to_domain() for branch in self.branches),
             frequency_hz=self.frequency_hz,
             operating_state_code=self.operating_state_code,
+            jurisdiction_profile=self.jurisdiction_profile,
             standard_reference=self.standard_reference,
             earth_current_reference=self.earth_current_reference,
             notes=self.notes,
@@ -538,8 +547,11 @@ class ShortCircuitStudyResponse(_ResponseBase):
     source_contributions: tuple[FaultSourceContributionResponse, ...]
     warnings: tuple[FaultEngineeringWarningResponse, ...]
 
-    standard_reference: str
-    earth_current_reference: str
+    standard_reference: str | None = None
+    earth_current_reference: str | None = None
+    reference_source: FaultReferenceSource
+    jurisdiction_profile: JurisdictionProfile
+    reference_verification_status: ReferenceVerificationStatus
 
     operating_state_code: str | None = None
     notes: str | None = None
