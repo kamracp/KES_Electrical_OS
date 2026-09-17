@@ -283,7 +283,7 @@ class ShortCircuitStudyResult:
 
     standard_reference: str | None = None
     earth_current_reference: str | None = None
-    reference_source: FaultReferenceSource = FaultReferenceSource.PROFILE
+    reference_source: FaultReferenceSource = FaultReferenceSource.NOT_ESTABLISHED
     jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
     reference_verification_status: ReferenceVerificationStatus = (
         ReferenceVerificationStatus.UNVERIFIED
