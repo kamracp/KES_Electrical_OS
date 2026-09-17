@@ -311,3 +311,56 @@ async def test_cable_single_reference_override_is_rejected(client: AsyncClient) 
     response = await client.post(CABLE_SIZING_URL, json=payload)
 
     assert response.status_code == 422
+
+
+@pytest.mark.api
+async def test_missing_derating_factors_require_review(
+    client: AsyncClient,
+) -> None:
+    payload = cable_payload()
+    installation = payload["installation"]
+    assert isinstance(installation, dict)
+    for name in (
+        "ambient_derating_factor",
+        "grouping_derating_factor",
+        "thermal_insulation_factor",
+        "depth_derating_factor",
+        "soil_thermal_resistivity_factor",
+    ):
+        installation.pop(name)
+
+    response = await client.post(CABLE_SIZING_URL, json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "REVIEW_REQUIRED"
+    assert data["ampacity"]["derating_established"] is False
+    assert data["ampacity"]["unestablished_derating_factors"] == [
+        "ambient_derating_factor",
+        "grouping_derating_factor",
+        "thermal_insulation_factor",
+        "depth_derating_factor",
+        "soil_thermal_resistivity_factor",
+    ]
+    assert data["ampacity"]["combined_derating_factor"] == "1"
+    named = [
+        warning["field_name"]
+        for warning in data["warnings"]
+        if warning["code"] == "DERATING_FACTOR_NOT_ESTABLISHED"
+    ]
+    assert named == data["ampacity"]["unestablished_derating_factors"]
+
+
+@pytest.mark.api
+async def test_established_derating_factors_pass_design_check(
+    client: AsyncClient,
+) -> None:
+    response = await client.post(CABLE_SIZING_URL, json=cable_payload())
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "DESIGN_CHECK_PASSED"
+    assert data["ampacity"]["derating_established"] is True
+    assert data["ampacity"]["unestablished_derating_factors"] == []
+    codes = {warning["code"] for warning in data["warnings"]}
+    assert "DERATING_FACTOR_NOT_ESTABLISHED" not in codes
