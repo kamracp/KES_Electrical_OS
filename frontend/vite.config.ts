@@ -1,5 +1,5 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
@@ -21,5 +21,10 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
+  },
+  test: {
+    // jsdom + React Testing Library files can exceed the 5 s default on a loaded machine;
+    // the gate was failing intermittently on CableSizingResultPanel.test.tsx.
+    testTimeout: 20_000,
   },
 });
