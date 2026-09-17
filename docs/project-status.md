@@ -43,6 +43,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 | Date | Commit | Notes |
 |---|---|---|
 | 2026-09-17 | `fdb8023` | Navigation shell release (Slice F) via `scripts/deploy.sh`; gate green |
+| 2026-09-17 | `dbbeced` | GAP-013 release: profile-derived cable references via `scripts/deploy.sh`; gate green; US-profile smoke shows pending references and the not-registered warning |
 | 2026-09-17 | `5ee3188` | First release: https://electrical.kamraengineeringsolution.com — server prep per runbook §1, `scripts/deploy.sh` green (origin + public health), Certbot cert added after the zone SSL mode incident; nginx site recorded at `e47a9c7` |
 
 ## Active slice
@@ -53,7 +54,7 @@ none). The cable engine resolves references profile-first; request references ar
 be given together and are reported as `REQUEST_OVERRIDE` deviations with a `GOVERNING_REFERENCE_OVERRIDDEN`
 warning; an unresolved profile without override yields `NOT_ESTABLISHED` and a
 `GOVERNING_REFERENCE_NOT_ESTABLISHED` warning. Contract gained `reference_source`; the References panel renders
-"Reference pending" for null references. Backend 909 tests, frontend 82 tests. Deployment pending (see Releases).
+"Reference pending" for null references. Backend 909 tests, frontend 82 tests. Deployed at `dbbeced` (see Releases).
 
 Navigation shell (Slice F) closed at `fdb8023` (17 Sep); note commits `bd22162` and `169dcd6` carry the same
 message (the second is the home-page test).
