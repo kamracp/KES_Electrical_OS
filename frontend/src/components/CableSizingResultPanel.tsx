@@ -1,4 +1,5 @@
 import type {
+  CableReferenceSource,
   JurisdictionProfile,
   ReferenceVerificationStatus,
 } from "../services/cableContract";
@@ -220,6 +221,22 @@ const VERIFICATION_LABELS: Record<ReferenceVerificationStatus, string> = {
   UNRESOLVED: "Unresolved - reference data pending",
 };
 
+const REFERENCE_SOURCE_LABELS: Record<CableReferenceSource, string> = {
+  PROFILE: "Jurisdiction profile",
+  REQUEST_OVERRIDE: "Project override - deviation from profile",
+  NOT_ESTABLISHED: "Not established",
+};
+
+const REFERENCE_PENDING_TEXT =
+  "Reference pending - not registered for this jurisdiction profile";
+
+function ReferenceValue({ value }: { value: string | null }) {
+  if (value === null) {
+    return <dd data-reference-pending="true">{REFERENCE_PENDING_TEXT}</dd>;
+  }
+  return <dd>{value}</dd>;
+}
+
 export function CableSizingResultPanel({ result }: CableSizingResultPanelProps) {
   return (
     <article aria-label="Cable sizing result">
@@ -255,9 +272,13 @@ export function CableSizingResultPanel({ result }: CableSizingResultPanelProps) 
         <h3>References</h3>
         <dl>
           <dt>Sizing standard</dt>
-          <dd>{result.standard_reference}</dd>
+          <ReferenceValue value={result.standard_reference} />
           <dt>Ampacity data</dt>
-          <dd>{result.ampacity_reference}</dd>
+          <ReferenceValue value={result.ampacity_reference} />
+          <dt>Reference source</dt>
+          <dd data-reference-source={result.reference_source}>
+            {REFERENCE_SOURCE_LABELS[result.reference_source]}
+          </dd>
           <dt>Jurisdiction profile</dt>
           <dd data-jurisdiction-profile={result.jurisdiction_profile}>
             {JURISDICTION_LABELS[result.jurisdiction_profile]}
