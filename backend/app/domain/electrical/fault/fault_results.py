@@ -13,6 +13,10 @@ from app.domain.electrical.fault.fault_models import (
     ShortCircuitCase,
     SourceRepresentation,
 )
+from app.domain.electrical.jurisdiction.jurisdiction_models import (
+    JurisdictionProfile,
+    ReferenceVerificationStatus,
+)
 from app.domain.electrical.sources.common import (
     normalize_optional_text,
     normalize_required_text,
@@ -280,6 +284,10 @@ class ShortCircuitStudyResult:
     standard_reference: str | None = None
     earth_current_reference: str | None = None
     reference_source: FaultReferenceSource = FaultReferenceSource.PROFILE
+    jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
+    reference_verification_status: ReferenceVerificationStatus = (
+        ReferenceVerificationStatus.UNVERIFIED
+    )
     operating_state_code: str | None = None
     notes: str | None = None
 
@@ -306,6 +314,12 @@ class ShortCircuitStudyResult:
 
         if not isinstance(self.reference_source, FaultReferenceSource):
             raise TypeError("reference_source must be a FaultReferenceSource value")
+        if not isinstance(self.jurisdiction_profile, JurisdictionProfile):
+            raise TypeError("jurisdiction_profile must be a JurisdictionProfile value")
+        if not isinstance(self.reference_verification_status, ReferenceVerificationStatus):
+            raise TypeError(
+                "reference_verification_status must be a ReferenceVerificationStatus value"
+            )
         references_present = (
             self.standard_reference is not None and self.earth_current_reference is not None
         )
