@@ -34,6 +34,7 @@ class CableSizingStatus(StrEnum):
     DESIGN_CHECK_PASSED = "DESIGN_CHECK_PASSED"
     DESIGN_CHECK_FAILED = "DESIGN_CHECK_FAILED"
     NO_STANDARD_SIZE_AVAILABLE = "NO_STANDARD_SIZE_AVAILABLE"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
 
     # Temporary compatibility aliases for callers using legacy member names.
     COMPLIANT = DESIGN_CHECK_PASSED
@@ -53,6 +54,7 @@ class CableWarningCode(StrEnum):
     SOIL_DATA_REQUIRED = "SOIL_DATA_REQUIRED"
     AMBIENT_DERATING_NOT_ESTABLISHED = "AMBIENT_DERATING_NOT_ESTABLISHED"
     GROUPING_DERATING_NOT_ESTABLISHED = "GROUPING_DERATING_NOT_ESTABLISHED"
+    DERATING_FACTOR_NOT_ESTABLISHED = "DERATING_FACTOR_NOT_ESTABLISHED"
     GOVERNING_REFERENCE_NOT_ESTABLISHED = "GOVERNING_REFERENCE_NOT_ESTABLISHED"
     GOVERNING_REFERENCE_OVERRIDDEN = "GOVERNING_REFERENCE_OVERRIDDEN"
     NO_STANDARD_SIZE_AVAILABLE = "NO_STANDARD_SIZE_AVAILABLE"
@@ -105,6 +107,8 @@ class CableAmpacityResult:
     required_tabulated_ampacity_a_per_run: Decimal
     utilization_ratio: Decimal
     status: CableCheckStatus
+    derating_established: bool = True
+    unestablished_derating_factors: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         """Validate the ampacity calculation result."""
@@ -130,6 +134,18 @@ class CableAmpacityResult:
             raise TypeError("status must be a CableCheckStatus value")
         if self.status is CableCheckStatus.NOT_APPLICABLE:
             raise ValueError("ampacity status must be PASS or FAIL")
+
+        if not isinstance(self.derating_established, bool):
+            raise TypeError("derating_established must be a bool")
+        if not isinstance(self.unestablished_derating_factors, tuple) or not all(
+            isinstance(name, str) and name for name in self.unestablished_derating_factors
+        ):
+            raise TypeError("unestablished_derating_factors must be a tuple of field names")
+        # An established derating carries no unestablished factors and vice versa.
+        if self.derating_established == bool(self.unestablished_derating_factors):
+            raise ValueError(
+                "derating_established must be False exactly when unestablished factors are listed"
+            )
 
 
 @dataclass(frozen=True, slots=True)
