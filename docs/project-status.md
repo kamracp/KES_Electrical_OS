@@ -42,12 +42,15 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 | Date | Commit | Notes |
 |---|---|---|
+| 2026-09-17 | `fdb8023` | Navigation shell release (Slice F) via `scripts/deploy.sh`; gate green |
 | 2026-09-17 | `5ee3188` | First release: https://electrical.kamraengineeringsolution.com — server prep per runbook §1, `scripts/deploy.sh` green (origin + public health), Certbot cert added after the zone SSL mode incident; nginx site recorded at `e47a9c7` |
 
 ## Active slice
 
-None. First release live. Next: navigation shell (the root route has no links, so `/cable-sizing` is URL-only),
-then public smoke record, then the items below.
+None. Navigation shell (Slice F) closed at `fdb8023` (17 Sep): `AppShell` layout route with primary nav
+(Home, Cable Sizing EOS-06 Live, Fault Study EOS-04 Placeholder), home module cards with truthful status,
+engineering-basis footer, shell layout CSS; 79 frontend tests; deployed. Note: commits `bd22162` and `169dcd6`
+carry the same message (the second is the home-page test).
 
 ## Next slices (in order)
 
