@@ -1,6 +1,6 @@
 # AGENTS.md — KES Electrical OS development preflight
 
-This file binds every development session (human or AI assistant). It condenses the Enterprise Master Prompt v2.0 into a checklist; the prompt, ADRs and `docs/references/` remain the controlled sources.
+This file binds every development session (human or AI assistant). It condenses the Enterprise Master Prompt v2.1 (`docs/governance/KES_Electrical_OS_Enterprise_Master_Prompt_v2_1.md`) into a checklist; the prompt, ADRs and `docs/references/` remain the controlled sources.
 
 ## 1. Session start (always, read-only first)
 
@@ -59,4 +59,4 @@ Claims of "passed", "committed", "pushed" or "deployed" require the command outp
 
 ## 7. Current pointer
 
-Active sequence: Enterprise Master Prompt v2.0 §15. Governance files done: reference register (`6100ce5`), this file. Next: Cable frontend vertical slice (`frontend/src/services/cable.ts` onward).
+Active sequence: Enterprise Master Prompt v2.1 §15, execution order A9 (13 → 16a shell → 16b one module at a time in §9 order). Items 1–13 done (v2.1 adopted `064ef64`, A9 `1634ba7`). Next: item 16a — adopt the preserved shell files (`AppShell.tsx`, `AppShell.test.tsx`, `styles/shell.css`, `global.css`), then home cards from `frontend/src/app/modules.ts`, then release. After that: EOS-06 complete (Slice G with `REVIEW_REQUIRED`, run persistence, §19 layout).
