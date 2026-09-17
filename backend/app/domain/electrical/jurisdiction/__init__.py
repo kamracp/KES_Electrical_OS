@@ -1,6 +1,7 @@
 """Jurisdiction profiles: reference conventions scoped to a jurisdiction, not engine physics."""
 
 from app.domain.electrical.jurisdiction.jurisdiction_models import (
+    GoverningReferences,
     JurisdictionProfile,
     JurisdictionProfileData,
     ReferenceTier,
@@ -8,6 +9,7 @@ from app.domain.electrical.jurisdiction.jurisdiction_models import (
 )
 
 __all__ = [
+    "GoverningReferences",
     "JurisdictionProfile",
     "JurisdictionProfileData",
     "ReferenceTier",
