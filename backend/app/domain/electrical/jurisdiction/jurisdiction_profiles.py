@@ -12,6 +12,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from app.domain.electrical.jurisdiction.jurisdiction_models import (
+    FaultGoverningReferences,
     GoverningReferences,
     JurisdictionProfile,
     JurisdictionProfileData,
@@ -54,6 +55,14 @@ _IEC_GOVERNING_REFERENCES = GoverningReferences(
     ampacity_reference="IEC 60287",
 )
 
+# Fault-calculation references for the IEC-based profiles were the fault engine's request
+# defaults before profiles existed (REF-IEC-60909 series). Editions are NOT resolved in the
+# register, so no edition year is carried here; status stays UNVERIFIED with the profile.
+_IEC_FAULT_GOVERNING_REFERENCES = FaultGoverningReferences(
+    short_circuit_reference="IEC 60909-0",
+    earth_current_reference="IEC 60909-3",
+)
+
 PROFILES: dict[JurisdictionProfile, JurisdictionProfileData] = {
     JurisdictionProfile.IN: JurisdictionProfileData(
         profile=JurisdictionProfile.IN,
@@ -65,6 +74,7 @@ PROFILES: dict[JurisdictionProfile, JurisdictionProfileData] = {
         nominal_lv_voltage_v=Decimal("415"),
         nominal_frequency_hz=Decimal("50"),
         governing_references=_IEC_GOVERNING_REFERENCES,
+        fault_governing_references=_IEC_FAULT_GOVERNING_REFERENCES,
         notes=(
             "National tier: CPWD General Specifications (REF-CPWD-P1-2023 with amendments, "
             "REF-CPWD-P2-2023 VERIFIED) and IS standards; ambient conventions inherited from "
@@ -81,6 +91,7 @@ PROFILES: dict[JurisdictionProfile, JurisdictionProfileData] = {
         nominal_lv_voltage_v=Decimal("400"),
         nominal_frequency_hz=Decimal("50"),
         governing_references=_IEC_GOVERNING_REFERENCES,
+        fault_governing_references=_IEC_FAULT_GOVERNING_REFERENCES,
         notes="Ambient conventions inherited from the cable engine thresholds.",
     ),
     JurisdictionProfile.UK: JurisdictionProfileData(
