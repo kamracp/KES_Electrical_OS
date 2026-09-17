@@ -305,8 +305,10 @@ class CableSizingInput:
     installation: CableInstallationInput
     size_schedule: CableSizeSchedule
 
-    standard_reference: str = "IEC 60364-5-52"
-    ampacity_reference: str = "IEC 60287"
+    # Governing references come from the jurisdiction profile. Supplying both here
+    # is a project override and is reported as a deviation on the result.
+    standard_reference: str | None = None
+    ampacity_reference: str | None = None
     jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
     notes: str | None = None
 
@@ -318,13 +320,17 @@ class CableSizingInput:
         object.__setattr__(
             self,
             "standard_reference",
-            normalize_required_text("standard_reference", self.standard_reference),
+            normalize_optional_text("standard_reference", self.standard_reference),
         )
         object.__setattr__(
             self,
             "ampacity_reference",
-            normalize_required_text("ampacity_reference", self.ampacity_reference),
+            normalize_optional_text("ampacity_reference", self.ampacity_reference),
         )
+        if (self.standard_reference is None) != (self.ampacity_reference is None):
+            raise ValueError(
+                "standard_reference and ampacity_reference must be overridden together"
+            )
         object.__setattr__(self, "notes", normalize_optional_text("notes", self.notes))
         if not isinstance(self.jurisdiction_profile, JurisdictionProfile):
             raise TypeError("jurisdiction_profile must be a JurisdictionProfile value")

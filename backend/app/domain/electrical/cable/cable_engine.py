@@ -4,7 +4,7 @@ KESE-S2-M13
 """
 
 from decimal import ROUND_HALF_UP, Decimal
-from typing import ClassVar
+from typing import ClassVar, NamedTuple
 
 from app.domain.electrical.cable.cable_models import (
     CableConstruction,
@@ -21,6 +21,7 @@ from app.domain.electrical.cable.cable_results import (
     CableCheckStatus,
     CableConductorSizingResult,
     CableEngineeringWarning,
+    CableReferenceSource,
     CableShortCircuitResult,
     CableSizingResult,
     CableSizingStatus,
@@ -28,6 +29,15 @@ from app.domain.electrical.cable.cable_results import (
     CableWarningCode,
 )
 from app.domain.electrical.jurisdiction.jurisdiction_profiles import get_profile
+
+
+class _ResolvedReferences(NamedTuple):
+    """Governing references resolved for one study, with any deviation warnings."""
+
+    standard_reference: str | None
+    ampacity_reference: str | None
+    source: CableReferenceSource
+    warnings: tuple[CableEngineeringWarning, ...]
 
 
 class CableSizingEngine:
@@ -106,7 +116,8 @@ class CableSizingEngine:
         if not isinstance(study, CableSizingInput):
             raise TypeError("study must be a CableSizingInput record")
 
-        base_warnings = cls._installation_warnings(study)
+        references = cls._resolve_references(study)
+        base_warnings = references.warnings + cls._installation_warnings(study)
 
         for phase_area_mm2 in study.size_schedule.phase_sizes_mm2:
             conductor = cls._calculate_conductor_sizes(study, phase_area_mm2)
@@ -143,8 +154,9 @@ class CableSizingEngine:
                     voltage_drop,
                     short_circuit,
                 ),
-                standard_reference=study.standard_reference,
-                ampacity_reference=study.ampacity_reference,
+                standard_reference=references.standard_reference,
+                ampacity_reference=references.ampacity_reference,
+                reference_source=references.source,
                 jurisdiction_profile=study.jurisdiction_profile,
                 reference_verification_status=get_profile(
                     study.jurisdiction_profile
@@ -165,8 +177,9 @@ class CableSizingEngine:
             voltage_drop=None,
             short_circuit=None,
             warnings=cls._deduplicate_warnings((*base_warnings, warning)),
-            standard_reference=study.standard_reference,
-            ampacity_reference=study.ampacity_reference,
+            standard_reference=references.standard_reference,
+            ampacity_reference=references.ampacity_reference,
+            reference_source=references.source,
             jurisdiction_profile=study.jurisdiction_profile,
             reference_verification_status=get_profile(
                 study.jurisdiction_profile
@@ -374,6 +387,57 @@ class CableSizingEngine:
         schedule: tuple[Decimal, ...],
     ) -> Decimal | None:
         return next((size for size in schedule if size >= required_area_mm2), None)
+
+    @classmethod
+    def _resolve_references(cls, study: CableSizingInput) -> _ResolvedReferences:
+        """Take governing references from the profile; a request override is a deviation."""
+
+        profile = get_profile(study.jurisdiction_profile)
+        registered = profile.governing_references
+
+        if study.standard_reference is None:
+            if registered is None:
+                warning = CableEngineeringWarning(
+                    code=CableWarningCode.GOVERNING_REFERENCE_NOT_ESTABLISHED,
+                    message=(
+                        f"Jurisdiction profile {profile.profile.value} has no registered "
+                        "governing references; sizing and ampacity references are pending"
+                    ),
+                    field_name="standard_reference",
+                )
+                return _ResolvedReferences(
+                    None, None, CableReferenceSource.NOT_ESTABLISHED, (warning,)
+                )
+            return _ResolvedReferences(
+                registered.sizing_reference,
+                registered.ampacity_reference,
+                CableReferenceSource.PROFILE,
+                (),
+            )
+
+        # Input validation guarantees both overrides are present together.
+        overridden = (study.standard_reference, study.ampacity_reference)
+        if registered is not None and overridden == (
+            registered.sizing_reference,
+            registered.ampacity_reference,
+        ):
+            return _ResolvedReferences(*overridden, CableReferenceSource.PROFILE, ())
+
+        registered_text = (
+            f"{registered.sizing_reference} / {registered.ampacity_reference}"
+            if registered is not None
+            else "none registered"
+        )
+        warning = CableEngineeringWarning(
+            code=CableWarningCode.GOVERNING_REFERENCE_OVERRIDDEN,
+            message=(
+                f"Governing references overridden by the request "
+                f"({overridden[0]} / {overridden[1]}); profile {profile.profile.value} "
+                f"carries {registered_text}"
+            ),
+            field_name="standard_reference",
+        )
+        return _ResolvedReferences(*overridden, CableReferenceSource.REQUEST_OVERRIDE, (warning,))
 
     @classmethod
     def _installation_warnings(
