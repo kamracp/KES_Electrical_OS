@@ -6,6 +6,7 @@ import {
   cableCheckStatusSchema,
   cableConstructionSchema,
   cableSizingStatusSchema,
+  cableReferenceSourceSchema,
   cableWarningCodeSchema,
   circuitSystemSchema,
   conductorArrangementSchema,
@@ -104,7 +105,17 @@ describe("cableContract", () => {
       "SOIL_DATA_REQUIRED",
       "AMBIENT_DERATING_NOT_ESTABLISHED",
       "GROUPING_DERATING_NOT_ESTABLISHED",
+      "GOVERNING_REFERENCE_NOT_ESTABLISHED",
+      "GOVERNING_REFERENCE_OVERRIDDEN",
       "NO_STANDARD_SIZE_AVAILABLE",
+    ]);
+  });
+
+  it("matches the backend cable reference sources", () => {
+    expect(cableReferenceSourceSchema.options).toEqual([
+      "PROFILE",
+      "REQUEST_OVERRIDE",
+      "NOT_ESTABLISHED",
     ]);
   });
 });

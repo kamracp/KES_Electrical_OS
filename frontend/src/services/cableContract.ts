@@ -85,6 +85,8 @@ export const cableWarningCodeSchema = z.enum([
   "SOIL_DATA_REQUIRED",
   "AMBIENT_DERATING_NOT_ESTABLISHED",
   "GROUPING_DERATING_NOT_ESTABLISHED",
+  "GOVERNING_REFERENCE_NOT_ESTABLISHED",
+  "GOVERNING_REFERENCE_OVERRIDDEN",
   "NO_STANDARD_SIZE_AVAILABLE",
 ]);
 
@@ -105,6 +107,12 @@ export const referenceVerificationStatusSchema = z.enum([
   "UNRESOLVED",
 ]);
 
+export const cableReferenceSourceSchema = z.enum([
+  "PROFILE",
+  "REQUEST_OVERRIDE",
+  "NOT_ESTABLISHED",
+]);
+
 export type ConductorMaterial = z.infer<typeof conductorMaterialSchema>;
 export type InsulationMaterial = z.infer<typeof insulationMaterialSchema>;
 export type CableConstruction = z.infer<typeof cableConstructionSchema>;
@@ -123,3 +131,4 @@ export type JurisdictionProfile = z.infer<typeof jurisdictionProfileSchema>;
 export type ReferenceVerificationStatus = z.infer<
   typeof referenceVerificationStatusSchema
 >;
+export type CableReferenceSource = z.infer<typeof cableReferenceSourceSchema>;
