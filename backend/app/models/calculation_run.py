@@ -65,30 +65,30 @@ class CalculationRun(
         ),
         CheckConstraint(
             "revision_number > 0",
-            name="calculation_runs_revision_positive",
+            name="revision_positive",
         ),
         CheckConstraint(
             "module_code LIKE 'EOS-__'",
-            name="calculation_runs_module_code_format",
+            name="module_code_format",
         ),
         CheckConstraint(
             ("calculation_type IN ('CABLE_SIZING', 'SHORT_CIRCUIT')"),
-            name="calculation_runs_type_valid",
+            name="type_valid",
         ),
         CheckConstraint(
             ("run_status IN ('DRAFT', 'COMPLETED', 'FAILED')"),
-            name="calculation_runs_status_valid",
+            name="status_valid",
         ),
         CheckConstraint(
             ("approval_status IN ('NOT_SUBMITTED', 'PENDING', 'APPROVED', 'REJECTED')"),
-            name="calculation_runs_approval_valid",
+            name="approval_valid",
         ),
         CheckConstraint(
             (
                 "approval_status <> 'APPROVED' OR "
                 "(approved_by IS NOT NULL AND approved_at IS NOT NULL AND is_immutable = true)"
             ),
-            name="calculation_runs_approved_audit_complete",
+            name="approved_audit_complete",
         ),
         CheckConstraint(
             (
@@ -96,15 +96,15 @@ class CalculationRun(
                 "(rejected_by IS NOT NULL AND rejected_at IS NOT NULL "
                 "AND rejection_reason IS NOT NULL)"
             ),
-            name="calculation_runs_rejected_audit_complete",
+            name="rejected_audit_complete",
         ),
         CheckConstraint(
             ("is_immutable = false OR approval_status = 'APPROVED'"),
-            name="calculation_runs_immutable_only_when_approved",
+            name="immutable_only_when_approved",
         ),
         CheckConstraint(
             ("supersedes_run_id IS NULL OR supersedes_run_id <> id"),
-            name="calculation_runs_cannot_supersede_itself",
+            name="cannot_supersede_itself",
         ),
         Index(
             "ix_calculation_runs_revision_lookup",

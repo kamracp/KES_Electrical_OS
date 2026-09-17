@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.db.base import Base
 
 # Import all models so that SQLAlchemy metadata is populated.
+import app.models.calculation_run  # noqa: F401
 import app.models.load_calculation_run  # noqa: F401
 import app.models.standard  # noqa: F401
 import app.models.unit  # noqa: F401
