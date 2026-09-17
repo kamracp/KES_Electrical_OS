@@ -21,6 +21,10 @@ const WARNING_CODE_LABELS: Record<WarningCode, string> = {
   STEADY_STATE_CURRENT_NOT_EVALUATED: "Steady-state current not evaluated",
   THERMAL_CURRENT_NOT_EVALUATED: "Thermal equivalent current not evaluated",
   ENGINEERING_REVIEW_REQUIRED: "Engineering review required",
+  GOVERNING_REFERENCE_NOT_ESTABLISHED:
+    "Governing references not registered for this jurisdiction profile",
+  GOVERNING_REFERENCE_OVERRIDDEN:
+    "Governing references overridden by the project (deviation from profile)",
   CALCULATION_FAILED: "Calculation failed",
 };
 

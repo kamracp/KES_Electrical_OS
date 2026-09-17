@@ -79,7 +79,15 @@ export const faultWarningCodeSchema = z.enum([
   "STEADY_STATE_CURRENT_NOT_EVALUATED",
   "THERMAL_CURRENT_NOT_EVALUATED",
   "ENGINEERING_REVIEW_REQUIRED",
+  "GOVERNING_REFERENCE_NOT_ESTABLISHED",
+  "GOVERNING_REFERENCE_OVERRIDDEN",
   "CALCULATION_FAILED",
+]);
+
+export const faultReferenceSourceSchema = z.enum([
+  "PROFILE",
+  "REQUEST_OVERRIDE",
+  "NOT_ESTABLISHED",
 ]);
 
 export type ExactDecimal = z.infer<typeof exactDecimalSchema>;
@@ -93,3 +101,4 @@ export type FaultResultStatus = z.infer<typeof faultResultStatusSchema>;
 export type FaultSequence = z.infer<typeof faultSequenceSchema>;
 export type FaultWarningSeverity = z.infer<typeof faultWarningSeveritySchema>;
 export type FaultWarningCode = z.infer<typeof faultWarningCodeSchema>;
+export type FaultReferenceSource = z.infer<typeof faultReferenceSourceSchema>;
