@@ -24,6 +24,8 @@ from app.domain.electrical.cable.cable_models import (
 )
 from app.domain.electrical.cable.cable_results import (
     CableCheckStatus,
+    CableReferenceSource,
+    CableSizingResult,
     CableSizingStatus,
     CableWarningCode,
 )
@@ -468,3 +470,79 @@ def test_aluminium_requires_larger_phase_conductor_than_copper() -> None:
 def test_invalid_study_type_is_rejected() -> None:
     with pytest.raises(TypeError, match="study must be a CableSizingInput"):
         CableSizingEngine.calculate("invalid")
+
+
+def _reference_warnings(result: CableSizingResult) -> dict[CableWarningCode, str]:
+    return {
+        warning.code: warning.message
+        for warning in result.warnings
+        if warning.code
+        in (
+            CableWarningCode.GOVERNING_REFERENCE_NOT_ESTABLISHED,
+            CableWarningCode.GOVERNING_REFERENCE_OVERRIDDEN,
+        )
+    }
+
+
+def test_india_profile_without_override_takes_references_from_profile() -> None:
+    result = CableSizingEngine.calculate(make_study())
+
+    assert result.standard_reference == "IEC 60364-5-52"
+    assert result.ampacity_reference == "IEC 60287"
+    assert result.reference_source is CableReferenceSource.PROFILE
+    assert _reference_warnings(result) == {}
+
+
+def test_unresolved_profile_without_override_has_no_governing_references() -> None:
+    result = CableSizingEngine.calculate(make_study(jurisdiction_profile=JurisdictionProfile.US))
+    warnings = _reference_warnings(result)
+
+    assert result.standard_reference is None
+    assert result.ampacity_reference is None
+    assert result.reference_source is CableReferenceSource.NOT_ESTABLISHED
+    assert set(warnings) == {CableWarningCode.GOVERNING_REFERENCE_NOT_ESTABLISHED}
+    assert "US" in warnings[CableWarningCode.GOVERNING_REFERENCE_NOT_ESTABLISHED]
+
+
+def test_override_equal_to_profile_references_is_not_a_deviation() -> None:
+    result = CableSizingEngine.calculate(
+        make_study(standard_reference="IEC 60364-5-52", ampacity_reference="IEC 60287")
+    )
+
+    assert result.reference_source is CableReferenceSource.PROFILE
+    assert _reference_warnings(result) == {}
+
+
+def test_override_differing_from_profile_is_reported_as_deviation() -> None:
+    result = CableSizingEngine.calculate(
+        make_study(standard_reference="IS 3961", ampacity_reference="IS 3961 Part 2")
+    )
+    warnings = _reference_warnings(result)
+
+    assert result.standard_reference == "IS 3961"
+    assert result.ampacity_reference == "IS 3961 Part 2"
+    assert result.reference_source is CableReferenceSource.REQUEST_OVERRIDE
+    assert set(warnings) == {CableWarningCode.GOVERNING_REFERENCE_OVERRIDDEN}
+    message = warnings[CableWarningCode.GOVERNING_REFERENCE_OVERRIDDEN]
+    assert "IS 3961" in message
+    assert "IEC 60364-5-52 / IEC 60287" in message
+
+
+def test_override_on_unresolved_profile_is_deviation_without_not_established_warning() -> None:
+    result = CableSizingEngine.calculate(
+        make_study(
+            jurisdiction_profile=JurisdictionProfile.US,
+            standard_reference="NFPA 70",
+            ampacity_reference="NFPA 70 Table 310.16",
+        )
+    )
+    warnings = _reference_warnings(result)
+
+    assert result.reference_source is CableReferenceSource.REQUEST_OVERRIDE
+    assert set(warnings) == {CableWarningCode.GOVERNING_REFERENCE_OVERRIDDEN}
+    assert "none registered" in warnings[CableWarningCode.GOVERNING_REFERENCE_OVERRIDDEN]
+
+
+def test_single_reference_override_is_rejected() -> None:
+    with pytest.raises(ValueError, match="overridden together"):
+        make_study(standard_reference="IS 3961")
