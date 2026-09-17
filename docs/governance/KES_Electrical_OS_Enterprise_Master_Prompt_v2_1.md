@@ -39,6 +39,7 @@ The live working tree always requires read-only inspection before any modificati
 | A6 | §16 hardened with the terminal-evidence rules learned in production (pipefail, gate-then-commit chain, heredoc `<` rule) | Red commits `9609116`/`6cf6405`; paste-mangled generics `4b49f1f` |
 | A7 | §19 extended with the result-first workspace layout and the persisted-run precondition for any export | Founder requirement 17 Sep 2026; §20 frozen-evidence rule |
 | A8 | §4.10 clarified: an unestablished derating factor yields `REVIEW_REQUIRED`, not a silent unity factor | Slice A finding 16 Sep 2026 |
+| A9 | §15 execution order amended: the shell (item 16a) is completed first; items 14, 15 and the page layout of 16 are then executed per module, one module at a time in §9 order (item 16b) | Founder direction 17 Sep 2026 after v2.1 adoption `064ef64` |
 
 Deviations recorded and closed by this amendment: the module registry `b4da7aa` and design tokens `103d8d2` were committed ahead of an amended sequence; they are adopted under §15 item 16. The uncommitted shell files listed in §14.2 are preserved for the same item.
 
@@ -625,6 +626,8 @@ The shell test was last red on landmark/cleanup assertions; a local test patch (
 ## 15. Immediate controlled continuation sequence
 
 Items 1–12 of v2.0 are complete (evidence: §14.1). The controlled sequence continues; no item may start before the previous item's close is recorded in `docs/project-status.md`.
+
+**Execution order (A9):** 13 → 16a → then one module at a time. Item 16a = the product shell only: adopt the §14.2 shell files (sidebar listing all fifteen modules from the registry with truthful status), home page cards from the same registry, release. Item 16b = for each module in §9 order, complete it fully before the next: engine gaps (for EOS-06 this is item 14, Slice G), calculation-run persistence (item 15 pattern), the §19 study-page layout, register/project-status close, release and live smoke. Module order: EOS-06 Cable → EOS-04 Fault (including Fault UI v2) → EOS-01 project spine (item 17) → EOS-02 → EOS-03 → EOS-05 → EOS-07 → EOS-08 → onwards. Items 18 and 19 remain as written and are scheduled between modules when a §22 gate or reference row blocks the next module.
 
 13. **Adopt this prompt (P0).** Commit this file as `docs/governance/KES_Electrical_OS_Enterprise_Master_Prompt_v2_1.md` (one file); update the `AGENTS.md` pointer to v2.1 (one file).
 14. **Slice G — derating factors optional (P8, §4.10).** Ten files, one per commit unless type-coupled: `cable_results.py` (warning code `DERATING_FACTOR_NOT_ESTABLISHED`, `REVIEW_REQUIRED` member of `CableSizingStatus`, ampacity result `derating_established` + `unestablished_derating_factors`) → `cable_models.py` (five factors `Decimal | None = None`) → `cable_engine.py` (warnings per unestablished factor; overall status `REVIEW_REQUIRED` when any factor is unestablished and the design check would otherwise pass) → `schemas/cable.py` → engine tests → API tests → frontend contract + warning labels + mirror test → `cable.ts` → result panel + tests → register/project-status, release, smoke.
