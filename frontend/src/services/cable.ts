@@ -13,6 +13,7 @@ import {
   insulationMaterialSchema,
   jurisdictionProfileSchema,
   protectiveConductorTypeSchema,
+  cableReferenceSourceSchema,
   referenceVerificationStatusSchema,
 } from "./cableContract";
 
@@ -173,8 +174,9 @@ export const cableSizingResponseSchema = z
     voltage_drop: cableVoltageDropResultResponseSchema.nullable(),
     short_circuit: cableShortCircuitResultResponseSchema.nullable(),
     warnings: z.array(cableEngineeringWarningResponseSchema),
-    standard_reference: z.string().min(1),
-    ampacity_reference: z.string().min(1),
+    standard_reference: z.string().min(1).nullable(),
+    ampacity_reference: z.string().min(1).nullable(),
+    reference_source: cableReferenceSourceSchema,
     jurisdiction_profile: jurisdictionProfileSchema,
     reference_verification_status: referenceVerificationStatusSchema,
     notes: z.string().nullable(),

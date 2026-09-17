@@ -55,6 +55,7 @@ const fullResult: CableSizingResponse = {
   warnings: [],
   standard_reference: "IS 732:2019 (UNVERIFIED)",
   ampacity_reference: "IS 3961 tabulated data (UNVERIFIED)",
+  reference_source: "PROFILE",
   jurisdiction_profile: "IN",
   reference_verification_status: "UNVERIFIED",
   notes: "Derating applied for grouping and ambient.",
