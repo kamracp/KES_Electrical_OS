@@ -261,3 +261,79 @@ export async function calculateCableSizing(
 
   return parsed.data;
 }
+
+// Persisted runs (Master Prompt v2.1 item 15 / section 19 traceability).
+
+export const calculationRunSummarySchema = z
+  .object({
+    id: z.string().uuid(),
+    module_code: z.string(),
+    calculation_type: z.string(),
+    calculation_key: z.string(),
+    revision_number: z.number().int(),
+    run_status: z.string(),
+    approval_status: z.string(),
+    engine_version: z.string(),
+    design_check_status: z.string(),
+    jurisdiction_profile: z.string(),
+    reference_verification_status: z.string(),
+    content_hash: z.string().length(64),
+    calculated_by: z.string().nullable(),
+    calculated_at: z.string(),
+    created_at: z.string(),
+    is_immutable: z.boolean(),
+    supersedes_run_id: z.string().uuid().nullable(),
+    notes: z.string().nullable(),
+  })
+  .strict();
+
+export const cableRunResponseSchema = z
+  .object({
+    run: calculationRunSummarySchema,
+    result: cableSizingResponseSchema,
+  })
+  .strict();
+
+export type CalculationRunSummary = z.infer<typeof calculationRunSummarySchema>;
+export type CableRunResponse = z.infer<typeof cableRunResponseSchema>;
+
+/**
+ * Calculate a cable study and persist it as a run revision.
+ *
+ * The persisted run is the only thing a study page may export (section 20):
+ * the returned summary carries the run ID, engine version, profile, reference
+ * status and content hash shown in the traceability panel.
+ */
+export async function createCableRun(
+  payload: CableSizingRequest,
+  signal?: AbortSignal,
+): Promise<CableRunResponse> {
+  const validatedPayload = cableSizingRequestSchema.parse(payload);
+  const timeoutSignal = AbortSignal.timeout(30_000);
+  const requestSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+
+  const response = await fetch("/api/v1/electrical/cable/runs", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ study: validatedPayload }),
+    cache: "no-store",
+    signal: requestSignal,
+  });
+
+  const data: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(formatApiError(data, response.status));
+  }
+
+  const parsed = cableRunResponseSchema.safeParse(data);
+
+  if (!parsed.success) {
+    throw new Error("Unexpected response from the KES Electrical OS cable runs API.");
+  }
+
+  return parsed.data;
+}
