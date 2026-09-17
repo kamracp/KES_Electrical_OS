@@ -62,6 +62,9 @@ const validResponse = {
   warnings: [],
   standard_reference: "IEC 60909-0:2026",
   earth_current_reference: "IEC 60909-3:2009",
+  reference_source: "PROFILE",
+  jurisdiction_profile: "IN",
+  reference_verification_status: "UNVERIFIED",
   operating_state_code: null,
   notes: null,
 };

@@ -70,6 +70,9 @@ const response: ShortCircuitStudyResponse = {
   ],
   standard_reference: "IEC 60909-0 (UNVERIFIED)",
   earth_current_reference: "IEC 60909-0 (UNVERIFIED)",
+  reference_source: "PROFILE",
+  jurisdiction_profile: "IN",
+  reference_verification_status: "UNVERIFIED",
   operating_state_code: null,
   notes: null,
 };

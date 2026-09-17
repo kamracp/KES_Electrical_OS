@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   exactDecimalSchema,
   faultBranchTypeSchema,
+  faultReferenceSourceSchema,
   faultResultStatusSchema,
   faultSequenceSchema,
   faultSourceTypeSchema,
@@ -13,6 +14,10 @@ import {
   shortCircuitCaseSchema,
   sourceRepresentationSchema,
 } from "./faultContract";
+import {
+  jurisdictionProfileSchema,
+  referenceVerificationStatusSchema,
+} from "./cableContract";
 
 const optionalRequestText = (maxLength: number) =>
   z.string().trim().max(maxLength).nullable().optional();
@@ -96,6 +101,7 @@ export const shortCircuitStudyRequestSchema = z
     branches: z.array(faultBranchRequestSchema).optional(),
     frequency_hz: exactDecimalSchema.optional(),
     operating_state_code: optionalRequestText(80),
+    jurisdiction_profile: jurisdictionProfileSchema.optional(),
     standard_reference: z.string().trim().min(1).max(200).optional(),
     earth_current_reference: z.string().trim().min(1).max(200).optional(),
     notes: optionalRequestText(2000),
@@ -156,8 +162,11 @@ export const shortCircuitStudyResponseSchema = z
     sequence_results: z.array(equivalentSequenceImpedanceResponseSchema),
     source_contributions: z.array(faultSourceContributionResponseSchema),
     warnings: z.array(faultEngineeringWarningResponseSchema),
-    standard_reference: z.string().min(1),
-    earth_current_reference: z.string().min(1),
+    standard_reference: z.string().min(1).nullable(),
+    earth_current_reference: z.string().min(1).nullable(),
+    reference_source: faultReferenceSourceSchema,
+    jurisdiction_profile: jurisdictionProfileSchema,
+    reference_verification_status: referenceVerificationStatusSchema,
     operating_state_code: z.string().nullable(),
     notes: z.string().nullable(),
   })
