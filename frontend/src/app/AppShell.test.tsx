@@ -42,7 +42,7 @@ describe("AppShell", () => {
     );
     expect(nav.querySelector('[data-module-code="EOS-06"] [data-module-status="Live"]')).not.toBeNull();
     expect(
-      nav.querySelector('[data-module-code="EOS-04"] [data-module-status="Placeholder"]'),
+      nav.querySelector('[data-module-code="EOS-04"] [data-module-status="Live"]'),
     ).not.toBeNull();
   });
 

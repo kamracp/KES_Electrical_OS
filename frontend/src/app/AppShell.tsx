@@ -12,7 +12,7 @@ type ModuleLink = {
 const MODULE_LINKS: ModuleLink[] = [
   { to: "/", label: "Home", end: true },
   { to: "/cable-sizing", label: "Cable Sizing", code: "EOS-06", status: "Live" },
-  { to: "/fault-study", label: "Fault Study", code: "EOS-04", status: "Placeholder" },
+  { to: "/fault-study", label: "Fault Study", code: "EOS-04", status: "Live" },
 ];
 
 export function AppShell() {

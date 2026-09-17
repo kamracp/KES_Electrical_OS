@@ -39,7 +39,7 @@ describe("App home page", () => {
     );
 
     const fault = modules.querySelector('[data-module-code="EOS-04"]') as HTMLElement;
-    expect(fault.getAttribute("data-module-status")).toBe("Placeholder");
+    expect(fault.getAttribute("data-module-status")).toBe("Live");
     expect(within(fault).getByRole("link", { name: "Open Fault Study" })).not.toBeNull();
 
     const loads = modules.querySelector('[data-module-code="EOS-02"]') as HTMLElement;
