@@ -29,6 +29,10 @@ type FaultStudyDraft = {
   sourceRepresentation: string;
   sourceResistanceOhm: string;
   sourceReactanceOhm: string;
+  sourceNegativeResistanceOhm: string;
+  sourceNegativeReactanceOhm: string;
+  sourceZeroResistanceOhm: string;
+  sourceZeroReactanceOhm: string;
   currentContributionKa: string;
   frequencyHz: string;
   jurisdictionProfile: string;
@@ -53,10 +57,27 @@ const initialDraft: FaultStudyDraft = {
   sourceRepresentation: "",
   sourceResistanceOhm: "",
   sourceReactanceOhm: "",
+  sourceNegativeResistanceOhm: "",
+  sourceNegativeReactanceOhm: "",
+  sourceZeroResistanceOhm: "",
+  sourceZeroReactanceOhm: "",
   currentContributionKa: "",
   frequencyHz: "",
   jurisdictionProfile: "IN",
 };
+
+// Optional sequence impedance: omitted when both fields are blank, sent when both are
+// filled; a half-filled pair is passed through so the schema reports which field is missing.
+function optionalImpedance(
+  key: "negative_sequence_impedance" | "zero_sequence_impedance",
+  resistance: string,
+  reactance: string,
+): Record<string, { resistance_ohm: string; reactance_ohm: string }> {
+  if (resistance.trim() === "" && reactance.trim() === "") {
+    return {};
+  }
+  return { [key]: { resistance_ohm: resistance, reactance_ohm: reactance } };
+}
 
 export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormProps) {
   const [draft, setDraft] = useState<FaultStudyDraft>(initialDraft);
@@ -106,6 +127,16 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
                   resistance_ohm: draft.sourceResistanceOhm,
                   reactance_ohm: draft.sourceReactanceOhm,
                 },
+                ...optionalImpedance(
+                  "negative_sequence_impedance",
+                  draft.sourceNegativeResistanceOhm,
+                  draft.sourceNegativeReactanceOhm,
+                ),
+                ...optionalImpedance(
+                  "zero_sequence_impedance",
+                  draft.sourceZeroResistanceOhm,
+                  draft.sourceZeroReactanceOhm,
+                ),
               }
             : {}),
           ...(draft.sourceRepresentation === "CURRENT_INJECTION"
@@ -393,6 +424,58 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
                 }
               />
             </label>
+
+            <label>
+              Negative-sequence resistance (Ω) - optional
+              <input
+                inputMode="decimal"
+                name="sourceNegativeResistanceOhm"
+                value={draft.sourceNegativeResistanceOhm}
+                onChange={(event) =>
+                  updateField("sourceNegativeResistanceOhm", event.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Negative-sequence reactance (Ω) - optional
+              <input
+                inputMode="decimal"
+                name="sourceNegativeReactanceOhm"
+                value={draft.sourceNegativeReactanceOhm}
+                onChange={(event) =>
+                  updateField("sourceNegativeReactanceOhm", event.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Zero-sequence resistance (Ω) - optional
+              <input
+                inputMode="decimal"
+                name="sourceZeroResistanceOhm"
+                value={draft.sourceZeroResistanceOhm}
+                onChange={(event) =>
+                  updateField("sourceZeroResistanceOhm", event.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Zero-sequence reactance (Ω) - optional
+              <input
+                inputMode="decimal"
+                name="sourceZeroReactanceOhm"
+                value={draft.sourceZeroReactanceOhm}
+                onChange={(event) =>
+                  updateField("sourceZeroReactanceOhm", event.target.value)
+                }
+              />
+            </label>
+            <p>
+              Negative- and zero-sequence impedances are required for phase-to-phase and
+              earth faults; leave both fields of a pair blank to omit it.
+            </p>
           </>
         ) : null}
 
