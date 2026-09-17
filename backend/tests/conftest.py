@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import StaticPool
 
-import app.models.calculation_run  # noqa: F401
+import app.models.calculation_run
 import app.models.load_calculation_run
 import app.models.standard
 import app.models.unit
