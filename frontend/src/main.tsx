@@ -6,6 +6,7 @@ import { AppProviders } from "./app/providers";
 import { router } from "./app/router";
 
 import "./styles/global.css";
+import "./styles/forms.css";
 
 const rootElement = document.getElementById("root");
 
