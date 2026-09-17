@@ -35,6 +35,7 @@ from app.domain.electrical.cable.cable_results import (
     CableCheckStatus,
     CableConductorSizingResult,
     CableEngineeringWarning,
+    CableReferenceSource,
     CableShortCircuitResult,
     CableSizingResult,
     CableSizingStatus,
@@ -307,18 +308,18 @@ class CableSizingRequest(BaseModel):
     cable: CableConstructionInputSchema
     installation: CableInstallationInputSchema
     size_schedule: CableSizeScheduleSchema
-    standard_reference: str = Field(
-        default="IEC 60364-5-52",
-        min_length=1,
-        max_length=80,
-    )
-    ampacity_reference: str = Field(
-        default="IEC 60287",
-        min_length=1,
-        max_length=80,
-    )
+    # Governing references default to the jurisdiction profile; supplying both is a
+    # project override reported as a deviation on the result.
+    standard_reference: str | None = Field(default=None, min_length=1, max_length=80)
+    ampacity_reference: str | None = Field(default=None, min_length=1, max_length=80)
     jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
     notes: str | None = Field(default=None, max_length=1000)
+
+    @model_validator(mode="after")
+    def _references_overridden_together(self) -> Self:
+        if (self.standard_reference is None) != (self.ampacity_reference is None):
+            raise ValueError("standard_reference and ampacity_reference must be provided together")
+        return self
 
     @model_validator(mode="after")
     def validate_system_neutral(self) -> Self:
@@ -498,8 +499,9 @@ class CableSizingResponse(BaseModel):
     voltage_drop: CableVoltageDropResultSchema | None = None
     short_circuit: CableShortCircuitResultSchema | None = None
     warnings: list[CableEngineeringWarningSchema] = Field(default_factory=list)
-    standard_reference: str
-    ampacity_reference: str
+    standard_reference: str | None = None
+    ampacity_reference: str | None = None
+    reference_source: CableReferenceSource
     jurisdiction_profile: JurisdictionProfile
     reference_verification_status: ReferenceVerificationStatus
     notes: str | None = None
@@ -534,6 +536,7 @@ class CableSizingResponse(BaseModel):
             warnings=[CableEngineeringWarningSchema.from_domain(w) for w in result.warnings],
             standard_reference=result.standard_reference,
             ampacity_reference=result.ampacity_reference,
+            reference_source=result.reference_source,
             jurisdiction_profile=result.jurisdiction_profile,
             reference_verification_status=result.reference_verification_status,
             notes=result.notes,
