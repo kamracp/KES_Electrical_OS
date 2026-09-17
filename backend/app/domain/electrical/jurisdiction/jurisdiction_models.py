@@ -89,6 +89,26 @@ class GoverningReferences:
 
 
 @dataclass(frozen=True, slots=True)
+class FaultGoverningReferences:
+    """Standards that govern short-circuit and earth-fault current calculation under a profile.
+
+    Present only when the master reference register lists the standards for the
+    jurisdiction; a profile without registered references carries ``None``.
+    """
+
+    short_circuit_reference: str
+    earth_current_reference: str
+
+    def __post_init__(self) -> None:
+        """Validate that both references are non-empty text."""
+
+        for field_name in ("short_circuit_reference", "earth_current_reference"):
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field_name} must be a non-empty string")
+
+
+@dataclass(frozen=True, slots=True)
 class JurisdictionProfileData:
     """Reference conventions for one jurisdiction profile."""
 
@@ -101,6 +121,7 @@ class JurisdictionProfileData:
     nominal_lv_voltage_v: Decimal | None = None
     nominal_frequency_hz: Decimal | None = None
     governing_references: GoverningReferences | None = None
+    fault_governing_references: FaultGoverningReferences | None = None
     notes: str = ""
 
     def __post_init__(self) -> None:
@@ -129,6 +150,12 @@ class JurisdictionProfileData:
             self.governing_references, GoverningReferences
         ):
             raise TypeError("governing_references must be a GoverningReferences value or None")
+        if self.fault_governing_references is not None and not isinstance(
+            self.fault_governing_references, FaultGoverningReferences
+        ):
+            raise TypeError(
+                "fault_governing_references must be a FaultGoverningReferences value or None"
+            )
 
     @property
     def has_reference_ambient(self) -> bool:
@@ -143,3 +170,9 @@ class JurisdictionProfileData:
         """Return True when the profile carries registered governing references."""
 
         return self.governing_references is not None
+
+    @property
+    def has_fault_governing_references(self) -> bool:
+        """Return True when the profile carries registered fault-calculation references."""
+
+        return self.fault_governing_references is not None
