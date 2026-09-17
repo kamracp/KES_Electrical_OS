@@ -5,6 +5,7 @@ from decimal import Decimal
 import pytest
 
 from app.domain.electrical.jurisdiction import (
+    GoverningReferences,
     JurisdictionProfile,
     JurisdictionProfileData,
     ReferenceTier,
@@ -108,3 +109,51 @@ def test_profile_data_rejects_blank_display_name_and_wrong_enum_types() -> None:
         make_profile(profile="IN")  # type: ignore[arg-type]
     with pytest.raises(TypeError):
         make_profile(reference_data_status="VERIFIED")  # type: ignore[arg-type]
+
+
+@pytest.mark.unit
+def test_governing_references_default_to_none() -> None:
+    profile = make_profile()
+    assert profile.governing_references is None
+    assert profile.has_governing_references is False
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("field_name", ["sizing_reference", "ampacity_reference"])
+def test_governing_references_reject_blank_text(field_name: str) -> None:
+    values = {"sizing_reference": "IEC 60364-5-52", "ampacity_reference": "IEC 60287"}
+    values[field_name] = "   "
+    with pytest.raises(ValueError, match=field_name):
+        GoverningReferences(**values)
+
+
+@pytest.mark.unit
+def test_profile_rejects_wrong_governing_references_type() -> None:
+    with pytest.raises(TypeError, match="governing_references"):
+        make_profile(governing_references="IEC 60364-5-52")  # type: ignore[arg-type]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("profile", [JurisdictionProfile.IN, JurisdictionProfile.IEC])
+def test_iec_based_profiles_carry_iec_governing_references(
+    profile: JurisdictionProfile,
+) -> None:
+    data = get_profile(profile)
+    assert data.has_governing_references is True
+    assert data.governing_references == GoverningReferences(
+        sizing_reference="IEC 60364-5-52",
+        ampacity_reference="IEC 60287",
+    )
+
+
+@pytest.mark.unit
+def test_unresolved_profiles_carry_no_governing_references() -> None:
+    unresolved = [
+        data
+        for data in PROFILES.values()
+        if data.reference_data_status is ReferenceVerificationStatus.UNRESOLVED
+    ]
+    assert unresolved, "registry must contain unresolved profiles for this rule to bite"
+    for data in unresolved:
+        assert data.governing_references is None, data.profile
+        assert data.has_governing_references is False, data.profile
