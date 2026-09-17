@@ -27,6 +27,8 @@ const fullResult: CableSizingResponse = {
   ampacity: {
     tabulated_ampacity_a_per_run: "251.00",
     combined_derating_factor: "0.8700",
+    derating_established: true,
+    unestablished_derating_factors: [],
     derated_ampacity_a_per_run: "218.37",
     parallel_runs: 2,
     total_installed_ampacity_a: "436.74",

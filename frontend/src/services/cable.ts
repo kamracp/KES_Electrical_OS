@@ -124,6 +124,8 @@ const cableAmpacityResultResponseSchema = z
   .object({
     tabulated_ampacity_a_per_run: exactDecimalSchema,
     combined_derating_factor: exactDecimalSchema,
+    derating_established: z.boolean(),
+    unestablished_derating_factors: z.array(z.string()),
     derated_ampacity_a_per_run: exactDecimalSchema,
     parallel_runs: z.number().int(),
     total_installed_ampacity_a: exactDecimalSchema,

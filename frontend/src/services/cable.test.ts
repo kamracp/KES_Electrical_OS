@@ -58,6 +58,8 @@ const validResponse = {
   ampacity: {
     tabulated_ampacity_a_per_run: "380",
     combined_derating_factor: "0.728",
+    derating_established: true,
+    unestablished_derating_factors: [],
     derated_ampacity_a_per_run: "276.64",
     parallel_runs: 1,
     total_installed_ampacity_a: "276.64",
