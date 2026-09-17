@@ -44,11 +44,14 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 |---|---|---|
 | 2026-09-17 | `fdb8023` | Navigation shell release (Slice F) via `scripts/deploy.sh`; gate green |
 | 2026-09-17 | `dbbeced` | GAP-013 release: profile-derived cable references via `scripts/deploy.sh`; gate green; US-profile smoke shows pending references and the not-registered warning |
+| 2026-09-17 | `d874622` | Fault UI release (EOS-04 Live): hook, warning panel, result panel, page wiring, nav/home status, field-path validation messages via `scripts/deploy.sh`; gate green; live smoke SC-MSB-01 (Ik'' 35.22 kA, kappa 1.698, X/R 8.15) and SC-MSB-03 current-injection 2.5 kA |
 | 2026-09-17 | `5ee3188` | First release: https://electrical.kamraengineeringsolution.com — server prep per runbook §1, `scripts/deploy.sh` green (origin + public health), Certbot cert added after the zone SSL mode incident; nginx site recorded at `e47a9c7` |
 
 ## Active slice
 
-None. GAP-013 closed at `a2797ee` (17 Sep): governing references are profile-derived. `GoverningReferences`
+**Fault UI slice (EOS-04)** — frontend released at `d874622` (17 Sep): `useFaultStudy`, `FaultWarningPanel`, `FaultStudyResultPanel`, `FaultStudyPage` wired to the real form, nav/home show Live, validation errors carry the field path; 94 frontend tests. Remaining in this slice, in order: (1) GAP-014 — fault `standard_reference` AND `earth_current_reference` profile-derived on the Cable pattern, dropping the unbacked `IEC 60909-0:2026` / `IEC 60909-3:2009` request defaults; (2) form scope — negative- and zero-sequence source impedances so unbalanced faults run (today the form sends positive sequence only and the engine correctly rejects TWO_PHASE / earth faults with 422), and a second source so transformer + motor contribution can be studied; (3) final release and close. Smoke set: SC-MSB-01 (415 V, solidly earthed, utility R 0.00087 / X 0.00709 ohm, three-phase maximum), SC-MSB-02 (single-phase-to-earth, minimum — expected to run only after (2)), SC-MSB-03 (asynchronous motor, current injection 2.5 kA).
+
+Previously: GAP-013 closed at `a2797ee` (17 Sep): governing references are profile-derived. `GoverningReferences`
 lives on the jurisdiction profile (IN/IEC carry IEC 60364-5-52 / IEC 60287 as UNVERIFIED; UK/EU/US/AU_NZ carry
 none). The cable engine resolves references profile-first; request references are optional overrides that must
 be given together and are reported as `REQUEST_OVERRIDE` deviations with a `GOVERNING_REFERENCE_OVERRIDDEN`
