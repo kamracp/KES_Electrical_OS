@@ -28,22 +28,27 @@ afterEach(() => {
 });
 
 describe("App home page", () => {
+  it("renders a card for every registry module", () => {
+    renderHome();
+    expect(document.querySelectorAll("[data-module-grid] > li")).toHaveLength(15);
+  });
+
   it("lists modules with status and links only the working pages", () => {
     renderHome();
     const modules = screen.getByRole("region", { name: "Modules" });
 
     const cable = modules.querySelector('[data-module-code="EOS-06"]') as HTMLElement;
-    expect(cable.getAttribute("data-module-status")).toBe("Live");
-    expect(within(cable).getByRole("link", { name: "Open Cable Sizing" }).getAttribute("href")).toBe(
+    expect(cable.getAttribute("data-module-status")).toBe("LIVE");
+    expect(within(cable).getByRole("link", { name: "Open Cable sizing" }).getAttribute("href")).toBe(
       "/cable-sizing",
     );
 
     const fault = modules.querySelector('[data-module-code="EOS-04"]') as HTMLElement;
-    expect(fault.getAttribute("data-module-status")).toBe("Live");
-    expect(within(fault).getByRole("link", { name: "Open Fault Study" })).not.toBeNull();
+    expect(fault.getAttribute("data-module-status")).toBe("LIVE");
+    expect(within(fault).getByRole("link", { name: "Open Short-circuit study" })).not.toBeNull();
 
     const loads = modules.querySelector('[data-module-code="EOS-02"]') as HTMLElement;
-    expect(loads.getAttribute("data-module-status")).toBe("Backend only");
+    expect(loads.getAttribute("data-module-status")).toBe("BACKEND_ONLY");
     expect(within(loads).queryByRole("link")).toBeNull();
   });
 
