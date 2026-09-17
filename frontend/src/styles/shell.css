@@ -1,0 +1,152 @@
+/* Application shell: fixed module sidebar, product topbar, workspace, footer.
+   Attribute selectors follow the repo convention of no className. */
+
+[data-shell] {
+  display: grid;
+  grid-template-columns: var(--kes-sidebar-width) minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+aside[aria-label="Modules"] {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  padding: var(--kes-space-4) var(--kes-space-3);
+  background: var(--kes-color-surface);
+  border-right: 1px solid var(--kes-color-border);
+}
+
+aside[aria-label="Modules"] [data-brand] {
+  display: block;
+  margin: 0 var(--kes-space-2) var(--kes-space-5);
+  color: var(--kes-color-text);
+  font-size: var(--kes-text-lg);
+  font-weight: 600;
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+aside[aria-label="Modules"] [data-brand] small {
+  display: block;
+  margin-top: var(--kes-space-1);
+  color: var(--kes-color-muted);
+  font-size: var(--kes-text-xs);
+  font-weight: 400;
+}
+
+nav[aria-label="Primary"] ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+nav[aria-label="Primary"] li {
+  margin-bottom: 2px;
+}
+
+nav[aria-label="Primary"] a,
+nav[aria-label="Primary"] [aria-disabled="true"] {
+  display: grid;
+  grid-template-columns: 3.75rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--kes-space-2);
+  padding: var(--kes-space-2);
+  border-radius: var(--kes-radius-sm);
+  color: var(--kes-color-text);
+  font-size: var(--kes-text-sm);
+  text-decoration: none;
+}
+
+nav[aria-label="Primary"] a:hover {
+  background: var(--kes-color-surface-muted);
+}
+
+nav[aria-label="Primary"] a[aria-current="page"] {
+  background: var(--kes-color-primary-soft);
+  color: var(--kes-color-primary-strong);
+  font-weight: 600;
+}
+
+nav[aria-label="Primary"] [aria-disabled="true"] {
+  color: var(--kes-color-muted);
+}
+
+nav[aria-label="Primary"] [data-module-code-label] {
+  color: var(--kes-color-muted);
+  font-size: var(--kes-text-xs);
+}
+
+nav[aria-label="Primary"] a[aria-current="page"] [data-module-code-label] {
+  color: inherit;
+}
+
+[data-module-status] {
+  padding: 1px var(--kes-space-2);
+  border-radius: 999px;
+  font-size: var(--kes-text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+[data-module-status="Live"] {
+  background: var(--kes-color-pass-soft);
+  color: var(--kes-color-pass);
+}
+
+[data-module-status="Backend only"] {
+  background: var(--kes-color-warning-soft);
+  color: var(--kes-color-warning);
+}
+
+[data-module-status="Planned"] {
+  background: var(--kes-color-pending-soft);
+  color: var(--kes-color-pending);
+}
+
+[data-shell-body] {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+header[aria-label="Product"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kes-space-4);
+  min-height: var(--kes-topbar-height);
+  padding: 0 clamp(1rem, 3vw, 2.5rem);
+  background: var(--kes-color-surface);
+  border-bottom: 1px solid var(--kes-color-border);
+  font-size: var(--kes-text-sm);
+  color: var(--kes-color-muted);
+}
+
+[data-shell-content] {
+  flex: 1;
+}
+
+footer[aria-label="Engineering basis"] {
+  padding: var(--kes-space-4) clamp(1rem, 3vw, 2.5rem);
+  border-top: 1px solid var(--kes-color-border);
+  color: var(--kes-color-muted);
+  font-size: var(--kes-text-xs);
+}
+
+footer[aria-label="Engineering basis"] p {
+  margin: 0 0 var(--kes-space-1);
+}
+
+@media (max-width: 64rem) {
+  [data-shell] {
+    grid-template-columns: 1fr;
+  }
+
+  aside[aria-label="Modules"] {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--kes-color-border);
+  }
+}

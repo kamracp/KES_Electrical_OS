@@ -73,39 +73,6 @@ body {
   min-height: 100dvh;
 }
 
-/* Application shell: navigation and footer share the page container with <main>. */
-nav[aria-label="Primary"],
-footer[aria-label="Engineering basis"] {
-  max-width: 90rem;
-  margin-inline: auto;
-  padding-inline: clamp(1rem, 3vw, 2.5rem);
-}
-
-nav[aria-label="Primary"] {
-  padding-block: 0.75rem;
-  border-bottom: 1px solid currentColor;
-}
-
-nav[aria-label="Primary"] ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-nav[aria-label="Primary"] a[aria-current="page"] {
-  font-weight: 700;
-  text-decoration: none;
-}
-
-footer[aria-label="Engineering basis"] {
-  padding-block: 1.5rem;
-  border-top: 1px solid currentColor;
-  font-size: 0.875rem;
-}
-
 main {
   width: 100%;
   max-width: 90rem;
