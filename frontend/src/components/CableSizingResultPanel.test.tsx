@@ -168,4 +168,38 @@ describe("CableSizingResultPanel", () => {
     expect(document.querySelector("[data-notes]")).toBeNull();
     expect(screen.getByText(/not a statutory compliance certification/i)).toBeInTheDocument();
   });
+
+  it("renders pending references when the profile has none registered", () => {
+    const pending: CableSizingResponse = {
+      ...fullResult,
+      standard_reference: null,
+      ampacity_reference: null,
+      reference_source: "NOT_ESTABLISHED",
+      jurisdiction_profile: "US",
+      reference_verification_status: "UNRESOLVED",
+    };
+    render(<CableSizingResultPanel result={pending} />);
+
+    const pendingCells = document.querySelectorAll('[data-reference-pending="true"]');
+    expect(pendingCells).toHaveLength(2);
+    expect(pendingCells[0].textContent).toContain("Reference pending");
+    expect(screen.queryByText("IS 732:2019 (UNVERIFIED)")).toBeNull();
+    const source = document.querySelector("[data-reference-source]");
+    expect(source).toHaveAttribute("data-reference-source", "NOT_ESTABLISHED");
+    expect(source?.textContent).toBe("Not established");
+  });
+
+  it("labels a project override as a deviation from the profile", () => {
+    render(
+      <CableSizingResultPanel
+        result={{ ...fullResult, reference_source: "REQUEST_OVERRIDE" }}
+      />,
+    );
+
+    expect(document.querySelector('[data-reference-pending="true"]')).toBeNull();
+    expect(screen.getByText("IS 732:2019 (UNVERIFIED)")).toBeInTheDocument();
+    const source = document.querySelector("[data-reference-source]");
+    expect(source).toHaveAttribute("data-reference-source", "REQUEST_OVERRIDE");
+    expect(source?.textContent).toContain("deviation from profile");
+  });
 });
