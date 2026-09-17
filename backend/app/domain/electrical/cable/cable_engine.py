@@ -117,7 +117,11 @@ class CableSizingEngine:
             raise TypeError("study must be a CableSizingInput record")
 
         references = cls._resolve_references(study)
-        base_warnings = references.warnings + cls._installation_warnings(study)
+        base_warnings = (
+            references.warnings
+            + cls._unestablished_factor_warnings(study)
+            + cls._installation_warnings(study)
+        )
 
         for phase_area_mm2 in study.size_schedule.phase_sizes_mm2:
             conductor = cls._calculate_conductor_sizes(study, phase_area_mm2)
@@ -143,7 +147,12 @@ class CableSizingEngine:
             )
             return CableSizingResult(
                 study_code=study.code,
-                status=CableSizingStatus.DESIGN_CHECK_PASSED,
+                # Missing derating data never passes silently (Master Prompt v2.1 section 4.10).
+                status=(
+                    CableSizingStatus.DESIGN_CHECK_PASSED
+                    if study.installation.derating_established
+                    else CableSizingStatus.REVIEW_REQUIRED
+                ),
                 conductor=conductor,
                 ampacity=ampacity,
                 voltage_drop=voltage_drop,
@@ -216,6 +225,8 @@ class CableSizingEngine:
         return CableAmpacityResult(
             tabulated_ampacity_a_per_run=cls._round(tabulated_ampacity),
             combined_derating_factor=combined_factor,
+            derating_established=study.installation.derating_established,
+            unestablished_derating_factors=study.installation.unestablished_derating_factors,
             derated_ampacity_a_per_run=cls._round(derated_per_run),
             parallel_runs=study.cable.parallel_runs,
             total_installed_ampacity_a=cls._round(total_ampacity),
@@ -438,6 +449,24 @@ class CableSizingEngine:
             field_name="standard_reference",
         )
         return _ResolvedReferences(*overridden, CableReferenceSource.REQUEST_OVERRIDE, (warning,))
+
+    @staticmethod
+    def _unestablished_factor_warnings(
+        study: CableSizingInput,
+    ) -> tuple[CableEngineeringWarning, ...]:
+        """Warn once per derating factor the user has not established."""
+
+        return tuple(
+            CableEngineeringWarning(
+                code=CableWarningCode.DERATING_FACTOR_NOT_ESTABLISHED,
+                message=(
+                    f"{field_name} is not established; unity was used for the design "
+                    "check only and the result requires engineering review"
+                ),
+                field_name=field_name,
+            )
+            for field_name in study.installation.unestablished_derating_factors
+        )
 
     @classmethod
     def _installation_warnings(

@@ -76,6 +76,10 @@ def make_installation(**overrides: object) -> CableInstallationInput:
         "ambient_temperature_c": Decimal("45"),
         "ambient_derating_factor": Decimal("0.87"),
         "grouping_derating_factor": Decimal("0.80"),
+        # Established explicitly so the baseline study passes without review.
+        "thermal_insulation_factor": Decimal("1"),
+        "depth_derating_factor": Decimal("1"),
+        "soil_thermal_resistivity_factor": Decimal("1"),
         "grouped_circuits": 3,
     }
     values.update(overrides)
