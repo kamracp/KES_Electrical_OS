@@ -3,15 +3,13 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+# Import all models so that SQLAlchemy metadata is populated.
+import app.models.calculation_run
+import app.models.load_calculation_run
+import app.models.standard
+import app.models.unit  # noqa: F401
 from app.core.config import settings
 from app.db.base import Base
-
-# Import all models so that SQLAlchemy metadata is populated.
-import app.models.calculation_run  # noqa: F401
-import app.models.load_calculation_run  # noqa: F401
-import app.models.standard  # noqa: F401
-import app.models.unit  # noqa: F401
-
 
 config = context.config
 
