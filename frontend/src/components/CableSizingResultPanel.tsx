@@ -38,6 +38,7 @@ const SIZING_STATUS_LABELS: Record<SizingStatus, string> = {
   DESIGN_CHECK_PASSED: "Design check passed",
   DESIGN_CHECK_FAILED: "Design check failed",
   NO_STANDARD_SIZE_AVAILABLE: "No standard size available",
+  REVIEW_REQUIRED: "Engineering review required",
 };
 
 const CHECK_STATUS_LABELS: Record<CheckStatus, string> = {

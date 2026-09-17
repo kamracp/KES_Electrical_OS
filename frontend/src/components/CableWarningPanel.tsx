@@ -20,6 +20,7 @@ const WARNING_CODE_LABELS: Record<WarningCode, string> = {
   SOIL_DATA_REQUIRED: "Soil data required",
   AMBIENT_DERATING_NOT_ESTABLISHED: "Ambient derating factor not established",
   GROUPING_DERATING_NOT_ESTABLISHED: "Grouping derating factor not established",
+  DERATING_FACTOR_NOT_ESTABLISHED: "Derating factor not established - engineering review required",
   GOVERNING_REFERENCE_NOT_ESTABLISHED:
     "Governing references not registered for this jurisdiction profile",
   GOVERNING_REFERENCE_OVERRIDDEN:

@@ -86,6 +86,7 @@ describe("cableContract", () => {
       "DESIGN_CHECK_PASSED",
       "DESIGN_CHECK_FAILED",
       "NO_STANDARD_SIZE_AVAILABLE",
+      "REVIEW_REQUIRED",
     ]);
     expect(cableSizingStatusSchema.safeParse("COMPLIANT").success).toBe(false);
     expect(cableSizingStatusSchema.safeParse("NON_COMPLIANT").success).toBe(
@@ -105,6 +106,7 @@ describe("cableContract", () => {
       "SOIL_DATA_REQUIRED",
       "AMBIENT_DERATING_NOT_ESTABLISHED",
       "GROUPING_DERATING_NOT_ESTABLISHED",
+      "DERATING_FACTOR_NOT_ESTABLISHED",
       "GOVERNING_REFERENCE_NOT_ESTABLISHED",
       "GOVERNING_REFERENCE_OVERRIDDEN",
       "NO_STANDARD_SIZE_AVAILABLE",
