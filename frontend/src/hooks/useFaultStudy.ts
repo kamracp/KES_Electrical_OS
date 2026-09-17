@@ -20,7 +20,7 @@ import {
 export function useFaultStudy() {
   const controllerRef = useRef<AbortController | null>(null);
 
-  const mutation = useMutation
+  const mutation = useMutation<
     ShortCircuitStudyResponse,
     Error,
     ShortCircuitStudyRequest
