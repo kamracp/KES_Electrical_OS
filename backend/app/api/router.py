@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from app.api.v1.cable import (
     router as cable_router,
 )
+from app.api.v1.cable_run import router as cable_run_router
 from app.api.v1.fault import (
     router as fault_router,
 )
@@ -74,3 +75,4 @@ api_router.include_router(ht_panel_router)
 api_router.include_router(lt_pcc_router)
 api_router.include_router(load_calculation_run_router)
 api_router.include_router(cable_router)
+api_router.include_router(cable_run_router)
