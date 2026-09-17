@@ -47,25 +47,25 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 ## Active slice
 
-None. Navigation shell (Slice F) closed at `fdb8023` (17 Sep): `AppShell` layout route with primary nav
-(Home, Cable Sizing EOS-06 Live, Fault Study EOS-04 Placeholder), home module cards with truthful status,
-engineering-basis footer, shell layout CSS; 79 frontend tests; deployed. Note: commits `bd22162` and `169dcd6`
-carry the same message (the second is the home-page test).
+None. GAP-013 closed at `a2797ee` (17 Sep): governing references are profile-derived. `GoverningReferences`
+lives on the jurisdiction profile (IN/IEC carry IEC 60364-5-52 / IEC 60287 as UNVERIFIED; UK/EU/US/AU_NZ carry
+none). The cable engine resolves references profile-first; request references are optional overrides that must
+be given together and are reported as `REQUEST_OVERRIDE` deviations with a `GOVERNING_REFERENCE_OVERRIDDEN`
+warning; an unresolved profile without override yields `NOT_ESTABLISHED` and a
+`GOVERNING_REFERENCE_NOT_ESTABLISHED` warning. Contract gained `reference_source`; the References panel renders
+"Reference pending" for null references. Backend 909 tests, frontend 82 tests. Deployment pending (see Releases).
+
+Navigation shell (Slice F) closed at `fdb8023` (17 Sep); note commits `bd22162` and `169dcd6` carry the same
+message (the second is the home-page test).
 
 ## Next slices (in order)
 
-1. ~~Slice E — Jurisdiction profile~~ DONE `759ec99`..`59b9e4c` (17 Sep). Follow-up GAP-013: references from profile.
-1a. **(was Slice E)** `JurisdictionProfile` enum and profile
-   data (reference ambient air/ground, precedence chain, defaults) → `jurisdiction_profile` on the
-   cable request (default `IN`) and `reference_verification_status` on responses → cable engine reads
-   reference ambient through the profile → tests → frontend zod enum, `<select>` in
-   `CableSizingForm`, verification badge in the result panel → smoke.
-2. **§15 item 12 — Deployment utilities (P16).** Resolve `.gitignore` vs `deployment/`; then
-   `deployment/docker/*`, `compose.*.yaml`, `deployment/env/production.env.example`, root `compose.yaml`,
-   `.env.example`, `Makefile`, `scripts/*.sh`, `.github/workflows/*.yml`, `docs/operations/*-runbook.md`.
-   Release scope for the first deployment: Cable slice live; deployment complete ≠ EOS-01..15 complete (§22).
-3. Fault UI slice on the Cable pattern; navigation shell; CPWD Part IV and Part VII controlled copies
-   (GAP-002, GAP-003); IS 3961/1554/7098 register rows (GAP-008).
+1. **Fault UI slice on the Cable pattern** (EOS-04): service/hook/form/result panel/warning panel/page, and
+   close GAP-014 (fault `standard_reference` profile-derived; resolve the IEC 60909-0 edition first).
+2. **Derating factors optional** — blank ambient/grouping factor must not silently mean 1.0.
+3. CPWD Part IV and Part VII controlled copies (GAP-002, GAP-003); IS 3961/1554/7098 register rows (GAP-008);
+   ADR for jurisdiction profiles; Master Prompt v2.1 amendment.
+4. User manual (only after the first-release product scope above is complete), then announcement.
 
 ## Blocked / waiting
 
