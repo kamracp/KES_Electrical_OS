@@ -117,8 +117,10 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
     const parsed = shortCircuitStudyRequestSchema.safeParse(payload);
 
     if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const location = issue?.path.length ? `${issue.path.join(".")}: ` : "";
       setValidationError(
-        parsed.error.issues[0]?.message ?? "Review the fault-study inputs.",
+        issue ? `${location}${issue.message}` : "Review the fault-study inputs.",
       );
       return;
     }
