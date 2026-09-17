@@ -12,6 +12,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from app.domain.electrical.jurisdiction.jurisdiction_models import (
+    GoverningReferences,
     JurisdictionProfile,
     JurisdictionProfileData,
     ReferenceTier,
@@ -44,6 +45,15 @@ _PRECEDENCE_INTERNATIONAL_ONLY: tuple[ReferenceTier, ...] = (
 _IEC_REFERENCE_AMBIENT_AIR_C = Decimal("30")
 _IEC_REFERENCE_AMBIENT_GROUND_C = Decimal("20")
 
+# Governing references for the IEC-based profiles were the cable engine's request defaults
+# before profiles existed (REF-IEC-60364-5-52 for sizing rules, REF-IEC-60287 for ampacity).
+# Both are UNVERIFIED in the register, so the profiles carry the same status. Other
+# profiles have no registered national references yet and therefore carry None.
+_IEC_GOVERNING_REFERENCES = GoverningReferences(
+    sizing_reference="IEC 60364-5-52",
+    ampacity_reference="IEC 60287",
+)
+
 PROFILES: dict[JurisdictionProfile, JurisdictionProfileData] = {
     JurisdictionProfile.IN: JurisdictionProfileData(
         profile=JurisdictionProfile.IN,
@@ -54,6 +64,7 @@ PROFILES: dict[JurisdictionProfile, JurisdictionProfileData] = {
         reference_ambient_ground_c=_IEC_REFERENCE_AMBIENT_GROUND_C,
         nominal_lv_voltage_v=Decimal("415"),
         nominal_frequency_hz=Decimal("50"),
+        governing_references=_IEC_GOVERNING_REFERENCES,
         notes=(
             "National tier: CPWD General Specifications (REF-CPWD-P1-2023 with amendments, "
             "REF-CPWD-P2-2023 VERIFIED) and IS standards; ambient conventions inherited from "
@@ -69,6 +80,7 @@ PROFILES: dict[JurisdictionProfile, JurisdictionProfileData] = {
         reference_ambient_ground_c=_IEC_REFERENCE_AMBIENT_GROUND_C,
         nominal_lv_voltage_v=Decimal("400"),
         nominal_frequency_hz=Decimal("50"),
+        governing_references=_IEC_GOVERNING_REFERENCES,
         notes="Ambient conventions inherited from the cable engine thresholds.",
     ),
     JurisdictionProfile.UK: JurisdictionProfileData(
