@@ -47,23 +47,25 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 | 2026-09-17 | `d874622` | Fault UI release (EOS-04 Live): hook, warning panel, result panel, page wiring, nav/home status, field-path validation messages via `scripts/deploy.sh`; gate green; live smoke SC-MSB-01 (Ik'' 35.22 kA, kappa 1.698, X/R 8.15) and SC-MSB-03 current-injection 2.5 kA |
 | 2026-09-17 | `0dc673d` | GAP-014 release: fault references profile-derived, jurisdiction profile on the fault study via `scripts/deploy.sh`; gate green; live smoke SC-MSB-01 on IN (IEC 60909-0 / 60909-3, Unverified) and US (Reference pending, Not established, not-registered warning), Ik'' 35.22 kA on both |
 | 2026-09-17 | `bc22fda` | Fault form release: optional negative-/zero-sequence source impedances; live smoke SC-MSB-02 single-phase-to-earth minimum I_k1 32.915 kA (hand check 32.9 kA), all three sequences available |
+| 2026-09-17 | `6568af4` | Slice G release (EOS-06, item 14): derating factors optional — blank factor = not established, per-field `DERATING_FACTOR_NOT_ESTABLISHED` warnings, overall `REVIEW_REQUIRED` (Master Prompt v2.1 §4.10), ampacity `derating_established` + field list on API and panel; backend 924 / frontend 102 tests; via `scripts/deploy.sh` + manual `systemctl restart` (first attempt served old backend until restart — tooling follow-up); live smoke CBL-001 with blank factors → Engineering review required, five named factors, 150 mm² |
 | 2026-09-17 | `7efc071` | Item 16a shell release: sidebar lists all fifteen modules from `frontend/src/app/modules.ts` with truthful status, home cards from the same registry, design tokens + IBM Plex Sans, form/table styling (`forms.css`), overflow guard; via `scripts/deploy.sh`; gate green 101 frontend tests; founder browser check confirmed cards, badges and styled Cable form |
 | 2026-09-17 | `5ee3188` | First release: https://electrical.kamraengineeringsolution.com — server prep per runbook §1, `scripts/deploy.sh` green (origin + public health), Certbot cert added after the zone SSL mode incident; nginx site recorded at `e47a9c7` |
 
 ## Active slice
 
-None. **Item 16a (product shell) CLOSED at `7efc071`** (17 Sep), governed by Master Prompt v2.1 §15 execution
-order A9: registry `b4da7aa`, tokens `103d8d2`, sidebar/topbar/footer `a23b485`, home cards `e1de68d`,
-form/table styling `7efc071`. Frontend 101 tests. Live check by the founder: fifteen modules with status badges,
-styled Cable form. Not yet done (belongs to 16b per module): result summary first, traceability panel, collapsible
-input sections, export of persisted runs.
+**EOS-06 Cable complete (item 16b) — in progress.** (a) Slice G derating factors optional CLOSED at `6568af4`
+(commits `07254f1`..`6568af4`; warning uniqueness is now keyed by code + field). Remaining: (b) item 15
+calculation-run persistence for Cable, (c) §19 study-page layout (result summary first, warnings, traceability
+panel, collapsible inputs, JSON export of a persisted run), (d) close, release, smoke.
 
-Previously: Fault UI slice closed at `bc22fda`; GAP-013 closed at `a2797ee`; navigation shell (Slice F) at `fdb8023`.
+Tooling follow-up: `scripts/deploy.sh` reported success while the backend kept serving the previous code until a
+manual `systemctl restart kes-electrical-os`; verify the restart step and add a post-deploy contract probe.
+
+Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP-013 at `a2797ee`; Slice F at `fdb8023`.
 
 ## Next slices (in order — Master Prompt v2.1 §15, A9)
 
-1. **EOS-06 Cable complete (16b):** (a) item 14 Slice G — derating factors optional with `REVIEW_REQUIRED`
-   (§4.10); (b) item 15 — calculation-run persistence (run ID, engine version, snapshots); (c) §19 study-page
+1. **EOS-06 Cable complete (16b):** (a) ~~item 14 Slice G~~ DONE `6568af4`; (b) item 15 — calculation-run persistence (run ID, engine version, snapshots); (c) §19 study-page
    layout — result summary first, warnings, traceability panel, collapsible inputs, JSON export of a persisted
    run; (d) register/project-status close, release, live smoke.
 2. **EOS-04 Fault complete (16b):** run persistence, §19 layout, Fault UI v2 (multiple sources, branches,
