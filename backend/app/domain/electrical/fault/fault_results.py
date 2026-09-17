@@ -56,7 +56,17 @@ class FaultWarningCode(StrEnum):
     STEADY_STATE_CURRENT_NOT_EVALUATED = "STEADY_STATE_CURRENT_NOT_EVALUATED"
     THERMAL_CURRENT_NOT_EVALUATED = "THERMAL_CURRENT_NOT_EVALUATED"
     ENGINEERING_REVIEW_REQUIRED = "ENGINEERING_REVIEW_REQUIRED"
+    GOVERNING_REFERENCE_NOT_ESTABLISHED = "GOVERNING_REFERENCE_NOT_ESTABLISHED"
+    GOVERNING_REFERENCE_OVERRIDDEN = "GOVERNING_REFERENCE_OVERRIDDEN"
     CALCULATION_FAILED = "CALCULATION_FAILED"
+
+
+class FaultReferenceSource(StrEnum):
+    """Where the governing references reported on a result came from."""
+
+    PROFILE = "PROFILE"
+    REQUEST_OVERRIDE = "REQUEST_OVERRIDE"
+    NOT_ESTABLISHED = "NOT_ESTABLISHED"
 
 
 _UNBALANCED_FAULT_TYPES = {
@@ -267,8 +277,9 @@ class ShortCircuitStudyResult:
     source_contributions: tuple[FaultSourceContributionResult, ...]
     warnings: tuple[FaultEngineeringWarning, ...] = ()
 
-    standard_reference: str = "IEC 60909-0:2026"
-    earth_current_reference: str = "IEC 60909-3:2009"
+    standard_reference: str | None = None
+    earth_current_reference: str | None = None
+    reference_source: FaultReferenceSource = FaultReferenceSource.PROFILE
     operating_state_code: str | None = None
     notes: str | None = None
 
@@ -281,17 +292,32 @@ class ShortCircuitStudyResult:
                 field_name,
                 normalize_required_text(field_name, getattr(self, field_name)),
             )
-        for field_name in ("standard_reference", "earth_current_reference"):
-            object.__setattr__(
-                self,
-                field_name,
-                normalize_required_text(field_name, getattr(self, field_name)),
-            )
-        for field_name in ("operating_state_code", "notes"):
+        for field_name in (
+            "standard_reference",
+            "earth_current_reference",
+            "operating_state_code",
+            "notes",
+        ):
             object.__setattr__(
                 self,
                 field_name,
                 normalize_optional_text(field_name, getattr(self, field_name)),
+            )
+
+        if not isinstance(self.reference_source, FaultReferenceSource):
+            raise TypeError("reference_source must be a FaultReferenceSource value")
+        references_present = (
+            self.standard_reference is not None and self.earth_current_reference is not None
+        )
+        references_absent = self.standard_reference is None and self.earth_current_reference is None
+        if self.reference_source is FaultReferenceSource.NOT_ESTABLISHED:
+            if not references_absent:
+                raise ValueError(
+                    "NOT_ESTABLISHED reference source cannot carry governing references"
+                )
+        elif not references_present:
+            raise ValueError(
+                f"{self.reference_source.value} reference source requires both governing references"
             )
 
         if not isinstance(self.calculation_case, ShortCircuitCase):
