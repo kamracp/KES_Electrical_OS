@@ -226,8 +226,26 @@ def test_duplicate_warning_codes_are_rejected() -> None:
         message="Combined derating factor is low",
     )
 
-    with pytest.raises(ValueError, match="warning codes must be unique"):
+    with pytest.raises(ValueError, match="code and field pairs must be unique"):
         make_sizing_result(warnings=(warning, warning))
+
+
+@pytest.mark.unit
+def test_same_warning_code_on_different_fields_is_accepted() -> None:
+    ambient = CableEngineeringWarning(
+        code=CableWarningCode.DERATING_FACTOR_NOT_ESTABLISHED,
+        message="ambient_derating_factor is not established",
+        field_name="ambient_derating_factor",
+    )
+    depth = CableEngineeringWarning(
+        code=CableWarningCode.DERATING_FACTOR_NOT_ESTABLISHED,
+        message="depth_derating_factor is not established",
+        field_name="depth_derating_factor",
+    )
+
+    result = make_sizing_result(warnings=(ambient, depth))
+
+    assert len(result.warnings) == 2
 
 
 @pytest.mark.unit

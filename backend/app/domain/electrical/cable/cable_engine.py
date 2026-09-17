@@ -604,7 +604,8 @@ class CableSizingEngine:
     def _deduplicate_warnings(
         warnings: tuple[CableEngineeringWarning, ...],
     ) -> tuple[CableEngineeringWarning, ...]:
-        return tuple({warning.code: warning for warning in warnings}.values())
+        # One warning per (code, field): the same code may name several fields.
+        return tuple({(warning.code, warning.field_name): warning for warning in warnings}.values())
 
     @classmethod
     def _round(cls, value: Decimal) -> Decimal:

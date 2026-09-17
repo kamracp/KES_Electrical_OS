@@ -550,3 +550,62 @@ def test_override_on_unresolved_profile_is_deviation_without_not_established_war
 def test_single_reference_override_is_rejected() -> None:
     with pytest.raises(ValueError, match="overridden together"):
         make_study(standard_reference="IS 3961")
+
+
+def _unestablished_warnings(result) -> list[str]:
+    return [
+        warning.field_name
+        for warning in result.warnings
+        if warning.code is CableWarningCode.DERATING_FACTOR_NOT_ESTABLISHED
+    ]
+
+
+def test_all_derating_factors_unestablished_requires_review() -> None:
+    result = CableSizingEngine.calculate(
+        make_study(
+            installation=make_installation(
+                ambient_derating_factor=None,
+                grouping_derating_factor=None,
+                thermal_insulation_factor=None,
+                depth_derating_factor=None,
+                soil_thermal_resistivity_factor=None,
+            )
+        )
+    )
+
+    assert result.status is CableSizingStatus.REVIEW_REQUIRED
+    assert result.ampacity is not None
+    assert result.ampacity.derating_established is False
+    assert result.ampacity.unestablished_derating_factors == (
+        "ambient_derating_factor",
+        "grouping_derating_factor",
+        "thermal_insulation_factor",
+        "depth_derating_factor",
+        "soil_thermal_resistivity_factor",
+    )
+    # Unity is used for the physics only; the review flag carries the meaning.
+    assert result.ampacity.combined_derating_factor == Decimal("1")
+    assert _unestablished_warnings(result) == list(result.ampacity.unestablished_derating_factors)
+
+
+def test_established_derating_factors_pass_without_review_warning() -> None:
+    result = CableSizingEngine.calculate(make_study())
+
+    assert result.status is CableSizingStatus.DESIGN_CHECK_PASSED
+    assert result.ampacity is not None
+    assert result.ampacity.derating_established is True
+    assert result.ampacity.unestablished_derating_factors == ()
+    assert _unestablished_warnings(result) == []
+
+
+def test_single_unestablished_factor_is_named_and_forces_review() -> None:
+    result = CableSizingEngine.calculate(
+        make_study(installation=make_installation(depth_derating_factor=None))
+    )
+
+    assert result.status is CableSizingStatus.REVIEW_REQUIRED
+    assert result.ampacity is not None
+    assert result.ampacity.unestablished_derating_factors == ("depth_derating_factor",)
+    assert _unestablished_warnings(result) == ["depth_derating_factor"]
+    # Established factors still multiply through.
+    assert result.ampacity.combined_derating_factor == Decimal("0.87") * Decimal("0.80")

@@ -368,9 +368,12 @@ class CableSizingResult:
         if not all(isinstance(warning, CableEngineeringWarning) for warning in self.warnings):
             raise TypeError("warnings must contain only CableEngineeringWarning records")
 
+        # A code may repeat across fields (one warning per unestablished factor),
+        # but never twice for the same field.
+        warning_keys = tuple((warning.code, warning.field_name) for warning in self.warnings)
+        if len(warning_keys) != len(set(warning_keys)):
+            raise ValueError("warning code and field pairs must be unique")
         warning_codes = tuple(warning.code for warning in self.warnings)
-        if len(warning_codes) != len(set(warning_codes)):
-            raise ValueError("warning codes must be unique")
 
         detailed_results = (
             self.conductor,
