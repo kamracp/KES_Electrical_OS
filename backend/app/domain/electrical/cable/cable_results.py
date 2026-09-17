@@ -53,7 +53,17 @@ class CableWarningCode(StrEnum):
     SOIL_DATA_REQUIRED = "SOIL_DATA_REQUIRED"
     AMBIENT_DERATING_NOT_ESTABLISHED = "AMBIENT_DERATING_NOT_ESTABLISHED"
     GROUPING_DERATING_NOT_ESTABLISHED = "GROUPING_DERATING_NOT_ESTABLISHED"
+    GOVERNING_REFERENCE_NOT_ESTABLISHED = "GOVERNING_REFERENCE_NOT_ESTABLISHED"
+    GOVERNING_REFERENCE_OVERRIDDEN = "GOVERNING_REFERENCE_OVERRIDDEN"
     NO_STANDARD_SIZE_AVAILABLE = "NO_STANDARD_SIZE_AVAILABLE"
+
+
+class CableReferenceSource(StrEnum):
+    """Where the governing references reported on a result came from."""
+
+    PROFILE = "PROFILE"
+    REQUEST_OVERRIDE = "REQUEST_OVERRIDE"
+    NOT_ESTABLISHED = "NOT_ESTABLISHED"
 
 
 @dataclass(frozen=True, slots=True)
@@ -274,8 +284,9 @@ class CableSizingResult:
     warnings: tuple[CableEngineeringWarning, ...] = ()
 
     governing_criterion: str | None = None
-    standard_reference: str = "IEC 60364-5-52"
-    ampacity_reference: str = "IEC 60287"
+    standard_reference: str | None = None
+    ampacity_reference: str | None = None
+    reference_source: CableReferenceSource = CableReferenceSource.PROFILE
     jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
     reference_verification_status: ReferenceVerificationStatus = (
         ReferenceVerificationStatus.UNVERIFIED
@@ -298,13 +309,28 @@ class CableSizingResult:
         object.__setattr__(
             self,
             "standard_reference",
-            normalize_required_text("standard_reference", self.standard_reference),
+            normalize_optional_text("standard_reference", self.standard_reference),
         )
         object.__setattr__(
             self,
             "ampacity_reference",
-            normalize_required_text("ampacity_reference", self.ampacity_reference),
+            normalize_optional_text("ampacity_reference", self.ampacity_reference),
         )
+        if not isinstance(self.reference_source, CableReferenceSource):
+            raise TypeError("reference_source must be a CableReferenceSource value")
+        references_present = (
+            self.standard_reference is not None and self.ampacity_reference is not None
+        )
+        references_absent = self.standard_reference is None and self.ampacity_reference is None
+        if self.reference_source is CableReferenceSource.NOT_ESTABLISHED:
+            if not references_absent:
+                raise ValueError(
+                    "NOT_ESTABLISHED reference source cannot carry governing references"
+                )
+        elif not references_present:
+            raise ValueError(
+                f"{self.reference_source.value} reference source requires both governing references"
+            )
 
         object.__setattr__(self, "notes", normalize_optional_text("notes", self.notes))
 
