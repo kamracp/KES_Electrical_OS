@@ -1,3 +1,7 @@
+import type {
+  JurisdictionProfile,
+  ReferenceVerificationStatus,
+} from "../services/cableContract";
 import type { ShortCircuitStudyResponse } from "../services/fault";
 
 // Derive nested types from the contract so schema drift fails typecheck here.
@@ -9,6 +13,7 @@ type CalculationCase = ShortCircuitStudyResponse["calculation_case"];
 type Sequence = SequenceResult["sequence"];
 type SourceType = SourceContribution["source_type"];
 type Representation = SourceContribution["representation"];
+type ReferenceSource = ShortCircuitStudyResponse["reference_source"];
 
 interface CurrentRow {
   key: string;
@@ -61,6 +66,40 @@ const REPRESENTATION_LABELS: Record<Representation, string> = {
   VOLTAGE_BEHIND_IMPEDANCE: "Voltage behind impedance",
   CURRENT_INJECTION: "Current injection",
 };
+
+// Exhaustive maps: a new profile, status or source without a label is a compile error.
+const JURISDICTION_LABELS: Record<JurisdictionProfile, string> = {
+  IN: "India (CEA Regulations, IS, CPWD)",
+  IEC: "IEC (international)",
+  US: "United States (NEC / NFPA 70)",
+  UK: "United Kingdom (BS 7671)",
+  AU_NZ: "Australia / New Zealand (AS/NZS 3000)",
+  EU: "European Union (HD 60364)",
+};
+
+const VERIFICATION_LABELS: Record<ReferenceVerificationStatus, string> = {
+  VERIFIED: "Verified",
+  UNVERIFIED: "Unverified",
+  LEGACY: "Legacy",
+  REFERENCE_ONLY: "Reference only",
+  UNRESOLVED: "Unresolved - reference data pending",
+};
+
+const REFERENCE_SOURCE_LABELS: Record<ReferenceSource, string> = {
+  PROFILE: "Jurisdiction profile",
+  REQUEST_OVERRIDE: "Project override - deviation from profile",
+  NOT_ESTABLISHED: "Not established",
+};
+
+const REFERENCE_PENDING_TEXT =
+  "Reference pending - not registered for this jurisdiction profile";
+
+function ReferenceValue({ value }: { value: string | null }) {
+  if (value === null) {
+    return <dd data-reference-pending="true">{REFERENCE_PENDING_TEXT}</dd>;
+  }
+  return <dd>{value}</dd>;
+}
 
 function formatValue(value: string | null): string {
   return value === null ? EMPTY_VALUE_TEXT : value;
@@ -256,9 +295,21 @@ export function FaultStudyResultPanel({ result }: FaultStudyResultPanelProps) {
         <h3>References</h3>
         <dl>
           <dt>Short-circuit standard</dt>
-          <dd>{result.standard_reference}</dd>
+          <ReferenceValue value={result.standard_reference} />
           <dt>Earth-current basis</dt>
-          <dd>{result.earth_current_reference}</dd>
+          <ReferenceValue value={result.earth_current_reference} />
+          <dt>Reference source</dt>
+          <dd data-reference-source={result.reference_source}>
+            {REFERENCE_SOURCE_LABELS[result.reference_source]}
+          </dd>
+          <dt>Jurisdiction profile</dt>
+          <dd data-jurisdiction-profile={result.jurisdiction_profile}>
+            {JURISDICTION_LABELS[result.jurisdiction_profile]}
+          </dd>
+          <dt>Reference data status</dt>
+          <dd data-reference-verification-status={result.reference_verification_status}>
+            {VERIFICATION_LABELS[result.reference_verification_status]}
+          </dd>
         </dl>
         {result.notes ? <p data-notes="true">{result.notes}</p> : null}
       </section>

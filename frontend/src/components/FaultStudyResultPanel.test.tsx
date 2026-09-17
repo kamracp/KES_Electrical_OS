@@ -153,4 +153,30 @@ describe("FaultStudyResultPanel", () => {
     expect(document.querySelectorAll('[data-no-rows="true"]')).toHaveLength(2);
     expect(document.querySelector("[data-notes]")).toBeNull();
   });
+
+  it("renders pending references and profile rows for an unresolved profile", () => {
+    render(
+      <FaultStudyResultPanel
+        result={{
+          ...fullResult,
+          standard_reference: null,
+          earth_current_reference: null,
+          reference_source: "NOT_ESTABLISHED",
+          jurisdiction_profile: "US",
+          reference_verification_status: "UNRESOLVED",
+        }}
+      />,
+    );
+
+    expect(document.querySelectorAll('[data-reference-pending="true"]')).toHaveLength(2);
+    expect(document.querySelector("[data-reference-source]")).toHaveAttribute(
+      "data-reference-source",
+      "NOT_ESTABLISHED",
+    );
+    expect(document.querySelector("[data-jurisdiction-profile]")).toHaveAttribute(
+      "data-jurisdiction-profile",
+      "US",
+    );
+    expect(screen.getByText("Unresolved - reference data pending")).toBeInTheDocument();
+  });
 });
