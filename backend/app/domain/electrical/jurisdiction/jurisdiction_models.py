@@ -68,6 +68,27 @@ def _require_optional_positive(field_name: str, value: Decimal | None) -> None:
 
 
 @dataclass(frozen=True, slots=True)
+class GoverningReferences:
+    """Standards that govern cable sizing under a profile.
+
+    Present only when the master reference register lists the standards for the
+    jurisdiction; a profile without registered references carries ``None`` instead of
+    an invented default.
+    """
+
+    sizing_reference: str
+    ampacity_reference: str
+
+    def __post_init__(self) -> None:
+        """Validate that both references are non-empty text."""
+
+        for field_name in ("sizing_reference", "ampacity_reference"):
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field_name} must be a non-empty string")
+
+
+@dataclass(frozen=True, slots=True)
 class JurisdictionProfileData:
     """Reference conventions for one jurisdiction profile."""
 
@@ -79,6 +100,7 @@ class JurisdictionProfileData:
     reference_ambient_ground_c: Decimal | None = None
     nominal_lv_voltage_v: Decimal | None = None
     nominal_frequency_hz: Decimal | None = None
+    governing_references: GoverningReferences | None = None
     notes: str = ""
 
     def __post_init__(self) -> None:
@@ -103,6 +125,10 @@ class JurisdictionProfileData:
         )
         _require_optional_positive("nominal_lv_voltage_v", self.nominal_lv_voltage_v)
         _require_optional_positive("nominal_frequency_hz", self.nominal_frequency_hz)
+        if self.governing_references is not None and not isinstance(
+            self.governing_references, GoverningReferences
+        ):
+            raise TypeError("governing_references must be a GoverningReferences value or None")
 
     @property
     def has_reference_ambient(self) -> bool:
@@ -111,3 +137,9 @@ class JurisdictionProfileData:
         return (
             self.reference_ambient_air_c is not None and self.reference_ambient_ground_c is not None
         )
+
+    @property
+    def has_governing_references(self) -> bool:
+        """Return True when the profile carries registered governing references."""
+
+        return self.governing_references is not None
