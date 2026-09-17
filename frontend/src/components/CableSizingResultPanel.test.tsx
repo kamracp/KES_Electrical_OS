@@ -191,6 +191,25 @@ describe("CableSizingResultPanel", () => {
     expect(source?.textContent).toBe("Not established");
   });
 
+  it("shows unestablished derating factors by name and the review status", () => {
+    const review: CableSizingResponse = {
+      ...fullResult,
+      status: "REVIEW_REQUIRED",
+      ampacity: {
+        ...fullResult.ampacity!,
+        derating_established: false,
+        unestablished_derating_factors: ["ambient_derating_factor", "depth_derating_factor"],
+      },
+    };
+    render(<CableSizingResultPanel result={review} />);
+
+    const row = document.querySelector('[data-row-key="derating_established"]');
+    expect(row?.textContent).toContain(
+      "Not established: ambient_derating_factor, depth_derating_factor",
+    );
+    expect(screen.getByText("Engineering review required")).toBeInTheDocument();
+  });
+
   it("labels a project override as a deviation from the profile", () => {
     render(
       <CableSizingResultPanel

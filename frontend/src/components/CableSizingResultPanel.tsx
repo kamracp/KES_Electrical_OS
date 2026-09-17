@@ -91,6 +91,13 @@ function ampacityRows(section: AmpacityResult): CheckRow[] {
       value: section.combined_derating_factor,
     },
     {
+      key: "derating_established",
+      label: "Derating factors",
+      value: section.derating_established
+        ? "Established"
+        : `Not established: ${section.unestablished_derating_factors.join(", ")}`,
+    },
+    {
       key: "derated_ampacity_a_per_run",
       label: "Derated ampacity per run (A)",
       value: section.derated_ampacity_a_per_run,
