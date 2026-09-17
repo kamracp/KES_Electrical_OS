@@ -25,7 +25,7 @@ const MODULES: ModuleCard[] = [
   {
     code: "EOS-04",
     title: "Fault Study",
-    summary: "Short-circuit study workspace. Engine complete; the page is a placeholder until it is wired.",
+    summary: "Short-circuit and earth-fault study workspace: network, sources and branches to fault currents.",
     status: "Live",
     to: "/fault-study",
   },
