@@ -7,7 +7,7 @@ evidence. There is no delete: runs are audit records.
 
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, Response, status
 
 from app.api.dependencies import DatabaseSession
 from app.repositories.calculation_run import CalculationRunRepository
@@ -38,16 +38,21 @@ def get_service(db: DatabaseSession) -> FaultRunService:
 async def create_fault_run(
     payload: FaultRunCreateRequest,
     db: DatabaseSession,
+    response: Response,
 ) -> FaultRunResponse:
     """Calculate a short-circuit study and persist it as a new run revision."""
 
     try:
-        run, result = await get_service(db).create(payload)
+        run, result, created = await get_service(db).create(payload)
     except (TypeError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
+
+    if not created:
+        # A11: the latest revision already holds this exact evidence.
+        response.status_code = status.HTTP_200_OK
 
     return FaultRunResponse(
         run=CalculationRunSummary.model_validate(run),

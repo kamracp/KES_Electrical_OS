@@ -52,6 +52,24 @@ def content_hash(input_snapshot: dict[str, Any], result_snapshot: dict[str, Any]
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def reusable_run(
+    latest: CalculationRun | None,
+    new_hash: str,
+    engine_version: str,
+) -> CalculationRun | None:
+    """Return the latest revision when it already holds this exact evidence (A11).
+
+    A new revision is created only when the evidence (input + result hash) or the
+    engine version differs from the latest revision of the same study.
+    """
+
+    if latest is None:
+        return None
+    if latest.content_hash != new_hash or latest.engine_version != engine_version:
+        return None
+    return latest
+
+
 class CableRunService:
     """Calculate a cable study and persist it as a CalculationRun."""
 
@@ -62,8 +80,8 @@ class CableRunService:
     async def create(
         self,
         payload: CableRunCreateRequest,
-    ) -> tuple[CalculationRun, CableSizingResponse]:
-        """Run the engine, freeze the evidence and store a new revision."""
+    ) -> tuple[CalculationRun, CableSizingResponse, bool]:
+        """Run the engine and freeze the evidence; False flag = latest revision reused (A11)."""
 
         result = self.engine_service.calculate_cable_sizing(payload.study)
         response = CableSizingResponse.from_domain(result)
@@ -78,6 +96,12 @@ class CableRunService:
             "reference_verification_status": response.reference_verification_status,
         }
         calculation_key = payload.study.code
+        evidence_hash = content_hash(input_snapshot, result_snapshot)
+        latest = await self.repository.get_latest_revision(CABLE_MODULE_CODE, calculation_key)
+        existing = reusable_run(latest, evidence_hash, CABLE_ENGINE_VERSION)
+        if existing is not None:
+            return existing, response, False
+
         revision = await self.repository.get_next_revision_number(
             CABLE_MODULE_CODE,
             calculation_key,
@@ -98,13 +122,13 @@ class CableRunService:
             result_snapshot=result_snapshot,
             warnings_snapshot=list(result_snapshot.get("warnings", [])),
             references_snapshot=references_snapshot,
-            content_hash=content_hash(input_snapshot, result_snapshot),
+            content_hash=evidence_hash,
             calculated_by=payload.calculated_by,
             is_immutable=False,
             notes=payload.notes,
         )
         stored = await self.repository.create(run)
-        return stored, response
+        return stored, response, True
 
     async def get(self, run_id: UUID) -> CalculationRun | None:
         """Return one run by id (any module)."""
@@ -135,8 +159,8 @@ class FaultRunService:
     async def create(
         self,
         payload: FaultRunCreateRequest,
-    ) -> tuple[CalculationRun, ShortCircuitStudyResponse]:
-        """Run the engine, freeze the evidence and store a new revision."""
+    ) -> tuple[CalculationRun, ShortCircuitStudyResponse, bool]:
+        """Run the engine and freeze the evidence; False flag = latest revision reused (A11)."""
 
         result = self.engine_service.calculate_short_circuit(payload.study)
         response = ShortCircuitStudyResponse.from_domain(result)
@@ -147,6 +171,12 @@ class FaultRunService:
         result_snapshot = response.model_dump(mode="json")
         references_snapshot = {name: result_snapshot[name] for name in _FAULT_REFERENCE_FIELDS}
         calculation_key = payload.study.code
+        evidence_hash = content_hash(input_snapshot, result_snapshot)
+        latest = await self.repository.get_latest_revision(FAULT_MODULE_CODE, calculation_key)
+        existing = reusable_run(latest, evidence_hash, FAULT_ENGINE_VERSION)
+        if existing is not None:
+            return existing, response, False
+
         revision = await self.repository.get_next_revision_number(
             FAULT_MODULE_CODE,
             calculation_key,
@@ -167,13 +197,13 @@ class FaultRunService:
             result_snapshot=result_snapshot,
             warnings_snapshot=list(result_snapshot.get("warnings", [])),
             references_snapshot=references_snapshot,
-            content_hash=content_hash(input_snapshot, result_snapshot),
+            content_hash=evidence_hash,
             calculated_by=payload.calculated_by,
             is_immutable=False,
             notes=payload.notes,
         )
         stored = await self.repository.create(run)
-        return stored, response
+        return stored, response, True
 
     async def get(self, run_id: UUID) -> CalculationRun | None:
         """Return one run by id (any module)."""
@@ -202,4 +232,5 @@ __all__ = [
     "CableRunService",
     "FaultRunService",
     "content_hash",
+    "reusable_run",
 ]
