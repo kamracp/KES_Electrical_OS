@@ -63,6 +63,20 @@ describe("AppShell", () => {
     expect(screen.getByText("cable page")).not.toBeNull();
   });
 
+  it("shows no back control in the topbar on Home", () => {
+    renderShell("/");
+    const header = document.querySelector('header[aria-label="Product"]');
+    expect(header).not.toBeNull();
+    expect(header?.querySelector("[data-shell-back]")).toBeNull();
+  });
+
+  it("puts the back control first in the topbar on a module page (A10)", () => {
+    renderShell("/cable-sizing");
+    const header = document.querySelector('header[aria-label="Product"]');
+    expect(header?.firstElementChild?.hasAttribute("data-shell-back")).toBe(true);
+    expect(screen.getByRole("button", { name: "Back" })).not.toBeNull();
+  });
+
   it("states the engineering basis in the footer", () => {
     renderShell("/");
     const footer = document.querySelector('footer[aria-label="Engineering basis"]');

@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 
 import "../styles/shell.css";
+import { BackButton } from "../components/BackButton";
 import { MODULES, MODULE_STATUS_LABELS } from "./modules";
 
 // The sidebar renders every module from the registry so the product structure is
@@ -46,6 +47,7 @@ export function AppShell() {
 
       <div data-shell-body>
         <header aria-label="Product">
+          <BackButton />
           <span>Engineering design checks against referenced standard data</span>
           <span>Kamra Engineering Solutions</span>
         </header>
