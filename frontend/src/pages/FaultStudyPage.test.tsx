@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -99,7 +99,7 @@ const sampleRun: FaultRunResponse["run"] = {
   run_status: "COMPLETED",
   approval_status: "NOT_SUBMITTED",
   engine_version: "fault-engine 0.1.0",
-  design_check_status: "CALCULATED",
+  design_check_status: "WARNING",
   jurisdiction_profile: "IN",
   reference_verification_status: "UNVERIFIED",
   content_hash: "e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e280",
@@ -120,6 +120,18 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
 });
+
+// True when `first` comes before `second` in document order.
+function precedes(first: Node | null, second: Node | null): boolean {
+  if (!first || !second) {
+    return false;
+  }
+  return (first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
+function successState(): Element | null {
+  return document.querySelector('[data-calculation-state="success"]');
+}
 
 describe("FaultStudyPage", () => {
   it("renders the EOS-04 workspace in the idle state", () => {
@@ -144,8 +156,14 @@ describe("FaultStudyPage", () => {
     expect(createFaultRunMock).toHaveBeenCalledTimes(1);
     expect(createFaultRunMock.mock.calls[0]?.[0]).toBe(fixtureRequest);
     expect(screen.getByRole("article", { name: "Fault study result" })).toBeInTheDocument();
-    expect(screen.getByText("Calculated with warnings")).toHaveAttribute(
+    const article = screen.getByRole("article", { name: "Fault study result" });
+    expect(within(article).getByText("Calculated with warnings")).toHaveAttribute(
       "data-result-status",
+      "WARNING",
+    );
+    const summary = screen.getByRole("region", { name: "Result summary" });
+    expect(within(summary).getByText("Calculated with warnings")).toHaveAttribute(
+      "data-summary-status",
       "WARNING",
     );
     expect(document.querySelector('[data-warning-code="PEAK_CURRENT_NOT_EVALUATED"]')).not.toBeNull();
@@ -170,5 +188,58 @@ describe("FaultStudyPage", () => {
     expect(alert).toHaveAttribute("data-calculation-state", "error");
     expect(alert.textContent).toContain("bus MSB-99 is not defined");
     expect(screen.queryByRole("article")).toBeNull();
+  });
+
+  it("opens with the inputs expanded inside a collapsible block", () => {
+    render(<FaultStudyPage />, { wrapper: createWrapper() });
+
+    const inputs = document.getElementById("fault-study-inputs-heading")?.closest("details");
+    expect(inputs).toHaveAttribute("data-study-inputs");
+    expect(inputs).toHaveAttribute("open");
+    expect(inputs).toContainElement(screen.getByRole("button", { name: "Submit fixture" }));
+  });
+
+  it("orders the result column as summary, warnings, traceability, then detail", async () => {
+    createFaultRunMock.mockResolvedValue(runResponse);
+    render(<FaultStudyPage />, { wrapper: createWrapper() });
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit fixture" }));
+
+    await waitFor(() => expect(successState()).not.toBeNull());
+    const summary = screen.getByRole("region", { name: "Result summary" });
+    const warning = document.querySelector('[data-warning-code="PEAK_CURRENT_NOT_EVALUATED"]');
+    const traceability = screen.getByRole("region", { name: "Traceability" });
+    const detail = screen.getByRole("article", { name: "Fault study result" });
+
+    expect(precedes(summary, warning)).toBe(true);
+    expect(precedes(warning, traceability)).toBe(true);
+    expect(precedes(traceability, detail)).toBe(true);
+  });
+
+  it("shows the persisted run in the traceability panel and exports it as JSON", async () => {
+    createFaultRunMock.mockResolvedValue(runResponse);
+    render(<FaultStudyPage />, { wrapper: createWrapper() });
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit fixture" }));
+
+    await waitFor(() => expect(successState()).not.toBeNull());
+    const traceability = screen.getByRole("region", { name: "Traceability" });
+    expect(traceability).toHaveAttribute("data-run-id", sampleRun.id);
+    expect(within(traceability).getByText(sampleRun.id)).toBeInTheDocument();
+    expect(within(traceability).getByText(sampleRun.engine_version)).toBeInTheDocument();
+
+    // Intercept the generated download link: proves the export fired, records the
+    // file name and keeps jsdom from attempting a real navigation.
+    const downloads: string[] = [];
+    const anchorClick = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        downloads.push(this.download);
+      });
+    fireEvent.click(within(traceability).getByRole("button", { name: "Download run JSON" }));
+    expect(anchorClick).toHaveBeenCalledTimes(1);
+    expect(downloads).toEqual(["SC-001-rev1.json"]);
+    anchorClick.mockRestore();
+    expect(successState()).not.toBeNull();
   });
 });

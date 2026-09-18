@@ -1,7 +1,12 @@
+import "../styles/study.css";
+
 import type { ShortCircuitStudyRequest } from "../services/fault";
+import { downloadRunJson } from "../services/runExport";
+import { FaultResultSummary } from "../components/FaultResultSummary";
 import { FaultStudyForm } from "../components/FaultStudyForm";
 import { FaultStudyResultPanel } from "../components/FaultStudyResultPanel";
 import { FaultWarningPanel } from "../components/FaultWarningPanel";
+import { RunTraceabilityPanel } from "../components/RunTraceabilityPanel";
 import { useFaultStudy } from "../hooks/useFaultStudy";
 
 function describeError(error: unknown): string {
@@ -11,8 +16,10 @@ function describeError(error: unknown): string {
   return "The short-circuit study could not be completed.";
 }
 
+// Study-page layout (Master Prompt v2.1 section 19): collapsible inputs beside
+// a result-first column - summary, warnings, traceability, then detail tables.
 export function FaultStudyPage() {
-  const { calculate, reset, result, error, isPending, isError } = useFaultStudy();
+  const { calculate, reset, result, run, error, isPending, isError } = useFaultStudy();
 
   // Errors are surfaced through the hook state below, not thrown into the form.
   async function handleSubmit(payload: ShortCircuitStudyRequest): Promise<void> {
@@ -34,44 +41,62 @@ export function FaultStudyPage() {
         </p>
       </header>
 
-      <section aria-labelledby="fault-study-inputs-heading">
-        <h2 id="fault-study-inputs-heading">Inputs</h2>
-        <FaultStudyForm disabled={isPending} onSubmit={handleSubmit} />
-      </section>
+      <div data-study-layout>
+        <section aria-labelledby="fault-study-inputs-heading">
+          <details open data-study-inputs>
+            <summary>
+              <h2 id="fault-study-inputs-heading">Inputs</h2>
+            </summary>
+            <FaultStudyForm disabled={isPending} onSubmit={handleSubmit} />
+          </details>
+        </section>
 
-      <section aria-labelledby="fault-study-results-heading">
-        <h2 id="fault-study-results-heading">Results</h2>
+        <section aria-labelledby="fault-study-results-heading" data-study-results>
+          <h2 id="fault-study-results-heading">Results</h2>
 
-        {isPending ? (
-          <p role="status" data-calculation-state="pending">
-            Calculating fault currents…
-          </p>
-        ) : null}
-
-        {isError ? (
-          <p role="alert" data-calculation-state="error">
-            {describeError(error)}
-          </p>
-        ) : null}
-
-        {result ? (
-          <div data-calculation-state="success">
-            <FaultStudyResultPanel result={result} />
-            <FaultWarningPanel warnings={result.warnings} />
-            <p>
-              <button type="button" onClick={reset}>
-                Clear results
-              </button>
+          {isPending ? (
+            <p role="status" data-calculation-state="pending">
+              Calculating fault currents…
             </p>
-          </div>
-        ) : null}
+          ) : null}
 
-        {!isPending && !isError && !result ? (
-          <p data-calculation-state="idle">
-            Submit the inputs above to run a short-circuit study.
-          </p>
-        ) : null}
-      </section>
+          {isError ? (
+            <p role="alert" data-calculation-state="error">
+              {describeError(error)}
+            </p>
+          ) : null}
+
+          {result ? (
+            <div data-calculation-state="success">
+              <FaultResultSummary result={result} />
+              <FaultWarningPanel warnings={result.warnings} />
+              {run ? (
+                <RunTraceabilityPanel
+                  run={run}
+                  onExport={() =>
+                    downloadRunJson(
+                      { run, result },
+                      `${run.calculation_key}-rev${run.revision_number}.json`,
+                    )
+                  }
+                />
+              ) : null}
+              <FaultStudyResultPanel result={result} />
+              <p>
+                <button type="button" onClick={reset}>
+                  Clear results
+                </button>
+              </p>
+            </div>
+          ) : null}
+
+          {!isPending && !isError && !result ? (
+            <p data-calculation-state="idle">
+              Submit the inputs to run a short-circuit study.
+            </p>
+          ) : null}
+        </section>
+      </div>
 
       <section aria-labelledby="fault-study-review-heading">
         <h2 id="fault-study-review-heading">Engineering review required</h2>
