@@ -11,7 +11,8 @@ afterEach(() => {
   cleanup();
 });
 
-// Decimal strings deliberately carry trailing zeros to prove verbatim rendering.
+// Several decimals carry more than four significant figures to prove display rule A12:
+// rounded on screen, exact in the tooltip.
 const fullResult: CableSizingResponse = {
   study_code: "CBL-001",
   status: "DESIGN_CHECK_PASSED",
@@ -94,17 +95,21 @@ describe("CableSizingResultPanel", () => {
     expect(voltsRow).not.toBeNull();
     expect(percentRow).not.toBeNull();
     expect(voltsRow).toHaveTextContent("Voltage drop (V)");
-    expect(voltsRow).toHaveTextContent("9.4200");
+    expect(voltsRow?.querySelector("td")?.textContent).toBe("9.420");
+    expect(voltsRow?.querySelector("td")).toHaveAttribute("title", "9.4200");
     expect(percentRow).toHaveTextContent("Voltage drop (%)");
-    expect(percentRow).toHaveTextContent("2.2700");
+    expect(percentRow?.querySelector("td")?.textContent).toBe("2.270");
+    expect(percentRow?.querySelector("td")).toHaveAttribute("title", "2.2700");
   });
 
-  it("renders decimals verbatim and an em dash for null values", () => {
+  it("shows four figures, the exact decimal in the tooltip and an em dash for null", () => {
     render(<CableSizingResultPanel result={fullResult} />);
 
     const conductor = region("Conductor selection");
-    expect(within(conductor).getByText("120.50")).toBeInTheDocument();
-    expect(within(conductor).queryByText("120.5")).toBeNull();
+    const phaseCell = conductor.querySelector('[data-row-key="phase_area_mm2"] td');
+    expect(phaseCell?.textContent).toBe("120.5");
+    expect(phaseCell).toHaveAttribute("title", "120.50");
+    expect(within(conductor).queryByText("120.50")).toBeNull();
 
     const protectiveRow = conductor.querySelector('[data-row-key="protective_area_mm2"]');
     expect(protectiveRow).not.toBeNull();
@@ -112,6 +117,20 @@ describe("CableSizingResultPanel", () => {
     expect(cells[0]).toHaveTextContent("\u2014");
     expect(cells[1]).toHaveTextContent("N/A");
     expect(cells[1]).toHaveAttribute("data-check-status", "NOT_APPLICABLE");
+  });
+
+  it("leaves integers and descriptive text without a tooltip", () => {
+    render(<CableSizingResultPanel result={fullResult} />);
+
+    const runs = region("Conductor selection").querySelector('[data-row-key="parallel_runs"] td');
+    expect(runs?.textContent).toBe("2");
+    expect(runs).not.toHaveAttribute("title");
+
+    const derating = region("Ampacity check").querySelector(
+      '[data-row-key="derating_established"] td',
+    );
+    expect(derating?.textContent).toBe("Established");
+    expect(derating).not.toHaveAttribute("title");
   });
 
   it("maps check statuses to Pass, Fail, and N/A labels", () => {

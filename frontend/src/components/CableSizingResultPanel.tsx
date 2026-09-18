@@ -4,6 +4,7 @@ import type {
   ReferenceVerificationStatus,
 } from "../services/cableContract";
 import type { CableSizingResponse } from "../services/cable";
+import { formatQuantity } from "../utils/formatQuantity";
 
 // Derive nested types from the contract so schema drift fails typecheck here.
 type ConductorResult = NonNullable<CableSizingResponse["conductor"]>;
@@ -16,8 +17,12 @@ type SizingStatus = CableSizingResponse["status"];
 interface CheckRow {
   key: string;
   label: string;
-  // Decimal values are verbatim backend strings; integers are rendered as-is.
+  // Decimal values are exact backend strings: four significant figures on
+  // screen, the exact value in the tooltip (display rule A12). The unit is in
+  // the row label. Integers are rendered as-is.
   value: string | number | null;
+  // Set for descriptive text that is not a quantity.
+  text?: true;
   status?: CheckStatus;
 }
 
@@ -47,11 +52,16 @@ const CHECK_STATUS_LABELS: Record<CheckStatus, string> = {
   NOT_APPLICABLE: "N/A",
 };
 
-function formatValue(value: string | number | null): string {
+function ValueCell({ row }: { row: CheckRow }) {
+  const { value } = row;
   if (value === null) {
-    return EMPTY_VALUE_TEXT;
+    return <td>{EMPTY_VALUE_TEXT}</td>;
   }
-  return String(value);
+  if (typeof value === "number" || row.text) {
+    return <td>{String(value)}</td>;
+  }
+  const quantity = formatQuantity(value);
+  return <td title={quantity.exact ?? undefined}>{quantity.display}</td>;
 }
 
 function conductorRows(section: ConductorResult): CheckRow[] {
@@ -96,6 +106,7 @@ function ampacityRows(section: AmpacityResult): CheckRow[] {
       value: section.derating_established
         ? "Established"
         : `Not established: ${section.unestablished_derating_factors.join(", ")}`,
+      text: true,
     },
     {
       key: "derated_ampacity_a_per_run",
@@ -199,7 +210,7 @@ function CheckTable({ title, rows }: CheckTableProps) {
           {rows.map((row) => (
             <tr key={row.key} data-row-key={row.key}>
               <th scope="row">{row.label}</th>
-              <td>{formatValue(row.value)}</td>
+              <ValueCell row={row} />
               <td data-check-status={row.status ?? ""}>
                 {row.status ? CHECK_STATUS_LABELS[row.status] : EMPTY_VALUE_TEXT}
               </td>
