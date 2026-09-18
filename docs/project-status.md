@@ -61,9 +61,14 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 **EOS-04 Fault complete (item 16b) — in progress.** (a) Run persistence CLOSED `c157522`, `6b25a4b`, `2e8c52f`,
 `e5d8750` (generic `calculation_runs`, no migration, runs isolated per module). (b) §19 study-page layout CLOSED
 `82bd4d6`, `dd9f31d`, `a2008c4`, `1a40366`, `fff952e`, `55313ea`; (a)+(b) released at `55313ea` with a live contract
-probe and smoke SC-MSB-01 7/7. Remaining: (c) Fault UI v2 — multiple sources, branches, decay data, readable
-validation messages, a source-representation hint and the A12 display rule; the slice plan is written before the
-first file; (d) close, release, smoke.
+probe and smoke SC-MSB-01 7/7. (c) was split on 2026-09-18 after inspecting the API contract and the engine.
+(c1) Fault UI v2 — multiple buses, sources and branches (`ShortCircuitStudyRequest` already accepts all three), a
+source-representation hint, readable validation messages and the A12 display rule; frontend only; slice plan: 15
+commits (this register entry, shared formatter, four result components, validation helper, Cable form, Fault
+contract check, bus / source / branch row components, Fault form, page reference case, release). (c2) decay data —
+the engine has no decay model (breaking, steady-state and thermal-equivalent currents are returned as None with
+not-evaluated warnings) and REF-IEC-60909-0 is UNRESOLVED, so (c2) is blocked (see Blocked / waiting) and does not
+hold the EOS-04 close; the three values stay a declared limitation. (d) close, release, smoke after (c1).
 
 **Amendment A11 — idempotent runs — CLOSED 2026-09-18, released at `0c78311`.** Founder decision recorded in the
 Master Prompt §1A at `ca87d0b` (with A12). A Calculate whose content hash and engine version equal the latest
@@ -107,6 +112,8 @@ Follow-ups (not blocking):
   unchanged; revisit with EOS-01 when users and notes become real inputs.
 - Fault form: an empty form hides the impedance / current fields until a source representation is chosen and gives
   no hint of that (founder read it as missing fields on 2026-09-18); add the hint with Fault UI v2.
+- GAP-007 text is stale: a search of `backend/app` for the literal `60909-0:2026` finds nothing on 2026-09-18 (it
+  went with GAP-014); reword GAP-007 to the remaining work — edition resolution and the engine-string test.
 
 Founder decisions (2026-09-18, recorded in the Master Prompt §1A at `ca87d0b`):
 
@@ -121,8 +128,9 @@ Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP
 1. ~~**EOS-06 Cable complete (16b)**~~ DONE — released `40dfe6f` (2026-09-18).
 2. ~~**A10 shell back button**~~ DONE — released `a6a5f5e` (2026-09-18).
 3. **EOS-04 Fault complete (16b):** (a) ~~run persistence~~ DONE `e5d8750`; (b) ~~§19 layout~~ DONE, released
-   `55313ea`; A11 idempotent runs DONE `0c78311`; (c) Fault UI v2 (multiple sources, branches, decay data, readable
-   validation messages, source-representation hint, A12 display rule); (d) close.
+   `55313ea`; A11 idempotent runs DONE `0c78311`; (c1) Fault UI v2 (multiple buses, sources and branches, readable
+   validation messages, source-representation hint, A12 display rule); (d) close. (c2) decay data is BLOCKED on
+   REF-IEC-60909-0 and does not hold the close.
 4. **EOS-01 project spine (item 17):** organization/site/project/revision, profile on project, runs linked.
 5. Then EOS-02, EOS-03, EOS-05, EOS-07, EOS-08 … in §9 order; item 18 docs batch and item 19 §22 gate review
    (user manual = gate 17) scheduled between modules when a gate or reference row blocks the next module.
@@ -131,6 +139,9 @@ Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP
 
 - GAP-001 CPWD Part I Ch 18 table mapping: waits for reference data layer design and independent review.
 - GAP-005/006/007 IEC edition resolution: waits for licence or controlled-copy evidence.
+- EOS-04 (c2) decay data (symmetrical breaking, steady-state and thermal-equivalent currents): waits for a
+  controlled copy of IEC 60909-0 (REF-IEC-60909-0 UNRESOLVED); then domain model, engine, independent review, API
+  and UI, in that order.
 
 ## Environment facts
 
