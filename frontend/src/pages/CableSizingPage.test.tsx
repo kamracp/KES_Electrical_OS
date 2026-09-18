@@ -114,6 +114,11 @@ function calculationState(): string | null | undefined {
   return document.querySelector("[data-calculation-state]")?.getAttribute("data-calculation-state");
 }
 
+// True when `first` comes before `second` in document order.
+function precedes(first: Node, second: Node): boolean {
+  return (first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
 beforeEach(() => {
   createCableRunMock.mockReset();
 });
@@ -193,5 +198,58 @@ describe("CableSizingPage", () => {
     );
     expect(screen.queryByRole("article", { name: "Cable sizing result" })).toBeNull();
     expect(screen.getByRole("button", { name: "Calculate cable sizing" })).toBeEnabled();
+  });
+
+  it("opens with the inputs expanded inside a collapsible block", () => {
+    renderPage();
+
+    const inputs = document.getElementById("cable-sizing-inputs-heading")?.closest("details");
+    expect(inputs).toHaveAttribute("data-study-inputs");
+    expect(inputs).toHaveAttribute("open");
+    expect(inputs).toContainElement(screen.getByRole("form", { name: "Cable sizing inputs" }));
+  });
+
+  it("orders the result column as summary, warnings, traceability, then detail", async () => {
+    createCableRunMock.mockResolvedValue(runResponse);
+    renderPage();
+
+    fillMinimumValidDraft();
+    submit();
+
+    await waitFor(() => expect(calculationState()).toBe("success"));
+    const summary = screen.getByRole("region", { name: "Result summary" });
+    const warnings = screen.getByRole("region", { name: "Engineering warnings" });
+    const traceability = screen.getByRole("region", { name: "Traceability" });
+    const detail = screen.getByRole("article", { name: "Cable sizing result" });
+
+    expect(precedes(summary, warnings)).toBe(true);
+    expect(precedes(warnings, traceability)).toBe(true);
+    expect(precedes(traceability, detail)).toBe(true);
+  });
+
+  it("shows the persisted run in the traceability panel with a JSON export action", async () => {
+    createCableRunMock.mockResolvedValue(runResponse);
+    renderPage();
+
+    fillMinimumValidDraft();
+    submit();
+
+    await waitFor(() => expect(calculationState()).toBe("success"));
+    const traceability = screen.getByRole("region", { name: "Traceability" });
+    expect(traceability).toHaveAttribute("data-run-id", sampleRun.id);
+    expect(within(traceability).getByText(sampleRun.id)).toBeInTheDocument();
+    expect(within(traceability).getByText(sampleRun.engine_version)).toBeInTheDocument();
+
+    const exportButton = within(traceability).getByRole("button", { name: "Download run JSON" });
+    expect(exportButton).toBeEnabled();
+    // Intercept the generated download link: proves the export fired and keeps
+    // jsdom from attempting a real navigation.
+    const anchorClick = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    fireEvent.click(exportButton);
+    expect(anchorClick).toHaveBeenCalledTimes(1);
+    anchorClick.mockRestore();
+    expect(calculationState()).toBe("success");
   });
 });
