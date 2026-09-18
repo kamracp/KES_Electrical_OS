@@ -6,20 +6,24 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ShortCircuitStudyRequest, ShortCircuitStudyResponse } from "../services/fault";
+import type {
+  FaultRunResponse,
+  ShortCircuitStudyRequest,
+  ShortCircuitStudyResponse,
+} from "../services/fault";
 import { FaultStudyPage } from "./FaultStudyPage";
 
-type CalculateFault = (
+type CreateFaultRun = (
   payload: ShortCircuitStudyRequest,
   signal?: AbortSignal,
-) => Promise<ShortCircuitStudyResponse>;
+) => Promise<FaultRunResponse>;
 
-const calculateFaultStudyMock = vi.hoisted(() => vi.fn<CalculateFault>());
+const createFaultRunMock = vi.hoisted(() => vi.fn<CreateFaultRun>());
 
 // Partial mock: keep the real schemas, replace only the network call.
 vi.mock("../services/fault", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../services/fault")>();
-  return { ...actual, calculateFaultStudy: calculateFaultStudyMock };
+  return { ...actual, createFaultRun: createFaultRunMock };
 });
 
 // The full network form is covered by FaultStudyForm.test.tsx; here it is replaced by a
@@ -86,8 +90,31 @@ function createWrapper() {
   };
 }
 
+const sampleRun: FaultRunResponse["run"] = {
+  id: "48a782d0-4331-4aa2-bcd0-f24f5016334a",
+  module_code: "EOS-04",
+  calculation_type: "SHORT_CIRCUIT",
+  calculation_key: "SC-001",
+  revision_number: 1,
+  run_status: "COMPLETED",
+  approval_status: "NOT_SUBMITTED",
+  engine_version: "fault-engine 0.1.0",
+  design_check_status: "CALCULATED",
+  jurisdiction_profile: "IN",
+  reference_verification_status: "UNVERIFIED",
+  content_hash: "e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e280",
+  calculated_by: null,
+  calculated_at: "2026-09-18T12:00:00+00:00",
+  created_at: "2026-09-18T12:00:00+00:00",
+  is_immutable: false,
+  supersedes_run_id: null,
+  notes: null,
+};
+
+const runResponse: FaultRunResponse = { run: sampleRun, result: response };
+
 beforeEach(() => {
-  calculateFaultStudyMock.mockReset();
+  createFaultRunMock.mockReset();
 });
 
 afterEach(() => {
@@ -106,7 +133,7 @@ describe("FaultStudyPage", () => {
   });
 
   it("runs the study, renders result and warning panels, and clears back to idle", async () => {
-    calculateFaultStudyMock.mockResolvedValue(response);
+    createFaultRunMock.mockResolvedValue(runResponse);
     render(<FaultStudyPage />, { wrapper: createWrapper() });
 
     fireEvent.click(screen.getByRole("button", { name: "Submit fixture" }));
@@ -114,8 +141,8 @@ describe("FaultStudyPage", () => {
     await waitFor(() =>
       expect(document.querySelector('[data-calculation-state="success"]')).not.toBeNull(),
     );
-    expect(calculateFaultStudyMock).toHaveBeenCalledTimes(1);
-    expect(calculateFaultStudyMock.mock.calls[0]?.[0]).toBe(fixtureRequest);
+    expect(createFaultRunMock).toHaveBeenCalledTimes(1);
+    expect(createFaultRunMock.mock.calls[0]?.[0]).toBe(fixtureRequest);
     expect(screen.getByRole("article", { name: "Fault study result" })).toBeInTheDocument();
     expect(screen.getByText("Calculated with warnings")).toHaveAttribute(
       "data-result-status",
@@ -132,7 +159,7 @@ describe("FaultStudyPage", () => {
   });
 
   it("surfaces a service error as an alert without a result panel", async () => {
-    calculateFaultStudyMock.mockRejectedValue(
+    createFaultRunMock.mockRejectedValue(
       new Error("body.fault.bus_code: bus MSB-99 is not defined"),
     );
     render(<FaultStudyPage />, { wrapper: createWrapper() });
