@@ -3,6 +3,7 @@ import type {
   ReferenceVerificationStatus,
 } from "../services/cableContract";
 import type { ShortCircuitStudyResponse } from "../services/fault";
+import { formatQuantity } from "../utils/formatQuantity";
 
 // Derive nested types from the contract so schema drift fails typecheck here.
 type SequenceResult = ShortCircuitStudyResponse["sequence_results"][number];
@@ -18,7 +19,9 @@ type ReferenceSource = ShortCircuitStudyResponse["reference_source"];
 interface CurrentRow {
   key: string;
   label: string;
-  // Decimal values are verbatim backend strings; null renders as an em dash.
+  // Decimal values are exact backend strings: four significant figures on
+  // screen, the exact value in the tooltip (display rule A12); null renders as
+  // an em dash. The unit is in the row label.
   value: string | null;
 }
 
@@ -101,8 +104,25 @@ function ReferenceValue({ value }: { value: string | null }) {
   return <dd>{value}</dd>;
 }
 
-function formatValue(value: string | null): string {
+// Descriptive text (codes, reasons). Quantities go through QuantityCell.
+function formatText(value: string | null): string {
   return value === null ? EMPTY_VALUE_TEXT : value;
+}
+
+interface QuantityCellProps {
+  value: string | null;
+  // Adds data-evaluated so a not-evaluated current can be told from a value.
+  markEvaluated?: boolean;
+}
+
+function QuantityCell({ value, markEvaluated = false }: QuantityCellProps) {
+  const quantity = formatQuantity(value);
+  const evaluated = value === null ? "false" : "true";
+  return (
+    <td data-evaluated={markEvaluated ? evaluated : undefined} title={quantity.exact ?? undefined}>
+      {quantity.display}
+    </td>
+  );
 }
 
 function formatCodes(codes: string[]): string {
@@ -162,9 +182,7 @@ function CurrentsTable({ rows }: { rows: CurrentRow[] }) {
           {rows.map((row) => (
             <tr key={row.key} data-row-key={row.key}>
               <th scope="row">{row.label}</th>
-              <td data-evaluated={row.value === null ? "false" : "true"}>
-                {formatValue(row.value)}
-              </td>
+              <QuantityCell value={row.value} markEvaluated />
             </tr>
           ))}
         </tbody>
@@ -198,8 +216,8 @@ function SequenceTable({ rows }: { rows: SequenceResult[] }) {
                 <td data-available={row.available ? "true" : "false"}>
                   {row.available ? "Yes" : "No"}
                 </td>
-                <td>{formatValue(row.resistance_ohm)}</td>
-                <td>{formatValue(row.reactance_ohm)}</td>
+                <QuantityCell value={row.resistance_ohm} />
+                <QuantityCell value={row.reactance_ohm} />
                 <td>{formatCodes(row.path_reference_codes)}</td>
                 <td>{formatCodes(row.blocking_reference_codes)}</td>
               </tr>
@@ -239,9 +257,9 @@ function ContributionsTable({ rows }: { rows: SourceContribution[] }) {
                 <td data-included={row.included ? "true" : "false"}>
                   {row.included ? "Yes" : "No"}
                 </td>
-                <td>{row.initial_symmetrical_current_ka}</td>
-                <td>{formatValue(row.peak_current_ka)}</td>
-                <td>{formatValue(row.exclusion_reason)}</td>
+                <QuantityCell value={row.initial_symmetrical_current_ka} />
+                <QuantityCell value={row.peak_current_ka} />
+                <td>{formatText(row.exclusion_reason)}</td>
               </tr>
             ))}
           </tbody>
@@ -283,7 +301,7 @@ export function FaultStudyResultPanel({ result }: FaultStudyResultPanelProps) {
           <dt>Frequency (Hz)</dt>
           <dd>{result.frequency_hz}</dd>
           <dt>Operating state</dt>
-          <dd>{formatValue(result.operating_state_code)}</dd>
+          <dd>{formatText(result.operating_state_code)}</dd>
         </dl>
       </section>
 

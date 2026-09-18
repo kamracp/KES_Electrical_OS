@@ -15,7 +15,8 @@ function region(name: string): HTMLElement {
   return screen.getByRole("region", { name });
 }
 
-// Decimal strings deliberately carry trailing zeros to prove verbatim rendering.
+// Several decimals carry more than four significant figures to prove display rule A12:
+// rounded on screen, exact in the tooltip.
 const fullResult: ShortCircuitStudyResponse = {
   study_code: "SC-001",
   study_name: "Main switchboard three-phase fault",
@@ -25,8 +26,8 @@ const fullResult: ShortCircuitStudyResponse = {
   nominal_voltage_v: "415",
   frequency_hz: "50",
   status: "CALCULATED",
-  initial_symmetrical_short_circuit_current_ka: "25.40",
-  peak_short_circuit_current_ka: "55.80",
+  initial_symmetrical_short_circuit_current_ka: "25.4037",
+  peak_short_circuit_current_ka: "55.8042",
   symmetrical_breaking_current_ka: "25.40",
   steady_state_short_circuit_current_ka: "24.90",
   thermal_equivalent_short_circuit_current_ka: null,
@@ -38,7 +39,7 @@ const fullResult: ShortCircuitStudyResponse = {
     {
       sequence: "POSITIVE",
       available: true,
-      resistance_ohm: "0.00120",
+      resistance_ohm: "0.00120481",
       reactance_ohm: "0.00930",
       path_reference_codes: ["SRC-01", "BR-01"],
       blocking_reference_codes: [],
@@ -58,7 +59,7 @@ const fullResult: ShortCircuitStudyResponse = {
       source_type: "UTILITY_GRID",
       representation: "VOLTAGE_BEHIND_IMPEDANCE",
       included: true,
-      initial_symmetrical_current_ka: "25.40",
+      initial_symmetrical_current_ka: "25.4037",
       peak_current_ka: "55.80",
       exclusion_reason: null,
     },
@@ -83,7 +84,7 @@ const fullResult: ShortCircuitStudyResponse = {
 };
 
 describe("FaultStudyResultPanel", () => {
-  it("renders the header, fault definition and fault currents verbatim", () => {
+  it("renders the header, fault definition and fault currents with four figures (A12)", () => {
     render(<FaultStudyResultPanel result={fullResult} />);
 
     expect(screen.getByText("SC-001")).toHaveAttribute("data-study-code", "true");
@@ -101,8 +102,10 @@ describe("FaultStudyResultPanel", () => {
     );
 
     const currents = region("Fault currents");
-    expect(within(currents).getByText("55.80")).toBeInTheDocument();
-    expect(within(currents).queryByText("55.8")).toBeNull();
+    const peakCell = currents.querySelector('[data-row-key="peak_short_circuit_current_ka"] td');
+    expect(peakCell?.textContent).toBe("55.80");
+    expect(peakCell).toHaveAttribute("title", "55.8042");
+    expect(within(currents).queryByText("55.8042")).toBeNull();
     expect(within(currents).getByText("1.550")).toBeInTheDocument();
   });
 
@@ -133,6 +136,26 @@ describe("FaultStudyResultPanel", () => {
     expect(motor?.querySelector("[data-included]")).toHaveAttribute("data-included", "false");
     expect(motor?.textContent).toContain("Asynchronous motor");
     expect(motor?.textContent).toContain("Out of service in the selected operating state");
+  });
+
+  it("rounds sequence and contribution values and leaves text without a tooltip", () => {
+    render(<FaultStudyResultPanel result={fullResult} />);
+
+    const positive = region("Sequence impedances").querySelector('[data-sequence="POSITIVE"]');
+    const resistance = positive?.querySelectorAll("td")[1];
+    expect(resistance?.textContent).toBe("0.001205");
+    expect(resistance).toHaveAttribute("title", "0.00120481");
+    expect(resistance).not.toHaveAttribute("data-evaluated");
+
+    const grid = region("Source contributions").querySelector('[data-source-code="SRC-01"]');
+    const gridCurrent = grid?.querySelectorAll("td")[3];
+    expect(gridCurrent?.textContent).toBe("25.40");
+    expect(gridCurrent).toHaveAttribute("title", "25.4037");
+
+    const motor = region("Source contributions").querySelector('[data-source-code="M-07"]');
+    const reason = motor?.querySelectorAll("td")[5];
+    expect(reason?.textContent).toBe("Out of service in the selected operating state");
+    expect(reason).not.toHaveAttribute("title");
   });
 
   it("shows None reported for empty tables and renders references, notes and footer", () => {
