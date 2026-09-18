@@ -42,6 +42,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 | Date | Commit | Notes |
 |---|---|---|
+| 2026-09-18 | `40dfe6f` | Item 16b(c) release (EOS-06 Cable complete): §19 study-page layout — collapsible inputs beside a result-first column (summary strip, warnings, traceability panel, detail tables) and "Download run JSON" for the persisted run; files `5bb02e0`, `1c16d2c`, `a722c74`, `35f2aa9`, `01dc4f2`, `40dfe6f`; backend 927 / frontend 109 tests; via `scripts/deploy.sh` (env loaded from `~/.keos-deploy.env`), restart step reported `active`; live smoke CBL-001 with blank factors → Engineering review required, 150 mm², utilization 0.8805, voltage drop 2.0545 % of 5 %, 5 warnings, run JSON downloaded, narrow window stacks results under inputs; founder browser check 6/6 |
 | 2026-09-17 | `fdb8023` | Navigation shell release (Slice F) via `scripts/deploy.sh`; gate green |
 | 2026-09-17 | `dbbeced` | GAP-013 release: profile-derived cable references via `scripts/deploy.sh`; gate green; US-profile smoke shows pending references and the not-registered warning |
 | 2026-09-17 | `d874622` | Fault UI release (EOS-04 Live): hook, warning panel, result panel, page wiring, nav/home status, field-path validation messages via `scripts/deploy.sh`; gate green; live smoke SC-MSB-01 (Ik'' 35.22 kA, kappa 1.698, X/R 8.15) and SC-MSB-03 current-injection 2.5 kA |
@@ -54,27 +55,40 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 ## Active slice
 
-**EOS-06 Cable complete (item 16b) — in progress.** (a) Slice G derating factors optional CLOSED at `6568af4`.
-(b) Item 15 Cable run persistence CLOSED at `5a9f97c` (`04b8573`..`ce371f1`; generic `calculation_runs` for every
-module, `EngineeringCalculationType` CABLE_SIZING/SHORT_CIRCUIT; engine version string in `services/calculation_run.py`,
-to move onto the engine). Remaining: (c) §19 study-page layout — Calculate persists a run, result summary first,
-warnings, traceability panel (run ID, engine version, profile, reference status, hash, timestamp, approval),
-collapsible inputs, JSON export of the persisted run; (d) close, release, smoke.
+**Amendment A10 — shell back button (founder requirement 2026-09-18) — next.** One "Back" control in the shell
+topbar on every page except Home: browser-history back, falling back to Home when there is no in-app history.
+Recorded in the Master Prompt §1A first (own commit), then built as a small shell slice, released and smoke-tested.
 
-Tooling follow-up: `scripts/deploy.sh` reported success while the backend kept serving the previous code until a
-manual `systemctl restart kes-electrical-os`; verify the restart step and add a post-deploy contract probe.
+**EOS-06 Cable complete (item 16b) — CLOSED 2026-09-18, released at `40dfe6f`.** (a) Slice G derating factors
+optional `6568af4`; (b) item 15 Cable run persistence `5a9f97c` (`04b8573`..`ce371f1`; generic `calculation_runs`
+for every module); (c) §19 study-page layout `5bb02e0`, `1c16d2c`, `a722c74`, `35f2aa9`, `01dc4f2`, `40dfe6f` —
+Calculate persists a run, result summary first, warnings, traceability panel, collapsible inputs, JSON export of
+the persisted run; (d) release and live smoke 6/6. Backend 927 / frontend 109 tests.
+
+Follow-ups (not blocking):
+
+- `scripts/deploy.sh` restart: the step reported `active` on 2026-09-18, but that release had no backend change, so
+  the 2026-09-17 stale-backend case is still unproven — add a post-deploy contract probe.
+- `scripts/deploy.sh` environment: load `~/.keos-deploy.env` itself when present (today a new shell needs
+  `set -a; source ~/.keos-deploy.env; set +a` first, otherwise the script exits 1 on `KEOS_SSH_HOST`).
+- Form validation messages: show the field label and a readable sentence instead of the raw path
+  (`cable.number_of_loaded_conductors: Too small: expected number to be >=1`).
+- Cable API contract: add `governing_criterion` to the response so the result summary can show it.
+- Engine version string still lives in `services/calculation_run.py`; move it onto the engine.
+- Session close: run `git status --short` before ending a session (on 2026-09-17 the 16b(c) page and `study.css`
+  never reached the repo and were rebuilt on 2026-09-18).
 
 Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP-013 at `a2797ee`; Slice F at `fdb8023`.
 
-## Next slices (in order — Master Prompt v2.1 §15, A9)
+## Next slices (in order — Master Prompt v2.1 §15, A9, A10)
 
-1. **EOS-06 Cable complete (16b):** (a) ~~item 14 Slice G~~ DONE `6568af4`; (b) ~~item 15~~ DONE `5a9f97c`; (c) — calculation-run persistence (run ID, engine version, snapshots); (c) §19 study-page
-   layout — result summary first, warnings, traceability panel, collapsible inputs, JSON export of a persisted
-   run; (d) register/project-status close, release, live smoke.
-2. **EOS-04 Fault complete (16b):** run persistence, §19 layout, Fault UI v2 (multiple sources, branches,
+1. ~~**EOS-06 Cable complete (16b)**~~ DONE — released `40dfe6f` (2026-09-18).
+2. **A10 shell back button:** amendment in Master Prompt §1A, then `BackButton` in the shell topbar (history back,
+   Home fallback, hidden on Home), tests, release, live smoke.
+3. **EOS-04 Fault complete (16b):** run persistence, §19 layout, Fault UI v2 (multiple sources, branches,
    decay data).
-3. **EOS-01 project spine (item 17):** organization/site/project/revision, profile on project, runs linked.
-4. Then EOS-02, EOS-03, EOS-05, EOS-07, EOS-08 … in §9 order; item 18 docs batch and item 19 §22 gate review
+4. **EOS-01 project spine (item 17):** organization/site/project/revision, profile on project, runs linked.
+5. Then EOS-02, EOS-03, EOS-05, EOS-07, EOS-08 … in §9 order; item 18 docs batch and item 19 §22 gate review
    (user manual = gate 17) scheduled between modules when a gate or reference row blocks the next module.
 
 ## Blocked / waiting
