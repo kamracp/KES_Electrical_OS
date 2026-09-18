@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { calculationRunSummarySchema } from "./calculationRun";
 import {
   exactDecimalSchema,
   faultBranchTypeSchema,
@@ -244,6 +245,60 @@ export async function calculateFaultStudy(
 
   if (!parsed.success) {
     throw new Error("Unexpected response from the KES Electrical OS fault API.");
+  }
+
+  return parsed.data;
+}
+
+// Persisted runs (Master Prompt v2.1 item 16b / section 19 traceability).
+
+export const faultRunResponseSchema = z
+  .object({
+    run: calculationRunSummarySchema,
+    result: shortCircuitStudyResponseSchema,
+  })
+  .strict();
+
+export type FaultRunResponse = z.infer<typeof faultRunResponseSchema>;
+
+/**
+ * Calculate a short-circuit study and persist it as a run revision.
+ *
+ * The persisted run is the only thing a study page may export (section 20):
+ * the returned summary carries the run ID, engine version, profile, reference
+ * status and content hash shown in the traceability panel.
+ */
+export async function createFaultRun(
+  payload: ShortCircuitStudyRequest,
+  signal?: AbortSignal,
+): Promise<FaultRunResponse> {
+  const validatedPayload = shortCircuitStudyRequestSchema.parse(payload);
+  const timeoutSignal = AbortSignal.timeout(30_000);
+  const requestSignal = signal
+    ? AbortSignal.any([signal, timeoutSignal])
+    : timeoutSignal;
+
+  const response = await fetch("/api/v1/electrical/fault/runs", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ study: validatedPayload }),
+    cache: "no-store",
+    signal: requestSignal,
+  });
+
+  const data: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(formatApiError(data, response.status));
+  }
+
+  const parsed = faultRunResponseSchema.safeParse(data);
+
+  if (!parsed.success) {
+    throw new Error("Unexpected response from the KES Electrical OS fault runs API.");
   }
 
   return parsed.data;

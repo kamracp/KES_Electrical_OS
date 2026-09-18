@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { calculateFaultStudy, type ShortCircuitStudyRequest } from "./fault";
+import { calculateFaultStudy, createFaultRun, type ShortCircuitStudyRequest } from "./fault";
 
 const validRequest: ShortCircuitStudyRequest = {
   code: "FAULT-001",
@@ -68,6 +68,29 @@ const validResponse = {
   operating_state_code: null,
   notes: null,
 };
+
+const validRun = {
+  id: "48a782d0-4331-4aa2-bcd0-f24f5016334a",
+  module_code: "EOS-04",
+  calculation_type: "SHORT_CIRCUIT",
+  calculation_key: "FAULT-001",
+  revision_number: 1,
+  run_status: "COMPLETED",
+  approval_status: "NOT_SUBMITTED",
+  engine_version: "fault-engine 0.1.0",
+  design_check_status: "CALCULATED",
+  jurisdiction_profile: "IN",
+  reference_verification_status: "UNVERIFIED",
+  content_hash: "e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e2805d5d7ba2e280",
+  calculated_by: null,
+  calculated_at: "2026-09-18T12:00:00+00:00",
+  created_at: "2026-09-18T12:00:00+00:00",
+  is_immutable: false,
+  supersedes_run_id: null,
+  notes: null,
+};
+
+const validRunResponse = { run: validRun, result: validResponse };
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -203,5 +226,71 @@ describe("calculateFaultStudy", () => {
     await vi.advanceTimersByTimeAsync(1);
     await rejection;
     expect(fetchMock.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+  });
+});
+
+describe("createFaultRun", () => {
+  it("posts the study to the runs endpoint and returns the run with its result", async () => {
+    fetchMock.mockResolvedValue(Response.json(validRunResponse, { status: 201 }));
+
+    await expect(createFaultRun(validRequest)).resolves.toEqual(validRunResponse);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toBe("/api/v1/electrical/fault/runs");
+    expect(init?.method).toBe("POST");
+    expect(init?.headers).toEqual({
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    });
+    expect(init?.cache).toBe("no-store");
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+    expect(JSON.parse(String(init?.body))).toEqual({ study: validRequest });
+  });
+
+  it("rejects an invalid request before calling the API", async () => {
+    const invalidRequest = {
+      ...validRequest,
+      fault: { ...validRequest.fault, fault_type: "NOT_A_FAULT_TYPE" },
+    } as unknown as ShortCircuitStudyRequest;
+
+    await expect(createFaultRun(invalidRequest)).rejects.toThrow();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("surfaces a backend 422 string detail", async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({ detail: "Fault bus BUS-9 is not defined." }, { status: 422 }),
+    );
+
+    await expect(createFaultRun(validRequest)).rejects.toThrow("Fault bus BUS-9 is not defined.");
+  });
+
+  it("rejects a response whose run summary is malformed", async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({ run: { ...validRun, content_hash: "too-short" }, result: validResponse }),
+    );
+
+    await expect(createFaultRun(validRequest)).rejects.toThrow(
+      "Unexpected response from the KES Electrical OS fault runs API.",
+    );
+  });
+
+  it("rejects a response with an unknown top-level field", async () => {
+    fetchMock.mockResolvedValue(Response.json({ ...validRunResponse, unexpected: true }));
+
+    await expect(createFaultRun(validRequest)).rejects.toThrow(
+      "Unexpected response from the KES Electrical OS fault runs API.",
+    );
+  });
+
+  it("cancels an in-flight request when the caller aborts", async () => {
+    mockPendingRequest();
+    const controller = new AbortController();
+
+    const pending = createFaultRun(validRequest, controller.signal);
+    controller.abort(new Error("cancelled by caller"));
+
+    await expect(pending).rejects.toThrow("cancelled by caller");
   });
 });
