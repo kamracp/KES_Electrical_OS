@@ -1,0 +1,237 @@
+import { describe, expect, it } from "vitest";
+
+import { shortCircuitStudyRequestSchema } from "../services/fault";
+import { describeValidationIssue } from "../utils/validationMessages";
+import {
+  FAULT_STUDY_LABELS,
+  buildShortCircuitPayload,
+  createBranchDraft,
+  createBusDraft,
+  createInitialFaultStudyDraft,
+  createRowId,
+  createSourceDraft,
+  type FaultStudyDraft,
+} from "./faultStudyDraft";
+
+// The single-bus study of the Fault UI v1 form test, as a draft.
+function filledDraft(): FaultStudyDraft {
+  const draft = createInitialFaultStudyDraft();
+  Object.assign(draft.buses[0]!, {
+    code: "BUS-1",
+    name: "Main LV Bus",
+    nominalVoltageV: "415",
+    voltageFactorMax: "1.10",
+    voltageFactorMin: "0.95",
+    neutralEarthingMode: "SOLIDLY_EARTHED",
+  });
+  Object.assign(draft.sources[0]!, {
+    code: "GRID-1",
+    name: "Utility Grid",
+    sourceType: "UTILITY_GRID",
+    representation: "VOLTAGE_BEHIND_IMPEDANCE",
+    positive: { resistanceOhm: "0.0100", reactanceOhm: "0.0200" },
+  });
+  return {
+    ...draft,
+    studyCode: "FAULT-001",
+    studyName: "Main LV Bus Fault Study",
+    calculationCase: "MAXIMUM",
+    faultType: "THREE_PHASE",
+    frequencyHz: "50.0",
+  };
+}
+
+function firstMessage(draft: FaultStudyDraft): string {
+  const parsed = shortCircuitStudyRequestSchema.safeParse(buildShortCircuitPayload(draft));
+  const issue = parsed.error?.issues[0];
+  return issue ? describeValidationIssue(issue, FAULT_STUDY_LABELS) : "no issue";
+}
+
+describe("fault study draft", () => {
+  it("starts as one bus with one source on it and the fault at that bus", () => {
+    const draft = createInitialFaultStudyDraft();
+
+    expect(draft.buses).toHaveLength(1);
+    expect(draft.sources).toHaveLength(1);
+    expect(draft.branches).toEqual([]);
+    expect(draft.sources[0]?.busId).toBe(draft.buses[0]?.id);
+    expect(draft.faultBusId).toBe(draft.buses[0]?.id);
+    expect(draft.jurisdictionProfile).toBe("IN");
+  });
+
+  it("gives every row a different id", () => {
+    const ids = [createRowId("bus"), createRowId("bus"), createBusDraft().id, createBranchDraft().id];
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("buildShortCircuitPayload", () => {
+  it("keeps the single-bus payload exactly as Fault UI v1 sent it", () => {
+    const payload = buildShortCircuitPayload(filledDraft());
+
+    expect(payload).toEqual({
+      code: "FAULT-001",
+      name: "Main LV Bus Fault Study",
+      calculation_case: "MAXIMUM",
+      fault: { bus_code: "BUS-1", fault_type: "THREE_PHASE" },
+      buses: [
+        {
+          code: "BUS-1",
+          name: "Main LV Bus",
+          nominal_voltage_v: "415",
+          voltage_factor_max: "1.10",
+          voltage_factor_min: "0.95",
+          neutral_earthing_mode: "SOLIDLY_EARTHED",
+        },
+      ],
+      sources: [
+        {
+          code: "GRID-1",
+          name: "Utility Grid",
+          bus_code: "BUS-1",
+          source_type: "UTILITY_GRID",
+          representation: "VOLTAGE_BEHIND_IMPEDANCE",
+          positive_sequence_impedance: { resistance_ohm: "0.0100", reactance_ohm: "0.0200" },
+        },
+      ],
+      frequency_hz: "50.0",
+      jurisdiction_profile: "IN",
+    });
+    expect(shortCircuitStudyRequestSchema.safeParse(payload).success).toBe(true);
+  });
+
+  it("sends only the current for a current-injection source", () => {
+    const draft = filledDraft();
+    Object.assign(draft.sources[0]!, {
+      representation: "CURRENT_INJECTION",
+      currentContributionKa: "2.750",
+    });
+
+    const parsed = shortCircuitStudyRequestSchema.parse(buildShortCircuitPayload(draft));
+    expect(parsed.sources[0]).toMatchObject({ current_contribution_ka: "2.750" });
+    expect(parsed.sources[0]).not.toHaveProperty("positive_sequence_impedance");
+  });
+
+  it("omits a blank optional impedance pair and passes a half-filled one through", () => {
+    const draft = filledDraft();
+    Object.assign(draft.sources[0]!, { negative: { resistanceOhm: "0.0110", reactanceOhm: "" } });
+
+    const source = (buildShortCircuitPayload(draft).sources as Record<string, unknown>[])[0];
+    expect(source).toHaveProperty("negative_sequence_impedance", {
+      resistance_ohm: "0.0110",
+      reactance_ohm: "",
+    });
+    expect(source).not.toHaveProperty("zero_sequence_impedance");
+    expect(firstMessage(draft)).toBe("Source 1 — Negative-sequence reactance (Ω) is required.");
+  });
+
+  it("sends a neutral impedance only under its own earthing mode", () => {
+    const draft = filledDraft();
+    Object.assign(draft.buses[0]!, { neutralResistanceOhm: "12.5" });
+
+    const solidly = (buildShortCircuitPayload(draft).buses as Record<string, unknown>[])[0];
+    expect(solidly).not.toHaveProperty("neutral_resistance_ohm");
+
+    Object.assign(draft.buses[0]!, { neutralEarthingMode: "RESISTANCE_EARTHED" });
+    const resistance = (buildShortCircuitPayload(draft).buses as Record<string, unknown>[])[0];
+    expect(resistance).toHaveProperty("neutral_resistance_ohm", "12.5");
+  });
+
+  it("omits a blank frequency and an empty branch list", () => {
+    const payload = buildShortCircuitPayload({ ...filledDraft(), frequencyHz: " " });
+
+    expect(payload).not.toHaveProperty("frequency_hz");
+    expect(payload).not.toHaveProperty("branches");
+  });
+
+  it("builds a two-bus network: bus ids become codes, the branch links the buses", () => {
+    const draft = filledDraft();
+    const mainBus = draft.buses[0]!;
+    const boardBus = {
+      ...createBusDraft(),
+      code: "DB-01",
+      name: "Distribution board",
+      nominalVoltageV: "415",
+      voltageFactorMax: "1.10",
+      voltageFactorMin: "0.95",
+      neutralEarthingMode: "SOLIDLY_EARTHED",
+    };
+    const motor = {
+      ...createSourceDraft(boardBus.id),
+      code: "M-01",
+      name: "Motor group",
+      sourceType: "ASYNCHRONOUS_MOTOR",
+      representation: "CURRENT_INJECTION",
+      currentContributionKa: "1.2",
+      inService: false,
+    };
+    const feeder = {
+      ...createBranchDraft(),
+      code: "CBL-01",
+      name: "Feeder to DB-01",
+      fromBusId: mainBus.id,
+      toBusId: boardBus.id,
+      branchType: "CABLE",
+      positive: { resistanceOhm: "0.0124", reactanceOhm: "0.0080" },
+      parallelCircuits: "2",
+    };
+
+    const parsed = shortCircuitStudyRequestSchema.parse(
+      buildShortCircuitPayload({
+        ...draft,
+        faultBusId: boardBus.id,
+        buses: [mainBus, boardBus],
+        sources: [draft.sources[0]!, motor],
+        branches: [feeder],
+      }),
+    );
+
+    expect(parsed.fault.bus_code).toBe("DB-01");
+    expect(parsed.buses.map((bus) => bus.code)).toEqual(["BUS-1", "DB-01"]);
+    expect(parsed.sources[1]).toEqual({
+      code: "M-01",
+      name: "Motor group",
+      bus_code: "DB-01",
+      source_type: "ASYNCHRONOUS_MOTOR",
+      representation: "CURRENT_INJECTION",
+      current_contribution_ka: "1.2",
+      in_service: false,
+    });
+    expect(parsed.branches).toEqual([
+      {
+        code: "CBL-01",
+        name: "Feeder to DB-01",
+        from_bus_code: "BUS-1",
+        to_bus_code: "DB-01",
+        branch_type: "CABLE",
+        positive_sequence_impedance: { resistance_ohm: "0.0124", reactance_ohm: "0.0080" },
+        parallel_circuits: 2,
+      },
+    ]);
+  });
+
+  it("follows a bus by id when its code is edited later", () => {
+    const draft = filledDraft();
+    Object.assign(draft.buses[0]!, { code: "MSB-01" });
+
+    const parsed = shortCircuitStudyRequestSchema.parse(buildShortCircuitPayload(draft));
+    expect(parsed.sources[0]?.bus_code).toBe("MSB-01");
+    expect(parsed.fault.bus_code).toBe("MSB-01");
+  });
+});
+
+describe("fault study validation messages", () => {
+  it("rewrites the raw source-name message the founder saw", () => {
+    const draft = filledDraft();
+    Object.assign(draft.sources[0]!, { name: "" });
+
+    expect(firstMessage(draft)).toBe("Source 1 — Source name is required.");
+  });
+
+  it("asks for the connected bus when a source points at a removed bus", () => {
+    const draft = filledDraft();
+    Object.assign(draft.sources[0]!, { busId: "bus-removed" });
+
+    expect(firstMessage(draft)).toBe("Source 1 — Connected bus is required.");
+  });
+});
