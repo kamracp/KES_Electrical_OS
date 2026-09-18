@@ -11,6 +11,7 @@ from app.api.v1.cable_run import router as cable_run_router
 from app.api.v1.fault import (
     router as fault_router,
 )
+from app.api.v1.fault_run import router as fault_run_router
 from app.api.v1.generator_sizing import (
     router as generator_sizing_router,
 )
@@ -76,3 +77,4 @@ api_router.include_router(lt_pcc_router)
 api_router.include_router(load_calculation_run_router)
 api_router.include_router(cable_router)
 api_router.include_router(cable_run_router)
+api_router.include_router(fault_run_router)
