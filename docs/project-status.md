@@ -42,6 +42,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 | Date | Commit | Notes |
 |---|---|---|
+| 2026-09-18 | `0c78311` | Amendment A11 release: idempotent runs — shared `reusable_run()` in the generic run service returns the latest revision when content hash and engine version are unchanged; Cable and Fault `create()` reuse it, the run APIs answer 200 instead of 201; governance `ca87d0b`, code `0c78311`; backend 933 / frontend 126 tests; via `scripts/deploy.sh`, restart `active`; live proof on SC-MSB-01 (founder, browser): three Calculates with unchanged inputs → the same run `3750ff34-010c-43d9-96d9-34a431204046`, revision 13, hash `dc9584fe…ff890c` each time; X changed 0.00709 → 0.00710 → new run `ce34e333-0d89-4fd3-9f2d-609ace02b263`, revision 14 (behaviour exists only in `0c78311`, so it also proves the restart); the 12 earlier revisions stay — runs are never deleted |
 | 2026-09-18 | `55313ea` | EOS-04 run persistence + §19 layout release: generic `calculation_runs` reused for `SHORT_CIRCUIT` (no migration), `FaultRunService` (shared SHA-256 `content_hash`, values from the JSON-mode result), `POST/GET /api/v1/electrical/fault/runs`; frontend shared `calculationRun.ts` and `runExport.ts`, `createFaultRun`, `useFaultStudy` with run, `FaultResultSummary`, Fault page in §19 layout; backend 931 / frontend 126 tests; via `scripts/deploy.sh`; post-deploy contract probe `POST /fault/runs` with `{}` → HTTP 422 on live (new backend code proven running — restart step confirmed), live bundle names verified with `curl`; live smoke SC-MSB-01 three-phase 415 V (TX-01 R 0.00087 / X 0.00709 Ω) → Calculated with warnings, Ik'' 35.219668322 kA, ip 84.583705423 kA, X/R 8.149, 3 warnings (breaking / steady-state / thermal-equivalent not evaluated), order summary → warnings → traceability → detail, run `a2cb7a31-3f25-4788-8af4-a55b071c0c20` rev 1 `fault-engine 0.1.0`, `SC-MSB-01-rev1.json` downloaded and matches the screen; repeated Calculate with unchanged inputs → revisions 2, 3, … each with the identical content hash `ccd59175…983da` (founder-confirmed in the browser; live smoke 7/7) |
 | 2026-09-18 | `a6a5f5e` | Amendment A10 release: shell back control — `BackButton` (browser-history back, Home fallback when the page is the first entry of the session, hidden on Home) rendered once in the shell topbar and styled from design tokens; governance `0ee2eca`, files `6e1c0d6`, `8084577`, `a6a5f5e`; backend 927 / frontend 114 tests; via `scripts/deploy.sh`, restart step `active`, live bundle names verified with `curl`; founder browser check 4/4 (absent on Home, present on Cable, Fault → Cable → Home via Back, direct `/cable-sizing` in a new tab → Home) |
 | 2026-09-18 | `40dfe6f` | Item 16b(c) release (EOS-06 Cable complete): §19 study-page layout — collapsible inputs beside a result-first column (summary strip, warnings, traceability panel, detail tables) and "Download run JSON" for the persisted run; files `5bb02e0`, `1c16d2c`, `a722c74`, `35f2aa9`, `01dc4f2`, `40dfe6f`; backend 927 / frontend 109 tests; via `scripts/deploy.sh` (env loaded from `~/.keos-deploy.env`), restart step reported `active`; live smoke CBL-001 with blank factors → Engineering review required, 150 mm², utilization 0.8805, voltage drop 2.0545 % of 5 %, 5 warnings, run JSON downloaded, narrow window stacks results under inputs; founder browser check 6/6 |
@@ -61,7 +62,14 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 `e5d8750` (generic `calculation_runs`, no migration, runs isolated per module). (b) §19 study-page layout CLOSED
 `82bd4d6`, `dd9f31d`, `a2008c4`, `1a40366`, `fff952e`, `55313ea`; (a)+(b) released at `55313ea` with a live contract
 probe and smoke SC-MSB-01 7/7. Remaining: (c) Fault UI v2 — multiple sources, branches, decay data, readable
-validation messages; the slice plan is written before the first file; (d) close, release, smoke.
+validation messages, a source-representation hint and the A12 display rule; the slice plan is written before the
+first file; (d) close, release, smoke.
+
+**Amendment A11 — idempotent runs — CLOSED 2026-09-18, released at `0c78311`.** Founder decision recorded in the
+Master Prompt §1A at `ca87d0b` (with A12). A Calculate whose content hash and engine version equal the latest
+revision's returns that run (HTTP 200); a new revision (HTTP 201) is created only when the evidence or the engine
+changes; comparison is against the latest revision only (A → B → A gives revision 3). Backend 933 tests; live proof
+on SC-MSB-01: revision 13 three times, revision 14 after an input change.
 
 **Amendment A10 — shell back control — CLOSED 2026-09-18, released at `a6a5f5e`.** Founder requirement recorded in
 the Master Prompt §1A at `0ee2eca`; `BackButton` `6e1c0d6`, shell wiring `8084577`, styles `a6a5f5e`. One control in
@@ -95,23 +103,26 @@ Follow-ups (not blocking):
 - Session close: run `git status --short` before ending a session (on 2026-09-17 the 16b(c) page and `study.css`
   never reached the repo and were rebuilt on 2026-09-18).
 
-Founder decisions pending (would amend the Master Prompt, so recorded before any code):
+- Reused runs (A11): `calculated_by` and `notes` of a repeated request are ignored because the stored run is returned
+  unchanged; revisit with EOS-01 when users and notes become real inputs.
+- Fault form: an empty form hides the impedance / current fields until a source representation is chosen and gives
+  no hint of that (founder read it as missing fields on 2026-09-18); add the hint with Fault UI v2.
 
-- Idempotent runs (proposed A11): every Calculate creates a new revision even when nothing changed — observed
-  live on 2026-09-18 (revisions 1, 2, 3 … with one identical content hash). Proposal: when the new `content_hash`
-  equals the latest revision's hash for the same study code, return that run instead of creating a revision; one
-  change in the generic run service, for Cable and Fault alike.
-- Display precision: the result summary shows exact engine decimals (`35.219668322 kA`). Proposal: a display rule
-  of 4 significant figures in summaries and tables, with the exact value kept in the detail, the run and the JSON.
+Founder decisions (2026-09-18, recorded in the Master Prompt §1A at `ca87d0b`):
+
+- A11 idempotent runs — DONE, released `0c78311` (see above).
+- A12 display precision — 4 significant figures in summaries and tables, exact value kept on the page (tooltip), in
+  the run and in the JSON export; one shared formatter for Cable and Fault; scheduled with EOS-04 (c) Fault UI v2.
 
 Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP-013 at `a2797ee`; Slice F at `fdb8023`.
 
-## Next slices (in order — Master Prompt v2.1 §15, A9, A10)
+## Next slices (in order — Master Prompt v2.1 §15, A9, A10, A11, A12)
 
 1. ~~**EOS-06 Cable complete (16b)**~~ DONE — released `40dfe6f` (2026-09-18).
 2. ~~**A10 shell back button**~~ DONE — released `a6a5f5e` (2026-09-18).
 3. **EOS-04 Fault complete (16b):** (a) ~~run persistence~~ DONE `e5d8750`; (b) ~~§19 layout~~ DONE, released
-   `55313ea`; (c) Fault UI v2 (multiple sources, branches, decay data, readable validation messages); (d) close.
+   `55313ea`; A11 idempotent runs DONE `0c78311`; (c) Fault UI v2 (multiple sources, branches, decay data, readable
+   validation messages, source-representation hint, A12 display rule); (d) close.
 4. **EOS-01 project spine (item 17):** organization/site/project/revision, profile on project, runs linked.
 5. Then EOS-02, EOS-03, EOS-05, EOS-07, EOS-08 … in §9 order; item 18 docs batch and item 19 §22 gate review
    (user manual = gate 17) scheduled between modules when a gate or reference row blocks the next module.
