@@ -18,12 +18,26 @@ from app.models.load_calculation_run import (
 )
 from app.repositories.calculation_run import CalculationRunRepository
 from app.schemas.cable import CableSizingResponse
-from app.schemas.calculation_run import CableRunCreateRequest
+from app.schemas.calculation_run import CableRunCreateRequest, FaultRunCreateRequest
+from app.schemas.fault import ShortCircuitStudyResponse
 from app.services.cable import CableSizingService
+from app.services.fault import FaultCalculationService
 
 CABLE_MODULE_CODE = "EOS-06"
 # Bump whenever the cable engine's method, rounding or reference handling changes.
 CABLE_ENGINE_VERSION = "cable-engine 0.1.0"
+
+FAULT_MODULE_CODE = "EOS-04"
+# Bump whenever the fault engine's method, rounding or reference handling changes.
+FAULT_ENGINE_VERSION = "fault-engine 0.1.0"
+# Result fields frozen into the references snapshot of a fault run.
+_FAULT_REFERENCE_FIELDS = (
+    "standard_reference",
+    "earth_current_reference",
+    "reference_source",
+    "jurisdiction_profile",
+    "reference_verification_status",
+)
 
 
 def content_hash(input_snapshot: dict[str, Any], result_snapshot: dict[str, Any]) -> str:
@@ -111,4 +125,81 @@ class CableRunService:
         return await self.repository.list_recent(CABLE_MODULE_CODE, limit=limit)
 
 
-__all__ = ["CABLE_ENGINE_VERSION", "CABLE_MODULE_CODE", "CableRunService", "content_hash"]
+class FaultRunService:
+    """Calculate a short-circuit study and persist it as a CalculationRun."""
+
+    def __init__(self, repository: CalculationRunRepository) -> None:
+        self.repository = repository
+        self.engine_service = FaultCalculationService()
+
+    async def create(
+        self,
+        payload: FaultRunCreateRequest,
+    ) -> tuple[CalculationRun, ShortCircuitStudyResponse]:
+        """Run the engine, freeze the evidence and store a new revision."""
+
+        result = self.engine_service.calculate_short_circuit(payload.study)
+        response = ShortCircuitStudyResponse.from_domain(result)
+
+        input_snapshot = payload.study.model_dump(mode="json")
+        # The JSON-mode dump is the single source for every stored value, so the
+        # run row always matches what the API returns.
+        result_snapshot = response.model_dump(mode="json")
+        references_snapshot = {name: result_snapshot[name] for name in _FAULT_REFERENCE_FIELDS}
+        calculation_key = payload.study.code
+        revision = await self.repository.get_next_revision_number(
+            FAULT_MODULE_CODE,
+            calculation_key,
+        )
+
+        run = CalculationRun(
+            module_code=FAULT_MODULE_CODE,
+            calculation_type=EngineeringCalculationType.SHORT_CIRCUIT.value,
+            calculation_key=calculation_key,
+            revision_number=revision,
+            run_status=CalculationRunStatus.COMPLETED.value,
+            approval_status=CalculationApprovalStatus.NOT_SUBMITTED.value,
+            engine_version=FAULT_ENGINE_VERSION,
+            design_check_status=str(result_snapshot["status"]),
+            jurisdiction_profile=str(result_snapshot["jurisdiction_profile"]),
+            reference_verification_status=str(result_snapshot["reference_verification_status"]),
+            input_snapshot=input_snapshot,
+            result_snapshot=result_snapshot,
+            warnings_snapshot=list(result_snapshot.get("warnings", [])),
+            references_snapshot=references_snapshot,
+            content_hash=content_hash(input_snapshot, result_snapshot),
+            calculated_by=payload.calculated_by,
+            is_immutable=False,
+            notes=payload.notes,
+        )
+        stored = await self.repository.create(run)
+        return stored, response
+
+    async def get(self, run_id: UUID) -> CalculationRun | None:
+        """Return one run by id (any module)."""
+
+        return await self.repository.get_by_id(run_id)
+
+    async def list_for_key(self, calculation_key: str) -> list[CalculationRun]:
+        """Return every fault run revision for a study code, newest first."""
+
+        return await self.repository.list_by_calculation_key(
+            FAULT_MODULE_CODE,
+            calculation_key,
+        )
+
+    async def list_recent(self, limit: int = 20) -> list[CalculationRun]:
+        """Return the most recent fault runs."""
+
+        return await self.repository.list_recent(FAULT_MODULE_CODE, limit=limit)
+
+
+__all__ = [
+    "CABLE_ENGINE_VERSION",
+    "CABLE_MODULE_CODE",
+    "FAULT_ENGINE_VERSION",
+    "FAULT_MODULE_CODE",
+    "CableRunService",
+    "FaultRunService",
+    "content_hash",
+]
