@@ -1,6 +1,7 @@
 import "../styles/study.css";
 
 import type { CableSizingRequest } from "../services/cable";
+import { downloadRunJson } from "../services/runExport";
 import { CableResultSummary } from "../components/CableResultSummary";
 import { CableSizingForm } from "../components/CableSizingForm";
 import { CableSizingResultPanel } from "../components/CableSizingResultPanel";
@@ -13,23 +14,6 @@ function describeError(error: unknown): string {
     return error.message;
   }
   return "The cable sizing calculation could not be completed.";
-}
-
-// Export is offered only for a persisted run (Master Prompt v2.1 sections 19
-// and 20): the file holds the stored run summary and the result it produced.
-function downloadRunJson(payload: unknown, filename: string): void {
-  if (typeof URL.createObjectURL !== "function") {
-    return;
-  }
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
 }
 
 // Study-page layout (Master Prompt v2.1 section 19): collapsible inputs beside
