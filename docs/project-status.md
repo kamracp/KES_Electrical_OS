@@ -42,6 +42,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 | Date | Commit | Notes |
 |---|---|---|
+| 2026-09-18 | `a6a5f5e` | Amendment A10 release: shell back control — `BackButton` (browser-history back, Home fallback when the page is the first entry of the session, hidden on Home) rendered once in the shell topbar and styled from design tokens; governance `0ee2eca`, files `6e1c0d6`, `8084577`, `a6a5f5e`; backend 927 / frontend 114 tests; via `scripts/deploy.sh`, restart step `active`, live bundle names verified with `curl`; founder browser check 4/4 (absent on Home, present on Cable, Fault → Cable → Home via Back, direct `/cable-sizing` in a new tab → Home) |
 | 2026-09-18 | `40dfe6f` | Item 16b(c) release (EOS-06 Cable complete): §19 study-page layout — collapsible inputs beside a result-first column (summary strip, warnings, traceability panel, detail tables) and "Download run JSON" for the persisted run; files `5bb02e0`, `1c16d2c`, `a722c74`, `35f2aa9`, `01dc4f2`, `40dfe6f`; backend 927 / frontend 109 tests; via `scripts/deploy.sh` (env loaded from `~/.keos-deploy.env`), restart step reported `active`; live smoke CBL-001 with blank factors → Engineering review required, 150 mm², utilization 0.8805, voltage drop 2.0545 % of 5 %, 5 warnings, run JSON downloaded, narrow window stacks results under inputs; founder browser check 6/6 |
 | 2026-09-17 | `fdb8023` | Navigation shell release (Slice F) via `scripts/deploy.sh`; gate green |
 | 2026-09-17 | `dbbeced` | GAP-013 release: profile-derived cable references via `scripts/deploy.sh`; gate green; US-profile smoke shows pending references and the not-registered warning |
@@ -55,9 +56,14 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 ## Active slice
 
-**Amendment A10 — shell back button (founder requirement 2026-09-18) — next.** One "Back" control in the shell
-topbar on every page except Home: browser-history back, falling back to Home when there is no in-app history.
-Recorded in the Master Prompt §1A first (own commit), then built as a small shell slice, released and smoke-tested.
+**EOS-04 Fault complete (item 16b) — next.** Run persistence on the generic `calculation_runs` table, §19
+study-page layout reusing `study.css` and `RunTraceabilityPanel`, Fault UI v2 (multiple sources, branches, decay
+data); the slice plan is written before the first file.
+
+**Amendment A10 — shell back control — CLOSED 2026-09-18, released at `a6a5f5e`.** Founder requirement recorded in
+the Master Prompt §1A at `0ee2eca`; `BackButton` `6e1c0d6`, shell wiring `8084577`, styles `a6a5f5e`. One control in
+the shell topbar on every page except Home: browser-history back, Home fallback when there is no in-app history.
+An unsaved-draft warning is deferred until EOS-01 drafts exist. Frontend 114 tests; live smoke 4/4.
 
 **EOS-06 Cable complete (item 16b) — CLOSED 2026-09-18, released at `40dfe6f`.** (a) Slice G derating factors
 optional `6568af4`; (b) item 15 Cable run persistence `5a9f97c` (`04b8573`..`ce371f1`; generic `calculation_runs`
@@ -83,8 +89,7 @@ Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP
 ## Next slices (in order — Master Prompt v2.1 §15, A9, A10)
 
 1. ~~**EOS-06 Cable complete (16b)**~~ DONE — released `40dfe6f` (2026-09-18).
-2. **A10 shell back button:** amendment in Master Prompt §1A, then `BackButton` in the shell topbar (history back,
-   Home fallback, hidden on Home), tests, release, live smoke.
+2. ~~**A10 shell back button**~~ DONE — released `a6a5f5e` (2026-09-18).
 3. **EOS-04 Fault complete (16b):** run persistence, §19 layout, Fault UI v2 (multiple sources, branches,
    decay data).
 4. **EOS-01 project spine (item 17):** organization/site/project/revision, profile on project, runs linked.
