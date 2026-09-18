@@ -1,7 +1,11 @@
+import "../styles/study.css";
+
 import type { CableSizingRequest } from "../services/cable";
+import { CableResultSummary } from "../components/CableResultSummary";
 import { CableSizingForm } from "../components/CableSizingForm";
 import { CableSizingResultPanel } from "../components/CableSizingResultPanel";
 import { CableWarningPanel } from "../components/CableWarningPanel";
+import { RunTraceabilityPanel } from "../components/RunTraceabilityPanel";
 import { useCableSizing } from "../hooks/useCableSizing";
 
 function describeError(error: unknown): string {
@@ -11,8 +15,27 @@ function describeError(error: unknown): string {
   return "The cable sizing calculation could not be completed.";
 }
 
+// Export is offered only for a persisted run (Master Prompt v2.1 sections 19
+// and 20): the file holds the stored run summary and the result it produced.
+function downloadRunJson(payload: unknown, filename: string): void {
+  if (typeof URL.createObjectURL !== "function") {
+    return;
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+// Study-page layout (Master Prompt v2.1 section 19): collapsible inputs beside
+// a result-first column - summary, warnings, traceability, then detail tables.
 export function CableSizingPage() {
-  const { calculate, reset, result, error, isPending, isError } = useCableSizing();
+  const { calculate, reset, result, run, error, isPending, isError } = useCableSizing();
 
   // Errors are surfaced through the hook state below, not thrown into the form.
   async function handleSubmit(payload: CableSizingRequest): Promise<void> {
@@ -34,44 +57,62 @@ export function CableSizingPage() {
         </p>
       </header>
 
-      <section aria-labelledby="cable-sizing-inputs-heading">
-        <h2 id="cable-sizing-inputs-heading">Inputs</h2>
-        <CableSizingForm disabled={isPending} onSubmit={handleSubmit} />
-      </section>
+      <div data-study-layout>
+        <section aria-labelledby="cable-sizing-inputs-heading">
+          <details open data-study-inputs>
+            <summary>
+              <h2 id="cable-sizing-inputs-heading">Inputs</h2>
+            </summary>
+            <CableSizingForm disabled={isPending} onSubmit={handleSubmit} />
+          </details>
+        </section>
 
-      <section aria-labelledby="cable-sizing-results-heading">
-        <h2 id="cable-sizing-results-heading">Results</h2>
+        <section aria-labelledby="cable-sizing-results-heading" data-study-results>
+          <h2 id="cable-sizing-results-heading">Results</h2>
 
-        {isPending ? (
-          <p role="status" data-calculation-state="pending">
-            Calculating cable size…
-          </p>
-        ) : null}
-
-        {isError ? (
-          <p role="alert" data-calculation-state="error">
-            {describeError(error)}
-          </p>
-        ) : null}
-
-        {result ? (
-          <div data-calculation-state="success">
-            <CableSizingResultPanel result={result} />
-            <CableWarningPanel warnings={result.warnings} />
-            <p>
-              <button type="button" onClick={reset}>
-                Clear results
-              </button>
+          {isPending ? (
+            <p role="status" data-calculation-state="pending">
+              Calculating cable size…
             </p>
-          </div>
-        ) : null}
+          ) : null}
 
-        {!isPending && !isError && !result ? (
-          <p data-calculation-state="idle">
-            Submit the inputs above to run a cable sizing design check.
-          </p>
-        ) : null}
-      </section>
+          {isError ? (
+            <p role="alert" data-calculation-state="error">
+              {describeError(error)}
+            </p>
+          ) : null}
+
+          {result ? (
+            <div data-calculation-state="success">
+              <CableResultSummary result={result} />
+              <CableWarningPanel warnings={result.warnings} />
+              {run ? (
+                <RunTraceabilityPanel
+                  run={run}
+                  onExport={() =>
+                    downloadRunJson(
+                      { run, result },
+                      `${run.calculation_key}-rev${run.revision_number}.json`,
+                    )
+                  }
+                />
+              ) : null}
+              <CableSizingResultPanel result={result} />
+              <p>
+                <button type="button" onClick={reset}>
+                  Clear results
+                </button>
+              </p>
+            </div>
+          ) : null}
+
+          {!isPending && !isError && !result ? (
+            <p data-calculation-state="idle">
+              Submit the inputs to run a cable sizing design check.
+            </p>
+          ) : null}
+        </section>
+      </div>
 
       <section aria-labelledby="cable-sizing-review-heading">
         <h2 id="cable-sizing-review-heading">Engineering review required</h2>

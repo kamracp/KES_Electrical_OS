@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -156,7 +156,8 @@ describe("CableSizingPage", () => {
 
     await waitFor(() => expect(calculationState()).toBe("success"));
     expect(screen.getByRole("article", { name: "Cable sizing result" })).toBeInTheDocument();
-    expect(screen.getByText("Design check passed")).toBeInTheDocument();
+    const summary = screen.getByRole("region", { name: "Result summary" });
+    expect(within(summary).getByText("Design check passed")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Engineering warnings" })).toHaveTextContent(
       "High total derating",
     );

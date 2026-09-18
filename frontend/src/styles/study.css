@@ -1,0 +1,205 @@
+/*
+ * Study-page layout - Master Prompt v2.1 section 19 (result-first).
+ * Shared by every module study page: collapsible inputs beside the result
+ * column (summary, warnings, traceability, detail tables).
+ * Uses only the --kes-* design tokens defined in global.css.
+ */
+
+/* ---- Two-column layout ------------------------------------------------- */
+
+[data-study-layout] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--kes-space-5);
+  align-items: start;
+}
+
+@media (min-width: 80rem) {
+  [data-study-layout] {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 6fr);
+  }
+}
+
+[data-study-results] {
+  display: grid;
+  gap: var(--kes-space-4);
+  min-width: 0;
+}
+
+[data-study-results] > h2 {
+  margin: 0;
+}
+
+[data-study-results] [data-calculation-state="success"] {
+  display: grid;
+  gap: var(--kes-space-4);
+}
+
+/* ---- Calculation state messages (idle / pending / error) --------------- */
+
+[data-study-results] > p[data-calculation-state] {
+  margin: 0;
+  padding: var(--kes-space-4);
+  border: 1px dashed var(--kes-color-border-strong);
+  border-radius: var(--kes-radius);
+  background: var(--kes-color-surface-muted);
+  color: var(--kes-color-muted);
+}
+
+[data-study-results] > p[data-calculation-state="pending"] {
+  border-style: solid;
+  background: var(--kes-color-pending-soft);
+  color: var(--kes-color-pending);
+}
+
+[data-study-results] > p[data-calculation-state="error"] {
+  border-style: solid;
+  border-color: var(--kes-color-fail);
+  background: var(--kes-color-fail-soft);
+  color: var(--kes-color-fail);
+}
+
+/* ---- Collapsible inputs ------------------------------------------------ */
+
+[data-study-inputs] {
+  background: var(--kes-color-surface);
+  border: 1px solid var(--kes-color-border);
+  border-radius: var(--kes-radius);
+}
+
+[data-study-inputs] > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kes-space-3);
+  padding: var(--kes-space-3) var(--kes-space-4);
+  cursor: pointer;
+  list-style: none;
+}
+
+[data-study-inputs] > summary::-webkit-details-marker {
+  display: none;
+}
+
+[data-study-inputs] > summary h2 {
+  margin: 0;
+  font-size: var(--kes-text-lg);
+}
+
+[data-study-inputs] > summary::after {
+  content: "Expand";
+  flex: none;
+  padding: var(--kes-space-1) var(--kes-space-3);
+  border-radius: 999px;
+  background: var(--kes-color-primary-soft);
+  color: var(--kes-color-primary-strong);
+  font-size: var(--kes-text-xs);
+  font-weight: 600;
+}
+
+[data-study-inputs][open] > summary::after {
+  content: "Collapse";
+}
+
+[data-study-inputs][open] > summary {
+  border-bottom: 1px solid var(--kes-color-border);
+}
+
+[data-study-inputs] > summary:focus-visible {
+  outline: 2px solid var(--kes-color-focus);
+  outline-offset: 2px;
+}
+
+[data-study-inputs] > :not(summary) {
+  padding: var(--kes-space-4);
+}
+
+/* ---- Result summary ---------------------------------------------------- */
+
+[data-summary-tone] {
+  padding: var(--kes-space-4);
+  border: 1px solid var(--kes-color-border);
+  border-left-width: 0.375rem;
+  border-radius: var(--kes-radius);
+  background: var(--kes-color-surface);
+}
+
+[data-summary-tone="pass"] {
+  border-left-color: var(--kes-color-pass);
+  background: var(--kes-color-pass-soft);
+}
+
+[data-summary-tone="fail"] {
+  border-left-color: var(--kes-color-fail);
+  background: var(--kes-color-fail-soft);
+}
+
+[data-summary-tone="warning"] {
+  border-left-color: var(--kes-color-warning);
+  background: var(--kes-color-warning-soft);
+}
+
+[data-summary-tone] > header > p {
+  margin: 0;
+  color: var(--kes-color-muted);
+  font-size: var(--kes-text-sm);
+}
+
+[data-summary-tone] > header > p[data-summary-status] {
+  margin-bottom: var(--kes-space-1);
+  color: var(--kes-color-text);
+  font-size: var(--kes-text-xl);
+  font-weight: 700;
+}
+
+[data-summary-tone="pass"] > header > p[data-summary-status] {
+  color: var(--kes-color-pass);
+}
+
+[data-summary-tone="fail"] > header > p[data-summary-status] {
+  color: var(--kes-color-fail);
+}
+
+[data-summary-tone="warning"] > header > p[data-summary-status] {
+  color: var(--kes-color-warning);
+}
+
+/* ---- Summary strip: the four decisive figures -------------------------- */
+
+[data-summary-strip] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--kes-space-3);
+  margin: var(--kes-space-4) 0 0;
+  padding: 0;
+}
+
+[data-summary-strip] > div {
+  display: block;
+  margin: 0;
+  padding: var(--kes-space-3);
+  border: 1px solid var(--kes-color-border);
+  border-radius: var(--kes-radius-sm);
+  background: var(--kes-color-surface);
+}
+
+[data-summary-strip] dt {
+  margin: 0;
+  color: var(--kes-color-muted);
+  font-size: var(--kes-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+[data-summary-strip] dd {
+  margin: var(--kes-space-1) 0 0;
+  color: var(--kes-color-text);
+  font-size: var(--kes-text-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-summary-strip] dd[data-summary-warnings]:not([data-summary-warnings="0"]) {
+  color: var(--kes-color-warning);
+}
