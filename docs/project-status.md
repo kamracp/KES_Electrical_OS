@@ -42,6 +42,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 | Date | Commit | Notes |
 |---|---|---|
+| 2026-09-18 | `55313ea` | EOS-04 run persistence + §19 layout release: generic `calculation_runs` reused for `SHORT_CIRCUIT` (no migration), `FaultRunService` (shared SHA-256 `content_hash`, values from the JSON-mode result), `POST/GET /api/v1/electrical/fault/runs`; frontend shared `calculationRun.ts` and `runExport.ts`, `createFaultRun`, `useFaultStudy` with run, `FaultResultSummary`, Fault page in §19 layout; backend 931 / frontend 126 tests; via `scripts/deploy.sh`; post-deploy contract probe `POST /fault/runs` with `{}` → HTTP 422 on live (new backend code proven running — restart step confirmed), live bundle names verified with `curl`; live smoke SC-MSB-01 three-phase 415 V (TX-01 R 0.00087 / X 0.00709 Ω) → Calculated with warnings, Ik'' 35.219668322 kA, ip 84.583705423 kA, X/R 8.149, 3 warnings (breaking / steady-state / thermal-equivalent not evaluated), order summary → warnings → traceability → detail, run `a2cb7a31-3f25-4788-8af4-a55b071c0c20` rev 1 `fault-engine 0.1.0`, `SC-MSB-01-rev1.json` downloaded and matches the screen; repeated Calculate with unchanged inputs → revisions 2, 3, … each with the identical content hash `ccd59175…983da` (founder-confirmed in the browser; live smoke 7/7) |
 | 2026-09-18 | `a6a5f5e` | Amendment A10 release: shell back control — `BackButton` (browser-history back, Home fallback when the page is the first entry of the session, hidden on Home) rendered once in the shell topbar and styled from design tokens; governance `0ee2eca`, files `6e1c0d6`, `8084577`, `a6a5f5e`; backend 927 / frontend 114 tests; via `scripts/deploy.sh`, restart step `active`, live bundle names verified with `curl`; founder browser check 4/4 (absent on Home, present on Cable, Fault → Cable → Home via Back, direct `/cable-sizing` in a new tab → Home) |
 | 2026-09-18 | `40dfe6f` | Item 16b(c) release (EOS-06 Cable complete): §19 study-page layout — collapsible inputs beside a result-first column (summary strip, warnings, traceability panel, detail tables) and "Download run JSON" for the persisted run; files `5bb02e0`, `1c16d2c`, `a722c74`, `35f2aa9`, `01dc4f2`, `40dfe6f`; backend 927 / frontend 109 tests; via `scripts/deploy.sh` (env loaded from `~/.keos-deploy.env`), restart step reported `active`; live smoke CBL-001 with blank factors → Engineering review required, 150 mm², utilization 0.8805, voltage drop 2.0545 % of 5 %, 5 warnings, run JSON downloaded, narrow window stacks results under inputs; founder browser check 6/6 |
 | 2026-09-17 | `fdb8023` | Navigation shell release (Slice F) via `scripts/deploy.sh`; gate green |
@@ -56,9 +57,11 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 ## Active slice
 
-**EOS-04 Fault complete (item 16b) — next.** Run persistence on the generic `calculation_runs` table, §19
-study-page layout reusing `study.css` and `RunTraceabilityPanel`, Fault UI v2 (multiple sources, branches, decay
-data); the slice plan is written before the first file.
+**EOS-04 Fault complete (item 16b) — in progress.** (a) Run persistence CLOSED `c157522`, `6b25a4b`, `2e8c52f`,
+`e5d8750` (generic `calculation_runs`, no migration, runs isolated per module). (b) §19 study-page layout CLOSED
+`82bd4d6`, `dd9f31d`, `a2008c4`, `1a40366`, `fff952e`, `55313ea`; (a)+(b) released at `55313ea` with a live contract
+probe and smoke SC-MSB-01 7/7. Remaining: (c) Fault UI v2 — multiple sources, branches, decay data, readable
+validation messages; the slice plan is written before the first file; (d) close, release, smoke.
 
 **Amendment A10 — shell back control — CLOSED 2026-09-18, released at `a6a5f5e`.** Founder requirement recorded in
 the Master Prompt §1A at `0ee2eca`; `BackButton` `6e1c0d6`, shell wiring `8084577`, styles `a6a5f5e`. One control in
@@ -73,16 +76,33 @@ the persisted run; (d) release and live smoke 6/6. Backend 927 / frontend 109 te
 
 Follow-ups (not blocking):
 
-- `scripts/deploy.sh` restart: the step reported `active` on 2026-09-18, but that release had no backend change, so
-  the 2026-09-17 stale-backend case is still unproven — add a post-deploy contract probe.
+- `scripts/deploy.sh` restart: PROVEN on 2026-09-18 — after a real backend change the live contract probe
+  (`POST /api/v1/electrical/fault/runs` with `{}` → HTTP 422, not 404) showed the new code running. Make this
+  probe a permanent post-deploy step of `deploy.sh` (one new-in-this-release endpoint per release).
 - `scripts/deploy.sh` environment: load `~/.keos-deploy.env` itself when present (today a new shell needs
   `set -a; source ~/.keos-deploy.env; set +a` first, otherwise the script exits 1 on `KEOS_SSH_HOST`).
-- Form validation messages: show the field label and a readable sentence instead of the raw path
-  (`cable.number_of_loaded_conductors: Too small: expected number to be >=1`).
-- Cable API contract: add `governing_criterion` to the response so the result summary can show it.
-- Engine version string still lives in `services/calculation_run.py`; move it onto the engine.
+- Form validation messages: show the field label and a readable sentence instead of the raw path — seen twice on
+  2026-09-18 (`cable.number_of_loaded_conductors: Too small: expected number to be >=1`,
+  `sources.0.name: Too small: expected string to have >=1 characters`); scheduled with Fault UI v2.
+- Cable API contract: the engine already computes `governing_criterion`; expose it on the response so the result
+  summary can show it.
+- Engine version strings (`cable-engine`, `fault-engine`) live in `services/calculation_run.py`; move them onto
+  the engines.
+- `createCableRun` has no service-level tests (`cable.test.ts` covers only `calculateCableSizing`); copy the six
+  `createFaultRun` tests.
+- Shared frontend contract schemas: `fault.ts` imports `jurisdictionProfileSchema` and
+  `referenceVerificationStatusSchema` from `cableContract`; move them to a module-neutral file.
 - Session close: run `git status --short` before ending a session (on 2026-09-17 the 16b(c) page and `study.css`
   never reached the repo and were rebuilt on 2026-09-18).
+
+Founder decisions pending (would amend the Master Prompt, so recorded before any code):
+
+- Idempotent runs (proposed A11): every Calculate creates a new revision even when nothing changed — observed
+  live on 2026-09-18 (revisions 1, 2, 3 … with one identical content hash). Proposal: when the new `content_hash`
+  equals the latest revision's hash for the same study code, return that run instead of creating a revision; one
+  change in the generic run service, for Cable and Fault alike.
+- Display precision: the result summary shows exact engine decimals (`35.219668322 kA`). Proposal: a display rule
+  of 4 significant figures in summaries and tables, with the exact value kept in the detail, the run and the JSON.
 
 Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP-013 at `a2797ee`; Slice F at `fdb8023`.
 
@@ -90,8 +110,8 @@ Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP
 
 1. ~~**EOS-06 Cable complete (16b)**~~ DONE — released `40dfe6f` (2026-09-18).
 2. ~~**A10 shell back button**~~ DONE — released `a6a5f5e` (2026-09-18).
-3. **EOS-04 Fault complete (16b):** run persistence, §19 layout, Fault UI v2 (multiple sources, branches,
-   decay data).
+3. **EOS-04 Fault complete (16b):** (a) ~~run persistence~~ DONE `e5d8750`; (b) ~~§19 layout~~ DONE, released
+   `55313ea`; (c) Fault UI v2 (multiple sources, branches, decay data, readable validation messages); (d) close.
 4. **EOS-01 project spine (item 17):** organization/site/project/revision, profile on project, runs linked.
 5. Then EOS-02, EOS-03, EOS-05, EOS-07, EOS-08 … in §9 order; item 18 docs batch and item 19 §22 gate review
    (user manual = gate 17) scheduled between modules when a gate or reference row blocks the next module.
