@@ -4,6 +4,8 @@ import {
   cableSizingRequestSchema,
   type CableSizingRequest,
 } from "../services/cable";
+import { describeValidationIssue } from "../utils/validationMessages";
+import { CABLE_SIZING_LABELS } from "./cableSizingLabels";
 
 type CableSizingFormProps = {
   disabled?: boolean;
@@ -183,9 +185,10 @@ export function CableSizingForm({ disabled = false, onSubmit }: CableSizingFormP
 
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
-      const location = issue?.path.length ? `${issue.path.join(".")}: ` : "";
       setValidationError(
-        issue ? `${location}${issue.message}` : "Review the cable sizing inputs.",
+        issue
+          ? describeValidationIssue(issue, CABLE_SIZING_LABELS)
+          : "Review the cable sizing inputs.",
       );
       return;
     }

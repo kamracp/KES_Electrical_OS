@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { CableSizingRequest } from "../services/cable";
 import { CableSizingForm } from "./CableSizingForm";
+import { CABLE_SIZING_LABELS } from "./cableSizingLabels";
 
 afterEach(() => {
   cleanup();
@@ -54,7 +55,7 @@ describe("CableSizingForm", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Calculate cable sizing" }));
 
-    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Study code is required.");
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
@@ -150,7 +151,7 @@ describe("CableSizingForm", () => {
     });
   });
 
-  it("reports a descending size schedule with its field path", async () => {
+  it("reports a descending size schedule by its form label", async () => {
     const onSubmit = vi.fn();
     render(<CableSizingForm onSubmit={onSubmit} />);
     fillMinimumValidDraft();
@@ -159,12 +160,13 @@ describe("CableSizingForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Calculate cable sizing" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("size_schedule.phase_sizes_mm2.1:");
+    expect(alert).toHaveTextContent("Phase size 2: Sizes must be unique and in ascending order.");
+    expect(alert).not.toHaveTextContent("size_schedule");
     expect(alert).toHaveTextContent("ascending");
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("rejects a non-decimal engineering value with its field path", async () => {
+  it("rejects a non-decimal engineering value by its form label", async () => {
     const onSubmit = vi.fn();
     render(<CableSizingForm onSubmit={onSubmit} />);
     fillMinimumValidDraft();
@@ -172,8 +174,32 @@ describe("CableSizingForm", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Calculate cable sizing" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("circuit.design_current_a:");
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Design current (A)");
+    expect(alert).not.toHaveTextContent("circuit.design_current_a");
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("rewrites the raw loaded-conductors message the founder saw", async () => {
+    const onSubmit = vi.fn();
+    render(<CableSizingForm onSubmit={onSubmit} />);
+    fillMinimumValidDraft();
+    change("Loaded conductors", "0");
+
+    fireEvent.click(screen.getByRole("button", { name: "Calculate cable sizing" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Loaded conductors must be at least 1.",
+    );
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("registers validation labels only for labels that are on the form", () => {
+    render(<CableSizingForm onSubmit={vi.fn()} />);
+
+    for (const label of Object.values(CABLE_SIZING_LABELS.fields)) {
+      expect(screen.getByLabelText(label)).toBeInTheDocument();
+    }
   });
 
   it("disables every input group and the button while a calculation is pending", () => {
