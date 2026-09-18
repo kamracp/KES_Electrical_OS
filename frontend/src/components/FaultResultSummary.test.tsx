@@ -7,6 +7,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { ShortCircuitStudyResponse } from "../services/fault";
 import { FaultResultSummary } from "./FaultResultSummary";
 
+// The currents and X/R carry more than four significant figures to prove
+// display rule A12: rounded on screen, exact in the tooltip.
 const calculated: ShortCircuitStudyResponse = {
   study_code: "SC-MSB-01",
   study_name: "Main switchboard three-phase fault",
@@ -16,14 +18,14 @@ const calculated: ShortCircuitStudyResponse = {
   nominal_voltage_v: "415",
   frequency_hz: "50",
   status: "CALCULATED",
-  initial_symmetrical_short_circuit_current_ka: "35.22",
-  peak_short_circuit_current_ka: "84.57",
+  initial_symmetrical_short_circuit_current_ka: "35.219668322",
+  peak_short_circuit_current_ka: "84.583705423",
   symmetrical_breaking_current_ka: null,
   steady_state_short_circuit_current_ka: null,
   thermal_equivalent_short_circuit_current_ka: null,
   earth_fault_current_ka: null,
   kappa_factor: "1.698",
-  x_r_ratio: "8.15",
+  x_r_ratio: "8.149425287",
   clearing_time_s: null,
   sequence_results: [],
   source_contributions: [],
@@ -46,7 +48,7 @@ afterEach(() => {
 });
 
 describe("FaultResultSummary", () => {
-  it("shows the study state, identity and the decisive currents verbatim", () => {
+  it("shows the study state, identity and the decisive currents with four figures (A12)", () => {
     render(<FaultResultSummary result={calculated} />);
 
     const region = screen.getByRole("region", { name: "Result summary" });
@@ -60,9 +62,14 @@ describe("FaultResultSummary", () => {
     expect(region).toHaveTextContent("maximum case");
     expect(region).toHaveTextContent("references unverified");
 
-    expect(field(region, "initial-current")).toHaveTextContent("35.22 kA");
-    expect(field(region, "peak-current")).toHaveTextContent("84.57 kA");
-    expect(field(region, "x-r-ratio")).toHaveTextContent("8.15");
+    expect(field(region, "initial-current")?.textContent).toBe("35.22 kA");
+    expect(field(region, "initial-current")).toHaveAttribute("title", "35.219668322 kA");
+    expect(field(region, "peak-current")?.textContent).toBe("84.58 kA");
+    expect(field(region, "peak-current")).toHaveAttribute("title", "84.583705423 kA");
+    expect(field(region, "x-r-ratio")?.textContent).toBe("8.149");
+    expect(field(region, "x-r-ratio")).toHaveAttribute("title", "8.149425287");
+    expect(region.textContent).not.toContain("35.219668322");
+
     expect(field(region, "earth-fault-current")).toBeNull();
     expect(region.querySelector("[data-summary-warnings]")).toHaveAttribute(
       "data-summary-warnings",
@@ -85,9 +92,16 @@ describe("FaultResultSummary", () => {
     const region = screen.getByRole("region", { name: "Result summary" });
     expect(region).toHaveAttribute("data-summary-tone", "warning");
     expect(within(region).getByText("Calculated with warnings")).toBeInTheDocument();
-    expect(field(region, "peak-current")).toHaveTextContent("—");
-    expect(field(region, "x-r-ratio")).toHaveTextContent("—");
-    expect(field(region, "earth-fault-current")).toHaveTextContent("32.915 kA");
+
+    expect(field(region, "peak-current")?.textContent).toBe("—");
+    expect(field(region, "peak-current")).not.toHaveAttribute("title");
+    expect(field(region, "x-r-ratio")?.textContent).toBe("—");
+    expect(field(region, "x-r-ratio")).not.toHaveAttribute("title");
+
+    // Half-up on the fifth figure: 32.915 -> 32.92.
+    expect(field(region, "earth-fault-current")?.textContent).toBe("32.92 kA");
+    expect(field(region, "earth-fault-current")).toHaveAttribute("title", "32.915 kA");
+
     expect(region.querySelector("[data-summary-warnings]")).toHaveAttribute(
       "data-summary-warnings",
       "2",

@@ -1,4 +1,5 @@
 import type { ShortCircuitStudyResponse } from "../services/fault";
+import { formatQuantity } from "../utils/formatQuantity";
 
 const STATUS_LABELS: Record<ShortCircuitStudyResponse["status"], string> = {
   CALCULATED: "Study calculated",
@@ -18,17 +19,19 @@ type FaultResultSummaryProps = {
   result: ShortCircuitStudyResponse;
 };
 
-function kiloamps(value: string | null | undefined): string {
-  return value ? `${value} kA` : "—";
-}
-
 // The decisive values first (Master Prompt v2.1 section 19): study state, the
-// initial symmetrical and peak currents, X/R and the warning count. Every
-// figure is the exact decimal string from the engine.
+// initial symmetrical and peak currents, X/R and the warning count.
+// Display rule A12: four significant figures on screen, the exact engine
+// decimal in the tooltip (title attribute).
 export function FaultResultSummary({ result }: FaultResultSummaryProps) {
   const tone = STATUS_TONE[result.status];
   const warningCount = result.warnings.length;
   const faultType = result.fault_type.split("_").join(" ").toLowerCase();
+
+  const initialCurrent = formatQuantity(result.initial_symmetrical_short_circuit_current_ka, "kA");
+  const peakCurrent = formatQuantity(result.peak_short_circuit_current_ka, "kA");
+  const earthFaultCurrent = formatQuantity(result.earth_fault_current_ka, "kA");
+  const xrRatio = formatQuantity(result.x_r_ratio);
 
   return (
     <section aria-label="Result summary" data-summary-tone={tone}>
@@ -44,27 +47,29 @@ export function FaultResultSummary({ result }: FaultResultSummaryProps) {
       <dl data-summary-strip>
         <div>
           <dt>Initial symmetrical current</dt>
-          <dd data-summary-field="initial-current">
-            {kiloamps(result.initial_symmetrical_short_circuit_current_ka)}
+          <dd data-summary-field="initial-current" title={initialCurrent.exact ?? undefined}>
+            {initialCurrent.display}
           </dd>
         </div>
         <div>
           <dt>Peak current</dt>
-          <dd data-summary-field="peak-current">
-            {kiloamps(result.peak_short_circuit_current_ka)}
+          <dd data-summary-field="peak-current" title={peakCurrent.exact ?? undefined}>
+            {peakCurrent.display}
           </dd>
         </div>
-        {result.earth_fault_current_ka ? (
+        {earthFaultCurrent.exact ? (
           <div>
             <dt>Earth-fault current</dt>
-            <dd data-summary-field="earth-fault-current">
-              {kiloamps(result.earth_fault_current_ka)}
+            <dd data-summary-field="earth-fault-current" title={earthFaultCurrent.exact}>
+              {earthFaultCurrent.display}
             </dd>
           </div>
         ) : null}
         <div>
           <dt>X/R ratio</dt>
-          <dd data-summary-field="x-r-ratio">{result.x_r_ratio ?? "—"}</dd>
+          <dd data-summary-field="x-r-ratio" title={xrRatio.exact ?? undefined}>
+            {xrRatio.display}
+          </dd>
         </div>
         <div>
           <dt>Warnings</dt>
