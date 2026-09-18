@@ -6,7 +6,7 @@ export const exactDecimalSchema = z
   .min(1, "Decimal value is required.")
   .regex(
     /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/,
-    "Value must be an exact decimal string.",
+    "Enter a plain number without units, for example 250 or 0.85.",
   );
 
 export const faultTypeSchema = z.enum([
