@@ -1,4 +1,5 @@
 import type { CableSizingResponse } from "../services/cable";
+import { formatQuantity } from "../utils/formatQuantity";
 
 const STATUS_LABELS: Record<CableSizingResponse["status"], string> = {
   DESIGN_CHECK_PASSED: "Design check passed",
@@ -20,10 +21,20 @@ type CableResultSummaryProps = {
 
 // The decisive values first (Master Prompt v2.1 section 19): design-check
 // state, selected size, thermal utilization, voltage drop, warning count.
-// Every figure is the exact decimal string from the engine.
+// Display rule A12: four significant figures on screen, the exact engine
+// decimal in the tooltip (title attribute).
 export function CableResultSummary({ result }: CableResultSummaryProps) {
   const tone = STATUS_TONE[result.status];
   const warningCount = result.warnings.length;
+
+  const phaseArea = formatQuantity(result.conductor?.phase_area_mm2, "mm²");
+  const utilization = formatQuantity(result.ampacity?.utilization_ratio);
+  const voltageDrop = formatQuantity(result.voltage_drop?.voltage_drop_percent, "%");
+  const allowableDrop = formatQuantity(result.voltage_drop?.allowable_voltage_drop_percent, "%");
+  const voltageDropExact =
+    voltageDrop.exact && allowableDrop.exact
+      ? `${voltageDrop.exact} of ${allowableDrop.exact}`
+      : undefined;
 
   return (
     <section aria-label="Result summary" data-summary-tone={tone}>
@@ -37,18 +48,20 @@ export function CableResultSummary({ result }: CableResultSummaryProps) {
       <dl data-summary-strip>
         <div>
           <dt>Phase conductor</dt>
-          <dd>{result.conductor ? `${result.conductor.phase_area_mm2} mm²` : "—"}</dd>
+          <dd data-summary-field="phase-conductor" title={phaseArea.exact ?? undefined}>
+            {phaseArea.display}
+          </dd>
         </div>
         <div>
           <dt>Thermal utilization</dt>
-          <dd>{result.ampacity ? result.ampacity.utilization_ratio : "—"}</dd>
+          <dd data-summary-field="thermal-utilization" title={utilization.exact ?? undefined}>
+            {utilization.display}
+          </dd>
         </div>
         <div>
           <dt>Voltage drop</dt>
-          <dd>
-            {result.voltage_drop
-              ? `${result.voltage_drop.voltage_drop_percent} % of ${result.voltage_drop.allowable_voltage_drop_percent} %`
-              : "—"}
+          <dd data-summary-field="voltage-drop" title={voltageDropExact}>
+            {result.voltage_drop ? `${voltageDrop.display} of ${allowableDrop.display}` : "—"}
           </dd>
         </div>
         <div>

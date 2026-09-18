@@ -1,8 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
-import "@testing-library/jest-dom/vitest";
-import "@testing-library/jest-dom/vitest";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { CableSizingResponse } from "../services/cable";
@@ -26,6 +24,10 @@ const base: CableSizingResponse = {
   notes: null,
 } as unknown as CableSizingResponse;
 
+function field(section: HTMLElement, name: string): Element | null {
+  return section.querySelector(`[data-summary-field="${name}"]`);
+}
+
 describe("CableResultSummary", () => {
   afterEach(cleanup);
 
@@ -36,26 +38,37 @@ describe("CableResultSummary", () => {
     expect(section).toHaveAttribute("data-summary-tone", "warning");
     expect(screen.getByText("Engineering review required")).toBeInTheDocument();
     expect(section.textContent).toContain("CBL-001");
-    expect(section.querySelectorAll("dd")[0]?.textContent).toBe("—");
+    expect(field(section, "phase-conductor")?.textContent).toBe("—");
+    expect(field(section, "phase-conductor")).not.toHaveAttribute("title");
+    expect(field(section, "voltage-drop")?.textContent).toBe("—");
+    expect(field(section, "voltage-drop")).not.toHaveAttribute("title");
     expect(section.querySelector("[data-summary-warnings]")?.textContent).toBe("1");
   });
 
-  it("renders decisive values verbatim from the engine", () => {
+  it("shows four significant figures and keeps the exact engine value in the tooltip (A12)", () => {
     const passed = {
       ...base,
       status: "DESIGN_CHECK_PASSED",
       warnings: [],
       conductor: { phase_area_mm2: "150" },
-      ampacity: { utilization_ratio: "0.8804" },
-      voltage_drop: { voltage_drop_percent: "2.0588", allowable_voltage_drop_percent: "5" },
+      ampacity: { utilization_ratio: "0.880512" },
+      voltage_drop: { voltage_drop_percent: "2.058823", allowable_voltage_drop_percent: "5" },
     } as unknown as CableSizingResponse;
     render(<CableResultSummary result={passed} />);
 
     const section = screen.getByRole("region", { name: "Result summary" });
     expect(section).toHaveAttribute("data-summary-tone", "pass");
-    expect(section.textContent).toContain("150 mm²");
-    expect(section.textContent).toContain("0.8804");
-    expect(section.textContent).toContain("2.0588 % of 5 %");
+
+    expect(field(section, "phase-conductor")?.textContent).toBe("150 mm²");
+    expect(field(section, "phase-conductor")).toHaveAttribute("title", "150 mm²");
+
+    expect(field(section, "thermal-utilization")?.textContent).toBe("0.8805");
+    expect(field(section, "thermal-utilization")).toHaveAttribute("title", "0.880512");
+
+    expect(field(section, "voltage-drop")?.textContent).toBe("2.059 % of 5 %");
+    expect(field(section, "voltage-drop")).toHaveAttribute("title", "2.058823 % of 5 %");
+
+    expect(section.textContent).not.toContain("0.880512");
     expect(section.querySelector("[data-summary-warnings]")?.textContent).toBe("0");
   });
 });
