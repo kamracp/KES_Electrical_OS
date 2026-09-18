@@ -13,6 +13,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.cable import CableSizingRequest, CableSizingResponse
+from app.schemas.fault import ShortCircuitStudyRequest, ShortCircuitStudyResponse
 
 
 class _ResponseBase(BaseModel):
@@ -80,10 +81,31 @@ class CableRunResponse(BaseModel):
     result: CableSizingResponse
 
 
+class FaultRunCreateRequest(BaseModel):
+    """Calculate a short-circuit study and persist the result as a run."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    study: ShortCircuitStudyRequest
+    calculated_by: str | None = Field(default=None, max_length=200)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class FaultRunResponse(BaseModel):
+    """The persisted run record together with the typed short-circuit result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    run: CalculationRunSummary
+    result: ShortCircuitStudyResponse
+
+
 __all__ = [
     "CableRunCreateRequest",
     "CableRunResponse",
     "CalculationRunDetail",
     "CalculationRunListResponse",
     "CalculationRunSummary",
+    "FaultRunCreateRequest",
+    "FaultRunResponse",
 ]
