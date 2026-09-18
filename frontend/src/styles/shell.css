@@ -153,3 +153,37 @@ footer[aria-label="Engineering basis"] p {
     border-bottom: 1px solid var(--kes-color-border);
   }
 }
+
+/* ---- Back control (Master Prompt v2.1 amendment A10) -------------------- */
+
+header[aria-label="Product"] > button[data-shell-back] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kes-space-2);
+  flex: none;
+  padding: var(--kes-space-1) var(--kes-space-3);
+  border: 1px solid var(--kes-color-border-strong);
+  border-radius: var(--kes-radius);
+  background: var(--kes-color-surface);
+  color: var(--kes-color-primary);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+header[aria-label="Product"] > button[data-shell-back]:hover {
+  border-color: var(--kes-color-primary);
+  background: var(--kes-color-primary-soft);
+  color: var(--kes-color-primary-strong);
+}
+
+header[aria-label="Product"] > button[data-shell-back]:focus-visible {
+  outline: 2px solid var(--kes-color-focus);
+  outline-offset: 2px;
+}
+
+/* Keep the tagline beside the back control; the company name stays right. */
+header[aria-label="Product"] > button[data-shell-back] + span {
+  margin-right: auto;
+}
