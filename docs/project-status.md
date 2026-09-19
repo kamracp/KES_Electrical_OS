@@ -72,7 +72,7 @@ the engine has no decay model (breaking, steady-state and thermal-equivalent cur
 not-evaluated warnings) and REF-IEC-60909-0 is UNRESOLVED, so (c2) is blocked (see Blocked / waiting) and does not
 hold the EOS-04 close; the three values stay a declared limitation. (c1) CLOSED 2026-09-19 (next paragraph).
 Layout fix released at `1dda748` on 2026-09-19 (live check by screenshot); (d) closed with it. Next: EOS-01
-project spine (item 17).
+(a) identity and access, then (b) the project spine (item 17) - founder decision A13.
 
 **EOS-04 (c1) Fault UI v2 and amendment A12 — CLOSED 2026-09-19, released at `513c04c`.** Fourteen commits
 `50a2f7f`..`513c04c`, frontend only: shared `formatQuantity` (four significant figures, exact engine decimal in the
@@ -144,6 +144,14 @@ Founder decisions (2026-09-18, recorded in the Master Prompt §1A at `ca87d0b`):
 - A12 display precision — 4 significant figures in summaries and tables, exact value kept on the page (tooltip), in
   the run and in the JSON export; one shared formatter for Cable and Fault; DONE, released `513c04c`.
 
+Founder decision (2026-09-19, recorded in the Master Prompt §1A at `989971c`):
+
+- A13 access control before project data - EOS-01 (a) identity and access (organizations, users, roles, login
+  with a server-side session, every engineering API behind authentication, independent review before release)
+  is built and released before EOS-01 (b) the project spine; until then no organization, site, project or
+  client name goes on the live system. Two spine questions stay open for (b): old runs unassigned or moved to a
+  sandbox project, and whether a study may still be calculated without a project.
+
 Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP-013 at `a2797ee`; Slice F at `fdb8023`.
 
 ## Next slices (in order — Master Prompt v2.1 §15, A9, A10, A11, A12)
@@ -154,7 +162,10 @@ Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP
    `55313ea`; A11 idempotent runs DONE `0c78311`; (c1) ~~Fault UI v2 + A12~~ DONE, released `513c04c` (smoke
    2026-09-19); ~~Add-button layout fix~~ DONE `1dda748`; ~~(d) close~~ DONE. (c2) decay data stays BLOCKED on
    REF-IEC-60909-0.
-4. **EOS-01 project spine (item 17):** organization/site/project/revision, profile on project, runs linked.
+4. **EOS-01 Project Configuration (order per A13):** (a) identity and access - organizations, users, roles,
+   login with a server-side session, every engineering API behind authentication, independent review before
+   release; (b) project spine (item 17) - site/project/revision, profile on project, runs linked, project
+   selector in the topbar.
 5. Then EOS-02, EOS-03, EOS-05, EOS-07, EOS-08 … in §9 order; item 18 docs batch and item 19 §22 gate review
    (user manual = gate 17) scheduled between modules when a gate or reference row blocks the next module.
 
