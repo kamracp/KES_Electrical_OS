@@ -31,7 +31,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 | P3 Org / RBAC / design basis | Planned | jurisdiction profile now selectable per cable study (`jurisdiction_profile`, default IN); the project-level design-basis field is still to come (GAP-004, GAP-012) |
 | P4 Load and demand | Backend/API implemented; UI pending | |
 | P5 Sources (Tx/DG/UPS/PV) | Backend/API implemented; UI pending | |
-| P6 Network / fault | Backend implemented; **UI is a placeholder** | Prompt v2.0 says "Fault UI implemented" — incorrect. `FaultStudyPage` renders no form; `FaultStudyForm` exists unwired. Engine string `IEC 60909-0:2026` unverified (GAP-007) |
+| P6 Network / fault | **Second complete vertical slice** (EOS-04 Fault complete, 2026-09-19); SLD network UI not built | Fault study page with run persistence and the §19 layout `55313ea`, idempotent runs `0c78311`, Fault UI v2 (buses, sources, branches) with display rule A12 and readable validation messages `513c04c`, layout fix `1dda748`. Live smoke: SC-MSB-01 35.22 kA unchanged; two-bus SC-NET-01 12.52 kA at DB-01 against a hand check of 12.5197 kA. Declared limitation: symmetrical breaking, steady-state and thermal-equivalent currents are not evaluated (decay data blocked on REF-IEC-60909-0). |
 | P7 Protection / relay | Backend foundations | |
 | P8 Cable sizing | **First complete vertical slice** | Frontend slice `b7435b8`…`1312b57` (16 Sep), live smoke passed. Derating-not-established warnings `1ec83cb`…`4cddf3e`; smoke: ambient and grouping warnings confirmed in browser; negative case (30 °C, 1 circuit) not yet recorded |
 | P9 Panels / IEC 61439 | Foundation | lifecycle incomplete |
@@ -42,6 +42,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 | Date | Commit | Notes |
 |---|---|---|
+| 2026-09-19 | `1dda748` | Fault form layout release: in `forms.css` a row fieldset inside a fieldset spans the full grid width and Add / Remove buttons sit on their own line at normal size (they had stretched into a full-height grid cell beside the row; a double click on Add branch had left an empty Branch 2 during the `513c04c` smoke). `deploy 1dda748: DONE`, live bundle `index-CeOJ5BtP.js` and `index-DHeKf3XJ.css` equal to the build (the CSS name changed from `index-D3o-VUix.css`). Live check 2026-09-19 (founder, screenshot; the first look showed the old layout from the browser cache): Add bus / Add source / Add branch are normal buttons under the rows, row fields spread into two columns, representation hint and empty-branches note in place. Frontend 235 tests. Closes EOS-04 Fault complete (16b). |
 | 2026-09-18 | `513c04c` | EOS-04 (c1) Fault UI v2 and amendment A12 release (14 commits `50a2f7f`..`513c04c`, frontend only): shared `formatQuantity` - four significant figures with the exact engine decimal in the tooltip - in the Cable and Fault summaries and tables (A12); readable validation messages (`describeValidationIssue`, form label maps) in both forms; Fault form rebuilt on a draft model with bus / source / branch rows (stable row ids, Add / Remove, Fault at bus, Connected bus, In service, representation hint, same-bus warning); new Fault contract test mirroring the six backend enums; decimal message in field language. Frontend 235 tests / 30 files (was 126). `deploy 513c04c: DONE`, live bundle `index-8pgvQcAI.js` equal to the build. Live smoke 2026-09-19 (founder, browser) 6/6: SC-MSB-01 unchanged (35.22 kA, 84.58 kA, X/R 8.149, tooltip 35.219668322 kA); two-bus SC-NET-01 (TX-01 0.00087 + j0.00709 on MSB-01, cable CBL-01 0.0124 + j0.0080 to DB-01, c 1.05, fault at DB-01): Ik″ 12.52 kA against the hand check c·Un/(√3·Zk) = 12.5197 kA with Zk = 0.0200948 Ω, ip 19.30 kA (κ 1.090), X/R 1.137, sequence 0.01327 + j0.01509, path CBL-01, TX-01, three not-evaluated warnings; `Source 1 — Source name is required.` and, unplanned, `Branch 2 — Branch code is required.`; empty Cable form: `Study code is required.` |
 | 2026-09-18 | `0c78311` | Amendment A11 release: idempotent runs — shared `reusable_run()` in the generic run service returns the latest revision when content hash and engine version are unchanged; Cable and Fault `create()` reuse it, the run APIs answer 200 instead of 201; governance `ca87d0b`, code `0c78311`; backend 933 / frontend 126 tests; via `scripts/deploy.sh`, restart `active`; live proof on SC-MSB-01 (founder, browser): three Calculates with unchanged inputs → the same run `3750ff34-010c-43d9-96d9-34a431204046`, revision 13, hash `dc9584fe…ff890c` each time; X changed 0.00709 → 0.00710 → new run `ce34e333-0d89-4fd3-9f2d-609ace02b263`, revision 14 (behaviour exists only in `0c78311`, so it also proves the restart); the 12 earlier revisions stay — runs are never deleted |
 | 2026-09-18 | `55313ea` | EOS-04 run persistence + §19 layout release: generic `calculation_runs` reused for `SHORT_CIRCUIT` (no migration), `FaultRunService` (shared SHA-256 `content_hash`, values from the JSON-mode result), `POST/GET /api/v1/electrical/fault/runs`; frontend shared `calculationRun.ts` and `runExport.ts`, `createFaultRun`, `useFaultStudy` with run, `FaultResultSummary`, Fault page in §19 layout; backend 931 / frontend 126 tests; via `scripts/deploy.sh`; post-deploy contract probe `POST /fault/runs` with `{}` → HTTP 422 on live (new backend code proven running — restart step confirmed), live bundle names verified with `curl`; live smoke SC-MSB-01 three-phase 415 V (TX-01 R 0.00087 / X 0.00709 Ω) → Calculated with warnings, Ik'' 35.219668322 kA, ip 84.583705423 kA, X/R 8.149, 3 warnings (breaking / steady-state / thermal-equivalent not evaluated), order summary → warnings → traceability → detail, run `a2cb7a31-3f25-4788-8af4-a55b071c0c20` rev 1 `fault-engine 0.1.0`, `SC-MSB-01-rev1.json` downloaded and matches the screen; repeated Calculate with unchanged inputs → revisions 2, 3, … each with the identical content hash `ccd59175…983da` (founder-confirmed in the browser; live smoke 7/7) |
@@ -59,7 +60,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 ## Active slice
 
-**EOS-04 Fault complete (item 16b) — in progress.** (a) Run persistence CLOSED `c157522`, `6b25a4b`, `2e8c52f`,
+**EOS-04 Fault complete (item 16b) — CLOSED 2026-09-19, released at `1dda748`.** (a) Run persistence CLOSED `c157522`, `6b25a4b`, `2e8c52f`,
 `e5d8750` (generic `calculation_runs`, no migration, runs isolated per module). (b) §19 study-page layout CLOSED
 `82bd4d6`, `dd9f31d`, `a2008c4`, `1a40366`, `fff952e`, `55313ea`; (a)+(b) released at `55313ea` with a live contract
 probe and smoke SC-MSB-01 7/7. (c) was split on 2026-09-18 after inspecting the API contract and the engine.
@@ -70,7 +71,8 @@ contract check, bus / source / branch row components, Fault form, page reference
 the engine has no decay model (breaking, steady-state and thermal-equivalent currents are returned as None with
 not-evaluated warnings) and REF-IEC-60909-0 is UNRESOLVED, so (c2) is blocked (see Blocked / waiting) and does not
 hold the EOS-04 close; the three values stay a declared limitation. (c1) CLOSED 2026-09-19 (next paragraph).
-Remaining: the Add-button layout fix (first follow-up), then (d) close.
+Layout fix released at `1dda748` on 2026-09-19 (live check by screenshot); (d) closed with it. Next: EOS-01
+project spine (item 17).
 
 **EOS-04 (c1) Fault UI v2 and amendment A12 — CLOSED 2026-09-19, released at `513c04c`.** Fourteen commits
 `50a2f7f`..`513c04c`, frontend only: shared `formatQuantity` (four significant figures, exact engine decimal in the
@@ -128,7 +130,7 @@ Follow-ups (not blocking):
   went with GAP-014); reword GAP-007 to the remaining work — edition resolution and the engine-string test.
 - FIRST - Fault form layout: the Add bus / Add source / Add branch buttons stretch into a full-height grid cell
   beside the row (seen live 2026-09-19; a double click on Add branch left an empty Branch 2); fix in the study
-  CSS with its own release before the EOS-04 (d) close.
+  CSS with its own release before the EOS-04 (d) close. DONE, released `1dda748` (`forms.css`, two rules).
 - API 422 errors: `formatApiError` in `cable.ts` and `fault.ts` still prints the raw `loc` path; route it through
   `describeLocation`.
 - Fault rows: the six impedance inputs are repeated in the source and branch rows and the bus label one-liner in
@@ -148,10 +150,10 @@ Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP
 
 1. ~~**EOS-06 Cable complete (16b)**~~ DONE — released `40dfe6f` (2026-09-18).
 2. ~~**A10 shell back button**~~ DONE — released `a6a5f5e` (2026-09-18).
-3. **EOS-04 Fault complete (16b):** (a) ~~run persistence~~ DONE `e5d8750`; (b) ~~§19 layout~~ DONE, released
+3. ~~**EOS-04 Fault complete (16b)**~~ DONE — released `1dda748` (2026-09-19): (a) ~~run persistence~~ DONE `e5d8750`; (b) ~~§19 layout~~ DONE, released
    `55313ea`; A11 idempotent runs DONE `0c78311`; (c1) ~~Fault UI v2 + A12~~ DONE, released `513c04c` (smoke
-   2026-09-19); Add-button layout fix; (d) close. (c2) decay data is BLOCKED on REF-IEC-60909-0 and does not hold
-   the close.
+   2026-09-19); ~~Add-button layout fix~~ DONE `1dda748`; ~~(d) close~~ DONE. (c2) decay data stays BLOCKED on
+   REF-IEC-60909-0.
 4. **EOS-01 project spine (item 17):** organization/site/project/revision, profile on project, runs linked.
 5. Then EOS-02, EOS-03, EOS-05, EOS-07, EOS-08 … in §9 order; item 18 docs batch and item 19 §22 gate review
    (user manual = gate 17) scheduled between modules when a gate or reference row blocks the next module.
