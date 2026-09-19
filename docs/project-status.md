@@ -42,6 +42,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 | Date | Commit | Notes |
 |---|---|---|
+| 2026-09-18 | `513c04c` | EOS-04 (c1) Fault UI v2 and amendment A12 release (14 commits `50a2f7f`..`513c04c`, frontend only): shared `formatQuantity` - four significant figures with the exact engine decimal in the tooltip - in the Cable and Fault summaries and tables (A12); readable validation messages (`describeValidationIssue`, form label maps) in both forms; Fault form rebuilt on a draft model with bus / source / branch rows (stable row ids, Add / Remove, Fault at bus, Connected bus, In service, representation hint, same-bus warning); new Fault contract test mirroring the six backend enums; decimal message in field language. Frontend 235 tests / 30 files (was 126). `deploy 513c04c: DONE`, live bundle `index-8pgvQcAI.js` equal to the build. Live smoke 2026-09-19 (founder, browser) 6/6: SC-MSB-01 unchanged (35.22 kA, 84.58 kA, X/R 8.149, tooltip 35.219668322 kA); two-bus SC-NET-01 (TX-01 0.00087 + j0.00709 on MSB-01, cable CBL-01 0.0124 + j0.0080 to DB-01, c 1.05, fault at DB-01): Ik″ 12.52 kA against the hand check c·Un/(√3·Zk) = 12.5197 kA with Zk = 0.0200948 Ω, ip 19.30 kA (κ 1.090), X/R 1.137, sequence 0.01327 + j0.01509, path CBL-01, TX-01, three not-evaluated warnings; `Source 1 — Source name is required.` and, unplanned, `Branch 2 — Branch code is required.`; empty Cable form: `Study code is required.` |
 | 2026-09-18 | `0c78311` | Amendment A11 release: idempotent runs — shared `reusable_run()` in the generic run service returns the latest revision when content hash and engine version are unchanged; Cable and Fault `create()` reuse it, the run APIs answer 200 instead of 201; governance `ca87d0b`, code `0c78311`; backend 933 / frontend 126 tests; via `scripts/deploy.sh`, restart `active`; live proof on SC-MSB-01 (founder, browser): three Calculates with unchanged inputs → the same run `3750ff34-010c-43d9-96d9-34a431204046`, revision 13, hash `dc9584fe…ff890c` each time; X changed 0.00709 → 0.00710 → new run `ce34e333-0d89-4fd3-9f2d-609ace02b263`, revision 14 (behaviour exists only in `0c78311`, so it also proves the restart); the 12 earlier revisions stay — runs are never deleted |
 | 2026-09-18 | `55313ea` | EOS-04 run persistence + §19 layout release: generic `calculation_runs` reused for `SHORT_CIRCUIT` (no migration), `FaultRunService` (shared SHA-256 `content_hash`, values from the JSON-mode result), `POST/GET /api/v1/electrical/fault/runs`; frontend shared `calculationRun.ts` and `runExport.ts`, `createFaultRun`, `useFaultStudy` with run, `FaultResultSummary`, Fault page in §19 layout; backend 931 / frontend 126 tests; via `scripts/deploy.sh`; post-deploy contract probe `POST /fault/runs` with `{}` → HTTP 422 on live (new backend code proven running — restart step confirmed), live bundle names verified with `curl`; live smoke SC-MSB-01 three-phase 415 V (TX-01 R 0.00087 / X 0.00709 Ω) → Calculated with warnings, Ik'' 35.219668322 kA, ip 84.583705423 kA, X/R 8.149, 3 warnings (breaking / steady-state / thermal-equivalent not evaluated), order summary → warnings → traceability → detail, run `a2cb7a31-3f25-4788-8af4-a55b071c0c20` rev 1 `fault-engine 0.1.0`, `SC-MSB-01-rev1.json` downloaded and matches the screen; repeated Calculate with unchanged inputs → revisions 2, 3, … each with the identical content hash `ccd59175…983da` (founder-confirmed in the browser; live smoke 7/7) |
 | 2026-09-18 | `a6a5f5e` | Amendment A10 release: shell back control — `BackButton` (browser-history back, Home fallback when the page is the first entry of the session, hidden on Home) rendered once in the shell topbar and styled from design tokens; governance `0ee2eca`, files `6e1c0d6`, `8084577`, `a6a5f5e`; backend 927 / frontend 114 tests; via `scripts/deploy.sh`, restart step `active`, live bundle names verified with `curl`; founder browser check 4/4 (absent on Home, present on Cable, Fault → Cable → Home via Back, direct `/cable-sizing` in a new tab → Home) |
@@ -68,7 +69,18 @@ commits (this register entry, shared formatter, four result components, validati
 contract check, bus / source / branch row components, Fault form, page reference case, release). (c2) decay data —
 the engine has no decay model (breaking, steady-state and thermal-equivalent currents are returned as None with
 not-evaluated warnings) and REF-IEC-60909-0 is UNRESOLVED, so (c2) is blocked (see Blocked / waiting) and does not
-hold the EOS-04 close; the three values stay a declared limitation. (d) close, release, smoke after (c1).
+hold the EOS-04 close; the three values stay a declared limitation. (c1) CLOSED 2026-09-19 (next paragraph).
+Remaining: the Add-button layout fix (first follow-up), then (d) close.
+
+**EOS-04 (c1) Fault UI v2 and amendment A12 — CLOSED 2026-09-19, released at `513c04c`.** Fourteen commits
+`50a2f7f`..`513c04c`, frontend only: shared `formatQuantity` (four significant figures, exact engine decimal in the
+tooltip) in the Cable and Fault summaries and tables; `describeValidationIssue` with form label maps in both forms;
+Fault contract test mirroring the six backend enums; Fault form rebuilt on a draft model (`faultStudyDraft.ts`, rows
+with stable ids) with `FaultBusRow`, `FaultSourceRow`, `FaultBranchRow`, Add / Remove, Fault at bus and the
+representation hint. The plan grew to 16 commits for the draft model and returned to 15 when the page reference case
+was dropped (the page test replaces the form by a button); this register entry is commit 15. Frontend 235 tests
+(was 126). Live smoke 6/6 on 2026-09-19: SC-MSB-01 unchanged at 35.22 kA; two-bus SC-NET-01 12.52 kA at DB-01
+against a hand check of 12.5197 kA.
 
 **Amendment A11 — idempotent runs — CLOSED 2026-09-18, released at `0c78311`.** Founder decision recorded in the
 Master Prompt §1A at `ca87d0b` (with A12). A Calculate whose content hash and engine version equal the latest
@@ -96,7 +108,7 @@ Follow-ups (not blocking):
   `set -a; source ~/.keos-deploy.env; set +a` first, otherwise the script exits 1 on `KEOS_SSH_HOST`).
 - Form validation messages: show the field label and a readable sentence instead of the raw path — seen twice on
   2026-09-18 (`cable.number_of_loaded_conductors: Too small: expected number to be >=1`,
-  `sources.0.name: Too small: expected string to have >=1 characters`); scheduled with Fault UI v2.
+  `sources.0.name: Too small: expected string to have >=1 characters`); DONE, released `513c04c`.
 - Cable API contract: the engine already computes `governing_criterion`; expose it on the response so the result
   summary can show it.
 - Engine version strings (`cable-engine`, `fault-engine`) live in `services/calculation_run.py`; move them onto
@@ -111,15 +123,24 @@ Follow-ups (not blocking):
 - Reused runs (A11): `calculated_by` and `notes` of a repeated request are ignored because the stored run is returned
   unchanged; revisit with EOS-01 when users and notes become real inputs.
 - Fault form: an empty form hides the impedance / current fields until a source representation is chosen and gives
-  no hint of that (founder read it as missing fields on 2026-09-18); add the hint with Fault UI v2.
+  no hint of that (founder read it as missing fields on 2026-09-18); hint DONE, released `513c04c`.
 - GAP-007 text is stale: a search of `backend/app` for the literal `60909-0:2026` finds nothing on 2026-09-18 (it
   went with GAP-014); reword GAP-007 to the remaining work — edition resolution and the engine-string test.
+- FIRST - Fault form layout: the Add bus / Add source / Add branch buttons stretch into a full-height grid cell
+  beside the row (seen live 2026-09-19; a double click on Add branch left an empty Branch 2); fix in the study
+  CSS with its own release before the EOS-04 (d) close.
+- API 422 errors: `formatApiError` in `cable.ts` and `fault.ts` still prints the raw `loc` path; route it through
+  `describeLocation`.
+- Fault rows: the six impedance inputs are repeated in the source and branch rows and the bus label one-liner in
+  three files; extract the shared pieces.
+- `exactDecimalSchema` lives in `faultContract.ts` and Cable imports it from there; move it with the jurisdiction
+  schemas to a module-neutral file.
 
 Founder decisions (2026-09-18, recorded in the Master Prompt §1A at `ca87d0b`):
 
 - A11 idempotent runs — DONE, released `0c78311` (see above).
 - A12 display precision — 4 significant figures in summaries and tables, exact value kept on the page (tooltip), in
-  the run and in the JSON export; one shared formatter for Cable and Fault; scheduled with EOS-04 (c) Fault UI v2.
+  the run and in the JSON export; one shared formatter for Cable and Fault; DONE, released `513c04c`.
 
 Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP-013 at `a2797ee`; Slice F at `fdb8023`.
 
@@ -128,9 +149,9 @@ Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP
 1. ~~**EOS-06 Cable complete (16b)**~~ DONE — released `40dfe6f` (2026-09-18).
 2. ~~**A10 shell back button**~~ DONE — released `a6a5f5e` (2026-09-18).
 3. **EOS-04 Fault complete (16b):** (a) ~~run persistence~~ DONE `e5d8750`; (b) ~~§19 layout~~ DONE, released
-   `55313ea`; A11 idempotent runs DONE `0c78311`; (c1) Fault UI v2 (multiple buses, sources and branches, readable
-   validation messages, source-representation hint, A12 display rule); (d) close. (c2) decay data is BLOCKED on
-   REF-IEC-60909-0 and does not hold the close.
+   `55313ea`; A11 idempotent runs DONE `0c78311`; (c1) ~~Fault UI v2 + A12~~ DONE, released `513c04c` (smoke
+   2026-09-19); Add-button layout fix; (d) close. (c2) decay data is BLOCKED on REF-IEC-60909-0 and does not hold
+   the close.
 4. **EOS-01 project spine (item 17):** organization/site/project/revision, profile on project, runs linked.
 5. Then EOS-02, EOS-03, EOS-05, EOS-07, EOS-08 … in §9 order; item 18 docs batch and item 19 §22 gate review
    (user manual = gate 17) scheduled between modules when a gate or reference row blocks the next module.
