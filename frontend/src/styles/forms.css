@@ -35,6 +35,19 @@ fieldset > p {
   font-size: var(--kes-text-sm);
 }
 
+/* Rows of a list (Fault buses, sources, branches) are fieldsets inside a
+   fieldset: each row takes the full width so its own fields form the grid. */
+fieldset > fieldset {
+  grid-column: 1 / -1;
+}
+
+/* Add / Remove actions sit on their own line at normal size instead of
+   stretching into a grid cell beside the rows. */
+fieldset > button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
 label {
   display: flex;
   flex-direction: column;
