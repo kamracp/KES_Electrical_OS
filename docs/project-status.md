@@ -60,6 +60,24 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 ## Active slice
 
+**EOS-01 (a) Identity and access — in progress (A13).** Slice plan decided 2026-09-19 after reading the backend and
+frontend structure. Design: server-side sessions - a random token in an HttpOnly, Secure, SameSite=Strict cookie,
+only its SHA-256 in the database, no JWT and no token in browser storage; argon2id password hashes (`argon2-cffi`,
+the only new dependency); organizations, users and memberships with the roles OWNER / ENGINEER / VIEWER; no public
+sign-up - the first owner is created by a server-side command that prompts for the password, the owner creates
+the other users; lockout for 15 minutes after 5 failed logins and one message for an unknown e-mail and a wrong
+password; auth event records; one protected router so that every engineering route needs a session (health and
+version stay public) with a test that enumerates the routes against an allow-list; the existing API tests keep
+running through an authenticated default test client; `calculated_by` comes from the session user. Finding: every
+route is public today, including the write routes of the units and standards registries. Plan, 22 commits, backend
+first: (1) this entry; (2) password and token helpers; (3) identity models; (4) migration; (5) settings;
+(6) repositories; (7) auth service; (8) schemas; (9) auth API and `require_user`; (10) protected router and the
+allow-list test; (11) user administration, owner only; (12) `create_owner` command and runbook; (13) `calculated_by`;
+frontend (14) auth service; (15) auth provider and route guard; (16) login page; (17) topbar user and logout;
+(18) 401 handling in the study services; (19) users page and EOS-01 in the module registry; then (20) security
+review against a written checklist kept in the repo; (21) release with a database backup, owner creation and live
+smoke; (22) close.
+
 **EOS-04 Fault complete (item 16b) — CLOSED 2026-09-19, released at `1dda748`.** (a) Run persistence CLOSED `c157522`, `6b25a4b`, `2e8c52f`,
 `e5d8750` (generic `calculation_runs`, no migration, runs isolated per module). (b) §19 study-page layout CLOSED
 `82bd4d6`, `dd9f31d`, `a2008c4`, `1a40366`, `fff952e`, `55313ea`; (a)+(b) released at `55313ea` with a live contract
