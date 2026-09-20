@@ -3,8 +3,31 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
 
+import type { Session } from "../services/auth";
 import { AppShell } from "./AppShell";
+import { AuthContext, type AuthContextValue } from "./authContext";
 import { MODULES } from "./modules";
+
+const SESSION: Session = {
+  user: {
+    id: "7b0c0a3e-5d0e-4a53-9c58-0d1f6f2f7a11",
+    email: "owner@example.com",
+    full_name: "Test Owner",
+    must_change_password: false,
+  },
+  organization: { id: "c1b7f1de-32a4-4c0b-8a4e-3f1f2a9d5b22", code: "KES", name: "KES" },
+  role: "OWNER",
+  session_expires_at: "2026-09-27T10:00:00Z",
+  idle_timeout_minutes: 720,
+};
+
+// The shell is only ever rendered behind RequireAuth, so every test runs signed in.
+const AUTH: AuthContextValue = {
+  state: { status: "signed-in", session: SESSION },
+  signIn: () => Promise.reject(new Error("not used")),
+  signOut: () => Promise.resolve(),
+  refresh: () => Promise.resolve(),
+};
 
 function renderShell(initialEntry: string) {
   const router = createMemoryRouter(
@@ -21,7 +44,11 @@ function renderShell(initialEntry: string) {
     ],
     { initialEntries: [initialEntry] },
   );
-  return render(<RouterProvider router={router} />);
+  return render(
+    <AuthContext.Provider value={AUTH}>
+      <RouterProvider router={router} />
+    </AuthContext.Provider>,
+  );
 }
 
 describe("AppShell", () => {
@@ -75,6 +102,17 @@ describe("AppShell", () => {
     const header = document.querySelector('header[aria-label="Product"]');
     expect(header?.firstElementChild?.hasAttribute("data-shell-back")).toBe(true);
     expect(screen.getByRole("button", { name: "Back" })).not.toBeNull();
+  });
+
+  it("shows the signed-in user with the account actions last in the topbar", () => {
+    renderShell("/cable-sizing");
+    const header = document.querySelector('header[aria-label="Product"]');
+    const user = header?.lastElementChild;
+    expect(user?.hasAttribute("data-shell-user")).toBe(true);
+    expect(user?.textContent).toContain("Test Owner");
+    expect(user?.textContent).toContain("Owner · KES");
+    expect(screen.getByRole("link", { name: "Change password" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Sign out" })).not.toBeNull();
   });
 
   it("states the engineering basis in the footer", () => {

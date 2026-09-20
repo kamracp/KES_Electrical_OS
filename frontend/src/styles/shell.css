@@ -187,3 +187,47 @@ header[aria-label="Product"] > button[data-shell-back]:focus-visible {
 header[aria-label="Product"] > button[data-shell-back] + span {
   margin-right: auto;
 }
+
+/* ---- Signed-in user (EOS-01 a) ------------------------------------------ */
+
+/* The tagline takes the free space, so the company name and the user sit together on the
+   right on every page, with or without the back control. */
+header[aria-label="Product"] {
+  flex-wrap: wrap;
+  row-gap: var(--kes-space-2);
+}
+
+header[aria-label="Product"] > span:first-of-type {
+  margin-right: auto;
+}
+
+[data-shell-user] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--kes-space-3);
+  padding: var(--kes-space-2) 0 var(--kes-space-2) var(--kes-space-4);
+  border-left: 1px solid var(--kes-color-border);
+}
+
+[data-shell-user-name] {
+  color: var(--kes-color-text);
+  font-weight: 600;
+}
+
+[data-shell-user] > button {
+  min-height: 2rem;
+  padding: 0 var(--kes-space-3);
+}
+
+[data-shell-user] > [role="alert"] {
+  flex-basis: 100%;
+  padding: var(--kes-space-1) var(--kes-space-2);
+  font-size: var(--kes-text-xs);
+}
+
+@media print {
+  [data-shell-user] {
+    display: none;
+  }
+}
