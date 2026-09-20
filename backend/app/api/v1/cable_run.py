@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 
+from app.api.authentication import CurrentSession
 from app.api.dependencies import DatabaseSession
 from app.repositories.calculation_run import CalculationRunRepository
 from app.schemas.calculation_run import (
@@ -39,11 +40,12 @@ async def create_cable_run(
     payload: CableRunCreateRequest,
     db: DatabaseSession,
     response: Response,
+    identity: CurrentSession,
 ) -> CableRunResponse:
     """Calculate a cable study and persist it as a new run revision."""
 
     try:
-        run, result, created = await get_service(db).create(payload)
+        run, result, created = await get_service(db).create(payload, calculated_by=identity.label)
     except (TypeError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

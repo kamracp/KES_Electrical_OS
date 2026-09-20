@@ -12,6 +12,7 @@ from fastapi import (
     status,
 )
 
+from app.api.authentication import CurrentSession
 from app.api.dependencies import DatabaseSession
 from app.repositories.load_calculation_run import (
     LoadCalculationRunRepository,
@@ -70,11 +71,12 @@ def raise_service_error(
 async def create_calculation_run(
     payload: LoadCalculationRunCreate,
     db: DatabaseSession,
+    identity: CurrentSession,
 ) -> LoadCalculationRunResponse:
     """Persist a new electrical calculation revision."""
 
     try:
-        calculation_run = await get_service(db).create(payload)
+        calculation_run = await get_service(db).create(payload, actor=identity.label)
     except (LookupError, ValueError) as error:
         raise_service_error(error)
 
@@ -165,6 +167,7 @@ async def submit_calculation_run(
     run_id: UUID,
     payload: LoadCalculationRunSubmit,
     db: DatabaseSession,
+    identity: CurrentSession,
 ) -> LoadCalculationRunResponse:
     """Submit a completed calculation run for review."""
 
@@ -172,6 +175,7 @@ async def submit_calculation_run(
         calculation_run = await get_service(db).submit(
             run_id,
             payload,
+            actor=identity.label,
         )
     except (LookupError, ValueError) as error:
         raise_service_error(error)
@@ -187,6 +191,7 @@ async def approve_calculation_run(
     run_id: UUID,
     payload: LoadCalculationRunApprove,
     db: DatabaseSession,
+    identity: CurrentSession,
 ) -> LoadCalculationRunResponse:
     """Approve and permanently lock a calculation run."""
 
@@ -194,6 +199,7 @@ async def approve_calculation_run(
         calculation_run = await get_service(db).approve(
             run_id,
             payload,
+            actor=identity.label,
         )
     except (LookupError, ValueError) as error:
         raise_service_error(error)
@@ -209,6 +215,7 @@ async def reject_calculation_run(
     run_id: UUID,
     payload: LoadCalculationRunReject,
     db: DatabaseSession,
+    identity: CurrentSession,
 ) -> LoadCalculationRunResponse:
     """Reject a calculation run under engineering review."""
 
@@ -216,6 +223,7 @@ async def reject_calculation_run(
         calculation_run = await get_service(db).reject(
             run_id,
             payload,
+            actor=identity.label,
         )
     except (LookupError, ValueError) as error:
         raise_service_error(error)

@@ -68,7 +68,6 @@ class CableRunCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     study: CableSizingRequest
-    calculated_by: str | None = Field(default=None, max_length=200)
     notes: str | None = Field(default=None, max_length=2000)
 
 
@@ -87,7 +86,6 @@ class FaultRunCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     study: ShortCircuitStudyRequest
-    calculated_by: str | None = Field(default=None, max_length=200)
     notes: str | None = Field(default=None, max_length=2000)
 
 

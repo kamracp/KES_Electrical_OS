@@ -75,6 +75,12 @@ class AuthenticatedSession:
     def role(self) -> str:
         return self.membership.role
 
+    @property
+    def label(self) -> str:
+        """The name written on records this person creates or signs: readable and unique."""
+
+        return f"{self.user.full_name} ({self.user.email})"[:200]
+
 
 def _aware(value: datetime) -> datetime:
     """SQLite returns naive datetimes; they are stored as UTC."""

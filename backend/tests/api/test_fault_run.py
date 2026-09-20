@@ -109,7 +109,7 @@ def cable_study(code: str) -> dict[str, object]:
 async def test_create_fault_run_persists_frozen_evidence(client: AsyncClient) -> None:
     response = await client.post(
         FAULT_RUNS_URL,
-        json={"study": fault_study(), "calculated_by": "C. Kamra", "notes": "smoke"},
+        json={"study": fault_study(), "notes": "smoke"},
     )
 
     assert response.status_code == 201, response.text
@@ -125,7 +125,7 @@ async def test_create_fault_run_persists_frozen_evidence(client: AsyncClient) ->
     assert run["is_immutable"] is False
     assert run["engine_version"] == "fault-engine 0.1.0"
     assert len(run["content_hash"]) == 64
-    assert run["calculated_by"] == "C. Kamra"
+    assert run["calculated_by"] == "Test Owner (owner@example.com)"
     assert run["notes"] == "smoke"
     # Stored values come from the JSON-mode result, never from str(enum).
     assert run["design_check_status"] == result["status"]

@@ -46,7 +46,6 @@ def calculation_payload(
                 "edition": "PROJECT_CONTROLLED",
             }
         ],
-        "calculated_by": "Chander Kamra",
         "notes": "KESE-S2-M3 integration test.",
     }
 
@@ -156,9 +155,7 @@ async def test_submit_approve_and_immutability(
 
     submit_response = await client.post(
         f"{BASE_URL}/{run_id}/submit",
-        json={
-            "submitted_by": "Electrical Designer",
-        },
+        json={},
     )
 
     assert submit_response.status_code == 200
@@ -166,7 +163,7 @@ async def test_submit_approve_and_immutability(
     submitted = submit_response.json()
 
     assert submitted["approval_status"] == "PENDING"
-    assert submitted["submitted_by"] == "Electrical Designer"
+    assert submitted["submitted_by"] == "Test Owner (owner@example.com)"
     assert submitted["submitted_at"] is not None
 
     pending_response = await client.get(f"{BASE_URL}/pending-review")
@@ -178,7 +175,6 @@ async def test_submit_approve_and_immutability(
     approve_response = await client.post(
         f"{BASE_URL}/{run_id}/approve",
         json={
-            "approved_by": "Engineering Checker",
             "approval_notes": "Calculation reviewed.",
         },
     )
@@ -188,15 +184,13 @@ async def test_submit_approve_and_immutability(
     approved = approve_response.json()
 
     assert approved["approval_status"] == "APPROVED"
-    assert approved["approved_by"] == "Engineering Checker"
+    assert approved["approved_by"] == "Test Owner (owner@example.com)"
     assert approved["approved_at"] is not None
     assert approved["is_immutable"] is True
 
     second_submit_response = await client.post(
         f"{BASE_URL}/{run_id}/submit",
-        json={
-            "submitted_by": "Another Designer",
-        },
+        json={},
     )
 
     assert second_submit_response.status_code == 409
@@ -225,9 +219,7 @@ async def test_reject_pending_calculation_run(
 
     submit_response = await client.post(
         f"{BASE_URL}/{run_id}/submit",
-        json={
-            "submitted_by": "Electrical Designer",
-        },
+        json={},
     )
 
     assert submit_response.status_code == 200
@@ -235,7 +227,6 @@ async def test_reject_pending_calculation_run(
     reject_response = await client.post(
         f"{BASE_URL}/{run_id}/reject",
         json={
-            "rejected_by": "Engineering Checker",
             "rejection_reason": ("Demand-factor evidence is required."),
         },
     )
@@ -245,7 +236,7 @@ async def test_reject_pending_calculation_run(
     rejected = reject_response.json()
 
     assert rejected["approval_status"] == "REJECTED"
-    assert rejected["rejected_by"] == "Engineering Checker"
+    assert rejected["rejected_by"] == "Test Owner (owner@example.com)"
     assert rejected["rejected_at"] is not None
     assert rejected["rejection_reason"] == ("Demand-factor evidence is required.")
     assert rejected["is_immutable"] is False

@@ -50,7 +50,7 @@ def cable_study(code: str = "CBL-RUN-01") -> dict[str, object]:
 async def test_create_run_persists_frozen_evidence(client: AsyncClient) -> None:
     response = await client.post(
         CABLE_RUNS_URL,
-        json={"study": cable_study(), "calculated_by": "C. Kamra", "notes": "smoke"},
+        json={"study": cable_study(), "notes": "smoke"},
     )
 
     assert response.status_code == 201, response.text
@@ -64,6 +64,7 @@ async def test_create_run_persists_frozen_evidence(client: AsyncClient) -> None:
     assert run["is_immutable"] is False
     assert run["engine_version"]
     assert len(run["content_hash"]) == 64
+    assert run["calculated_by"] == "Test Owner (owner@example.com)"
     assert run["design_check_status"] == body["result"]["status"]
     assert run["jurisdiction_profile"] == "IN"
 

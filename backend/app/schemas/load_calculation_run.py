@@ -143,11 +143,6 @@ class LoadCalculationRunCreate(_RequestBase):
         default_factory=list,
     )
 
-    calculated_by: str | None = Field(
-        default=None,
-        max_length=200,
-    )
-
     notes: str | None = None
 
     @field_validator(
@@ -176,19 +171,13 @@ class LoadCalculationRunCreate(_RequestBase):
 class LoadCalculationRunSubmit(_RequestBase):
     """Request for submitting a calculation run for review."""
 
-    submitted_by: str = Field(
-        min_length=1,
-        max_length=200,
-    )
+    # The person is the signed-in user; the server records the name.
 
 
 class LoadCalculationRunApprove(_RequestBase):
     """Request for approving and locking a calculation run."""
 
-    approved_by: str = Field(
-        min_length=1,
-        max_length=200,
-    )
+    # The person is the signed-in user; the server records the name.
 
     approval_notes: str | None = None
 
@@ -196,10 +185,7 @@ class LoadCalculationRunApprove(_RequestBase):
 class LoadCalculationRunReject(_RequestBase):
     """Request for rejecting a calculation run."""
 
-    rejected_by: str = Field(
-        min_length=1,
-        max_length=200,
-    )
+    # The person is the signed-in user; the server records the name.
 
     rejection_reason: str = Field(
         min_length=1,

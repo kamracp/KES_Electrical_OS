@@ -80,6 +80,8 @@ class CableRunService:
     async def create(
         self,
         payload: CableRunCreateRequest,
+        *,
+        calculated_by: str,
     ) -> tuple[CalculationRun, CableSizingResponse, bool]:
         """Run the engine and freeze the evidence; False flag = latest revision reused (A11)."""
 
@@ -123,7 +125,7 @@ class CableRunService:
             warnings_snapshot=list(result_snapshot.get("warnings", [])),
             references_snapshot=references_snapshot,
             content_hash=evidence_hash,
-            calculated_by=payload.calculated_by,
+            calculated_by=calculated_by,
             is_immutable=False,
             notes=payload.notes,
         )
@@ -159,6 +161,8 @@ class FaultRunService:
     async def create(
         self,
         payload: FaultRunCreateRequest,
+        *,
+        calculated_by: str,
     ) -> tuple[CalculationRun, ShortCircuitStudyResponse, bool]:
         """Run the engine and freeze the evidence; False flag = latest revision reused (A11)."""
 
@@ -198,7 +202,7 @@ class FaultRunService:
             warnings_snapshot=list(result_snapshot.get("warnings", [])),
             references_snapshot=references_snapshot,
             content_hash=evidence_hash,
-            calculated_by=payload.calculated_by,
+            calculated_by=calculated_by,
             is_immutable=False,
             notes=payload.notes,
         )

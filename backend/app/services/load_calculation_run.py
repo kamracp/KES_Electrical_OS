@@ -43,6 +43,7 @@ class LoadCalculationRunService:
     async def create(
         self,
         payload: LoadCalculationRunCreate,
+        actor: str,
     ) -> LoadCalculationRun:
         """Create a new immutable-history calculation revision."""
 
@@ -94,7 +95,7 @@ class LoadCalculationRunService:
             warnings_snapshot=snapshot_data["warnings_snapshot"],
             standards_snapshot=snapshot_data["standards_snapshot"],
             content_hash=content_hash,
-            calculated_by=payload.calculated_by,
+            calculated_by=actor,
             calculated_at=calculated_at,
             completed_at=completed_at,
             supersedes_run_id=(latest_revision.id if latest_revision is not None else None),
@@ -144,6 +145,7 @@ class LoadCalculationRunService:
         self,
         run_id: UUID,
         payload: LoadCalculationRunSubmit,
+        actor: str,
     ) -> LoadCalculationRun:
         """Submit a completed calculation for engineering review."""
 
@@ -164,7 +166,7 @@ class LoadCalculationRunService:
             raise ValueError("calculation run has already entered the review workflow")
 
         calculation_run.approval_status = CalculationApprovalStatus.PENDING.value
-        calculation_run.submitted_by = payload.submitted_by
+        calculation_run.submitted_by = actor
         calculation_run.submitted_at = datetime.now(UTC)
 
         return await self.repository.save(calculation_run)
@@ -173,6 +175,7 @@ class LoadCalculationRunService:
         self,
         run_id: UUID,
         payload: LoadCalculationRunApprove,
+        actor: str,
     ) -> LoadCalculationRun:
         """Approve and permanently lock a calculation run."""
 
@@ -192,7 +195,7 @@ class LoadCalculationRunService:
         approved_at = datetime.now(UTC)
 
         calculation_run.approval_status = CalculationApprovalStatus.APPROVED.value
-        calculation_run.approved_by = payload.approved_by
+        calculation_run.approved_by = actor
         calculation_run.approved_at = approved_at
         calculation_run.approval_notes = payload.approval_notes
         calculation_run.is_immutable = True
@@ -203,6 +206,7 @@ class LoadCalculationRunService:
         self,
         run_id: UUID,
         payload: LoadCalculationRunReject,
+        actor: str,
     ) -> LoadCalculationRun:
         """Reject a calculation run under controlled review."""
 
@@ -220,7 +224,7 @@ class LoadCalculationRunService:
             raise ValueError("only pending calculation runs can be rejected")
 
         calculation_run.approval_status = CalculationApprovalStatus.REJECTED.value
-        calculation_run.rejected_by = payload.rejected_by
+        calculation_run.rejected_by = actor
         calculation_run.rejected_at = datetime.now(UTC)
         calculation_run.rejection_reason = payload.rejection_reason
 
