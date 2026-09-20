@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
+import "../styles/auth.css";
 import { useAuth } from "./authContext";
 
 // Route guards (EOS-01 a). The server refuses every protected API call on its own; these

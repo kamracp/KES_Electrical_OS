@@ -1,0 +1,79 @@
+/* Sign-in and change-password pages, and the session-check screens of the route guards.
+   These stand outside the shell. Structure-based selectors: components carry no className. */
+
+main[data-auth-page] {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 28rem;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+main[data-auth-page] > header {
+  margin-bottom: var(--kes-space-5);
+  padding-bottom: var(--kes-space-4);
+}
+
+main[data-auth-page] h1 {
+  margin-bottom: 0;
+  font-size: var(--kes-text-2xl);
+}
+
+main[data-auth-page] h2 {
+  font-size: var(--kes-text-lg);
+}
+
+[data-auth-card] {
+  padding: var(--kes-space-5);
+  background: var(--kes-color-surface);
+  border: 1px solid var(--kes-color-border);
+  border-radius: var(--kes-radius);
+}
+
+[data-auth-card] button[type="submit"] {
+  align-self: stretch;
+}
+
+[data-auth-card] form > p {
+  margin: 0;
+}
+
+[data-auth-note] {
+  margin: var(--kes-space-4) 0 0;
+  color: var(--kes-color-muted);
+  font-size: var(--kes-text-sm);
+}
+
+[data-auth-actions] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--kes-space-3);
+  margin-top: var(--kes-space-4);
+  font-size: var(--kes-text-sm);
+}
+
+[data-auth-card] [role="status"] {
+  padding: var(--kes-space-3) var(--kes-space-4);
+  background: var(--kes-color-pass-soft);
+  border: 1px solid var(--kes-color-pass);
+  border-radius: var(--kes-radius);
+  color: var(--kes-color-pass);
+}
+
+/* Route guards: "Checking your session" and "the session check failed". */
+[data-auth-state] {
+  max-width: 28rem;
+  margin: var(--kes-space-7) auto;
+}
+
+p[data-auth-state] {
+  padding: 0 var(--kes-space-4);
+  color: var(--kes-color-muted);
+  text-align: center;
+}
+
+[data-auth-state] > p {
+  margin-bottom: var(--kes-space-2);
+}
