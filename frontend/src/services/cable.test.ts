@@ -217,6 +217,16 @@ describe("calculateCableSizing", () => {
     );
   });
 
+  it("rejects with an ApiError that carries the status when the session has ended", async () => {
+    fetchMock.mockResolvedValue(Response.json({ detail: "Not signed in." }, { status: 401 }));
+
+    await expect(calculateCableSizing(validRequest)).rejects.toMatchObject({
+      name: "ApiError",
+      status: 401,
+      message: "Not signed in.",
+    });
+  });
+
   it("falls back to a status message when the error body is not JSON", async () => {
     fetchMock.mockResolvedValue(new Response("upstream failure", { status: 502 }));
 

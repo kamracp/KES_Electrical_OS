@@ -266,6 +266,16 @@ describe("createFaultRun", () => {
     await expect(createFaultRun(validRequest)).rejects.toThrow("Fault bus BUS-9 is not defined.");
   });
 
+  it("rejects with an ApiError that carries the status when the session has ended", async () => {
+    fetchMock.mockResolvedValue(Response.json({ detail: "Not signed in." }, { status: 401 }));
+
+    await expect(createFaultRun(validRequest)).rejects.toMatchObject({
+      name: "ApiError",
+      status: 401,
+      message: "Not signed in.",
+    });
+  });
+
   it("rejects a response whose run summary is malformed", async () => {
     fetchMock.mockResolvedValue(
       Response.json({ run: { ...validRun, content_hash: "too-short" }, result: validResponse }),

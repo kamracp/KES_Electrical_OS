@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type PropsWithChildren } from "react";
+import { useCallback, useEffect, useMemo, type PropsWithChildren } from "react";
 import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
 import {
@@ -7,6 +7,7 @@ import {
   signOut as requestSignOut,
   type Session,
 } from "../services/auth";
+import { ApiError } from "../services/http";
 import {
   AuthContext,
   SESSION_QUERY_KEY,
@@ -28,6 +29,11 @@ function dropUserData(queryClient: QueryClient): void {
   queryClient.getMutationCache().clear();
 }
 
+/** HTTP 401 = the session has ended; HTTP 403 = a password change may have become due. */
+function isAccessRefusal(error: unknown): boolean {
+  return error instanceof ApiError && (error.status === 401 || error.status === 403);
+}
+
 function describeFailure(error: unknown): string {
   return error instanceof Error && error.message !== ""
     ? error.message
@@ -44,6 +50,43 @@ export function AuthProvider({ children }: PropsWithChildren) {
     // Coming back to the tab after the idle timeout must not leave a stale "signed in".
     refetchOnWindowFocus: true,
   });
+
+  // Any API call may be the first to learn that the session is over (idle timeout, account
+  // switched off, password reset). The study services reject with an ApiError; when its
+  // status is 401 or 403 the server is asked again who is signed in, and the route guard
+  // then shows the sign-in or the change-password page. The session request itself is left
+  // out, otherwise its own failure would ask again without end.
+  useEffect(() => {
+    const recheck = (): void => {
+      void queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
+    };
+
+    const stopMutations = queryClient.getMutationCache().subscribe((event) => {
+      if (
+        event.type === "updated" &&
+        event.action.type === "error" &&
+        isAccessRefusal(event.action.error)
+      ) {
+        recheck();
+      }
+    });
+
+    const stopQueries = queryClient.getQueryCache().subscribe((event) => {
+      if (
+        event.type === "updated" &&
+        event.action.type === "error" &&
+        event.query.queryKey[0] !== SESSION_QUERY_KEY[0] &&
+        isAccessRefusal(event.action.error)
+      ) {
+        recheck();
+      }
+    });
+
+    return () => {
+      stopMutations();
+      stopQueries();
+    };
+  }, [queryClient]);
 
   const { data, error, isError, isFetching } = sessionQuery;
 

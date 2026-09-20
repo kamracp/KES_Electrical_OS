@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { calculationRunSummarySchema } from "./calculationRun";
+import { ApiError } from "./http";
 import {
   cableCheckStatusSchema,
   cableConstructionSchema,
@@ -251,7 +252,7 @@ export async function calculateCableSizing(
   const data: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(formatApiError(data, response.status));
+    throw new ApiError(formatApiError(data, response.status), response.status);
   }
 
   const parsed = cableSizingResponseSchema.safeParse(data);
@@ -304,7 +305,7 @@ export async function createCableRun(
   const data: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(formatApiError(data, response.status));
+    throw new ApiError(formatApiError(data, response.status), response.status);
   }
 
   const parsed = cableRunResponseSchema.safeParse(data);

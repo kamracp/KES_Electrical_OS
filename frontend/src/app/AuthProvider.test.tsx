@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useMutation, useQuery } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getSession, signIn, signOut, type Session } from "../services/auth";
+import { ApiError } from "../services/http";
 import { AuthProvider } from "./AuthProvider";
 import { SESSION_QUERY_KEY, useAuth } from "./authContext";
 
@@ -51,6 +52,44 @@ function Probe() {
         refresh
       </button>
     </div>
+  );
+}
+
+// Stands for a study page: one mutation and one query that fail the way the test says.
+function StudyProbe({ failure }: { failure: unknown }) {
+  const mutation = useMutation<void, unknown, void>({
+    mutationFn: () => Promise.reject(failure),
+  });
+  const query = useQuery({
+    queryKey: ["study", "probe"],
+    queryFn: () => Promise.reject(failure),
+    enabled: false,
+  });
+
+  return (
+    <div>
+      <button type="button" onClick={() => mutation.mutate()}>
+        calculate
+      </button>
+      <button type="button" onClick={() => void query.refetch()}>
+        load
+      </button>
+      <p data-testid="calculation">{mutation.isError ? "failed" : "idle"}</p>
+    </div>
+  );
+}
+
+function renderWithStudy(failure: unknown) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Probe />
+        <StudyProbe failure={failure} />
+      </AuthProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -194,5 +233,74 @@ describe("AuthProvider", () => {
     expect(() => render(<Probe />)).toThrow("useAuth must be used inside <AuthProvider>.");
 
     consoleError.mockRestore();
+  });
+});
+
+describe("AuthProvider - an API call that is refused", () => {
+  beforeEach(() => {
+    vi.mocked(getSession).mockReset();
+  });
+  afterEach(cleanup);
+
+  it("signs out when a calculation comes back with HTTP 401", async () => {
+    vi.mocked(getSession).mockResolvedValueOnce(SESSION).mockResolvedValue(null);
+    renderWithStudy(new ApiError("Not signed in.", 401));
+    await waitFor(() => expect(status()).toBe("signed-in"));
+
+    fireEvent.click(screen.getByRole("button", { name: "calculate" }));
+
+    await waitFor(() => expect(status()).toBe("signed-out"));
+    expect(screen.getByTestId("calculation").textContent).toBe("failed");
+    expect(getSession).toHaveBeenCalledTimes(2);
+  });
+
+  it("signs out when a data request comes back with HTTP 401", async () => {
+    vi.mocked(getSession).mockResolvedValueOnce(SESSION).mockResolvedValue(null);
+    renderWithStudy(new ApiError("Not signed in.", 401));
+    await waitFor(() => expect(status()).toBe("signed-in"));
+
+    fireEvent.click(screen.getByRole("button", { name: "load" }));
+
+    await waitFor(() => expect(status()).toBe("signed-out"));
+  });
+
+  it("asks the server again after HTTP 403 and sees a password change that is due", async () => {
+    const changeDue: Session = {
+      ...SESSION,
+      user: { ...SESSION.user, must_change_password: true },
+    };
+    vi.mocked(getSession).mockResolvedValueOnce(SESSION).mockResolvedValue(changeDue);
+    renderWithStudy(new ApiError("Change your password first.", 403));
+    await waitFor(() => expect(status()).toBe("signed-in"));
+
+    fireEvent.click(screen.getByRole("button", { name: "calculate" }));
+
+    await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2));
+    expect(status()).toBe("signed-in");
+  });
+
+  it.each([
+    ["a validation refusal (HTTP 422)", new ApiError("Study code is required.", 422)],
+    ["a server failure (HTTP 502)", new ApiError("Cable sizing failed (HTTP 502).", 502)],
+    ["a failure without a status", new Error("fetch failed")],
+  ])("leaves the session alone after %s", async (_label, failure) => {
+    vi.mocked(getSession).mockResolvedValue(SESSION);
+    renderWithStudy(failure);
+    await waitFor(() => expect(status()).toBe("signed-in"));
+
+    fireEvent.click(screen.getByRole("button", { name: "calculate" }));
+
+    await waitFor(() => expect(screen.getByTestId("calculation").textContent).toBe("failed"));
+    expect(getSession).toHaveBeenCalledTimes(1);
+    expect(status()).toBe("signed-in");
+  });
+
+  it("does not ask again without end when the session request itself is refused", async () => {
+    vi.mocked(getSession).mockRejectedValue(new ApiError("Forbidden.", 403));
+    renderWithStudy(new Error("not used"));
+
+    await waitFor(() => expect(status()).toBe("error"));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(getSession).toHaveBeenCalledTimes(1);
   });
 });

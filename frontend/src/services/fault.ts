@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { calculationRunSummarySchema } from "./calculationRun";
+import { ApiError } from "./http";
 import {
   exactDecimalSchema,
   faultBranchTypeSchema,
@@ -238,7 +239,7 @@ export async function calculateFaultStudy(
   const data: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(formatApiError(data, response.status));
+    throw new ApiError(formatApiError(data, response.status), response.status);
   }
 
   const parsed = shortCircuitStudyResponseSchema.safeParse(data);
@@ -292,7 +293,7 @@ export async function createFaultRun(
   const data: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(formatApiError(data, response.status));
+    throw new ApiError(formatApiError(data, response.status), response.status);
   }
 
   const parsed = faultRunResponseSchema.safeParse(data);
