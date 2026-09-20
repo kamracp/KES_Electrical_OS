@@ -3,12 +3,13 @@ import { Link } from "react-router-dom";
 
 import { useAuth } from "../app/authContext";
 import { ROLE_LABELS } from "../app/roles";
-import { CHANGE_PASSWORD_PATH } from "../app/routeGuards";
+import { CHANGE_PASSWORD_PATH, USERS_PATH } from "../app/routeGuards";
 import { ApiError } from "../services/http";
 
-// Who is signed in, shown once in the shell topbar (EOS-01 a), with the two account actions:
-// change the own password and sign out. Signing out is done by the server; when it succeeds
-// the session state turns "signed-out" and the route guard shows the sign-in page.
+// Who is signed in, shown once in the shell topbar (EOS-01 a), with the account actions:
+// user administration (owner only), change the own password and sign out. Signing out is
+// done by the server; when it succeeds the session state turns "signed-out" and the route
+// guard shows the sign-in page.
 
 const UNREACHABLE = "Sign-out failed: the server could not be reached.";
 
@@ -44,6 +45,7 @@ export function UserMenu() {
       <span data-shell-user-role>
         {ROLE_LABELS[role]} · {organization.name}
       </span>
+      {role === "OWNER" ? <Link to={USERS_PATH}>Users</Link> : null}
       <Link to={CHANGE_PASSWORD_PATH}>Change password</Link>
       <button type="button" onClick={() => void leave()} disabled={pending}>
         {pending ? "Signing out…" : "Sign out"}

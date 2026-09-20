@@ -50,7 +50,6 @@ export function AppShell() {
         <header aria-label="Product">
           <BackButton />
           <span>Engineering design checks against referenced standard data</span>
-          <span>Kamra Engineering Solutions</span>
           <UserMenu />
         </header>
 

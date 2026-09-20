@@ -5,9 +5,16 @@ import { CableSizingPage } from "../pages/CableSizingPage";
 import { ChangePasswordPage } from "../pages/ChangePasswordPage";
 import { FaultStudyPage } from "../pages/FaultStudyPage";
 import { LoginPage } from "../pages/LoginPage";
+import { UsersPage } from "../pages/UsersPage";
 import { AppShell } from "./AppShell";
 import { AuthProvider } from "./AuthProvider";
-import { CHANGE_PASSWORD_PATH, LOGIN_PATH, RequireAuth, SignedOutOnly } from "./routeGuards";
+import {
+  CHANGE_PASSWORD_PATH,
+  LOGIN_PATH,
+  RequireAuth,
+  SignedOutOnly,
+  USERS_PATH,
+} from "./routeGuards";
 
 // The route table, kept apart from createBrowserRouter so tests can run it in a memory router.
 //
@@ -50,6 +57,8 @@ export const routes: RouteObject[] = [
           { index: true, element: <App /> },
           { path: "fault-study", element: <FaultStudyPage /> },
           { path: "cable-sizing", element: <CableSizingPage /> },
+          // Owner only: the page says so to anybody else, and the server refuses them (403).
+          { path: USERS_PATH.slice(1), element: <UsersPage /> },
         ],
       },
     ],

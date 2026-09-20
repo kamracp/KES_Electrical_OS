@@ -17,6 +17,7 @@ vi.mock("../services/auth", () => ({
 vi.mock("../App", () => ({ App: () => <p>home page</p> }));
 vi.mock("../pages/CableSizingPage", () => ({ CableSizingPage: () => <p>cable page</p> }));
 vi.mock("../pages/FaultStudyPage", () => ({ FaultStudyPage: () => <p>fault page</p> }));
+vi.mock("../pages/UsersPage", () => ({ UsersPage: () => <p>users page</p> }));
 
 function sessionOf(mustChangePassword: boolean): Session {
   return {
@@ -50,7 +51,7 @@ describe("application routes", () => {
   });
   afterEach(cleanup);
 
-  it.each(["/", "/cable-sizing", "/fault-study"])(
+  it.each(["/", "/cable-sizing", "/fault-study", "/users"])(
     "shows the sign-in page instead of %s to a signed-out visitor",
     async (path) => {
       vi.mocked(getSession).mockResolvedValue(null);
@@ -77,6 +78,14 @@ describe("application routes", () => {
     renderApp("/cable-sizing");
 
     expect(await screen.findByText("cable page")).not.toBeNull();
+    expect(screen.getByRole("navigation", { name: "Primary" })).not.toBeNull();
+  });
+
+  it("shows the users page inside the shell to a signed-in user", async () => {
+    vi.mocked(getSession).mockResolvedValue(sessionOf(false));
+    renderApp("/users");
+
+    expect(await screen.findByText("users page")).not.toBeNull();
     expect(screen.getByRole("navigation", { name: "Primary" })).not.toBeNull();
   });
 

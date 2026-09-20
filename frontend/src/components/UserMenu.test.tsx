@@ -62,6 +62,19 @@ describe("UserMenu", () => {
     );
   });
 
+  it("offers user administration to the owner only", () => {
+    renderMenu({ status: "signed-in", session: sessionOf("OWNER") });
+    expect(screen.getByRole("link", { name: "Users" }).getAttribute("href")).toBe("/users");
+    cleanup();
+
+    renderMenu({ status: "signed-in", session: sessionOf("ENGINEER") });
+    expect(screen.queryByRole("link", { name: "Users" })).toBeNull();
+    cleanup();
+
+    renderMenu({ status: "signed-in", session: sessionOf("VIEWER") });
+    expect(screen.queryByRole("link", { name: "Users" })).toBeNull();
+  });
+
   it("signs out through the server and locks the button meanwhile", async () => {
     const signOut = vi.fn(() => new Promise<void>(() => {}));
     renderMenu({ status: "signed-in", session: sessionOf("VIEWER") }, signOut);

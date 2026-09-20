@@ -5,6 +5,7 @@ import "../styles/auth.css";
 import { useAuth } from "../app/authContext";
 import { changePassword } from "../services/auth";
 import { ApiError } from "../services/http";
+import { PASSWORD_MIN_LENGTH, describePasswordProblem } from "../utils/passwordPolicy";
 
 // Change the own password (EOS-01 a). A user with a first or reset password is held here by
 // the route guard until the change is done, because the API refuses everything else (403).
@@ -12,8 +13,6 @@ import { ApiError } from "../services/http";
 // The checks below only save a round trip; the server applies the password rule again and
 // stays the authority. Passwords are never trimmed and never stored by the browser code.
 
-const PASSWORD_MIN_LENGTH = 12;
-const PASSWORD_MAX_LENGTH = 128;
 const UNREACHABLE = "The server could not be reached. Check the connection and try again.";
 
 type Draft = { current: string; next: string; repeat: string };
@@ -24,20 +23,11 @@ function checkDraft(draft: Draft, email: string): string | null {
   if (draft.current === "") {
     return "Current password is required.";
   }
-  if (draft.next === "") {
-    return "New password is required.";
-  }
-  if (draft.next.length < PASSWORD_MIN_LENGTH) {
-    return `New password must have at least ${PASSWORD_MIN_LENGTH} characters.`;
-  }
-  if (draft.next.length > PASSWORD_MAX_LENGTH) {
-    return `New password must have at most ${PASSWORD_MAX_LENGTH} characters.`;
-  }
-  if (draft.next.trim() === "") {
-    return "New password must not be blank.";
-  }
-  if (draft.next.toLowerCase() === email.trim().toLowerCase()) {
-    return "New password must not be the e-mail address.";
+
+  const problem = describePasswordProblem(draft.next, email, "New password");
+
+  if (problem !== null) {
+    return problem;
   }
   if (draft.next === draft.current) {
     return "New password must differ from the current password.";

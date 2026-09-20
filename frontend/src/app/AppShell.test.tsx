@@ -115,6 +115,13 @@ describe("AppShell", () => {
     expect(screen.getByRole("button", { name: "Sign out" })).not.toBeNull();
   });
 
+  it("names the signed-in organization once and no fixed company beside it", () => {
+    renderShell("/");
+    const header = document.querySelector('header[aria-label="Product"]');
+    expect(header?.textContent).not.toContain("Kamra Engineering Solutions");
+    expect(header?.querySelectorAll(":scope > span")).toHaveLength(1);
+  });
+
   it("states the engineering basis in the footer", () => {
     renderShell("/");
     const footer = document.querySelector('footer[aria-label="Engineering basis"]');

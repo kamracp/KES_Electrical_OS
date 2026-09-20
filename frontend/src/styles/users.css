@@ -1,0 +1,59 @@
+/* Users page (EOS-01 a). Structure-based selectors: components carry no className. */
+
+[data-users-page] > section[aria-label] {
+  margin-bottom: var(--kes-space-5);
+}
+
+[data-users-page] section[aria-label] > h2 {
+  font-size: var(--kes-text-lg);
+}
+
+[data-users-page] [data-table-scroll] {
+  overflow-x: auto;
+}
+
+/* forms.css right-aligns every column after the first for engineering figures; here the
+   columns hold names and words. */
+[data-users-page] th,
+[data-users-page] td {
+  text-align: left;
+  vertical-align: middle;
+}
+
+[data-users-page] td select {
+  min-width: 7rem;
+}
+
+[data-users-page] [data-row-actions] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kes-space-2);
+}
+
+[data-users-page] [data-row-actions] button {
+  min-height: 2rem;
+  padding: 0 var(--kes-space-3);
+}
+
+[data-users-page] tr[data-user-active="false"] td {
+  color: var(--kes-color-muted);
+}
+
+[data-users-page] [data-form-actions] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kes-space-3);
+}
+
+[data-users-page] [data-users-note] {
+  color: var(--kes-color-muted);
+  font-size: var(--kes-text-sm);
+}
+
+[data-users-page] [role="status"] {
+  padding: var(--kes-space-3) var(--kes-space-4);
+  background: var(--kes-color-pass-soft);
+  border: 1px solid var(--kes-color-pass);
+  border-radius: var(--kes-radius);
+  color: var(--kes-color-pass);
+}
