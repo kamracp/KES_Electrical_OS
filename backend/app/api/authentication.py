@@ -52,7 +52,7 @@ RequestContextDependency = Annotated[RequestContext, Depends(get_request_context
 
 
 def get_session_token(request: Request) -> str | None:
-    return request.cookies.get(settings.SESSION_COOKIE_NAME)
+    return request.cookies.get(settings.session_cookie_name)
 
 
 async def require_user(

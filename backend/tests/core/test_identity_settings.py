@@ -52,3 +52,27 @@ def test_production_refuses_an_insecure_session_cookie() -> None:
 def test_out_of_range_values_are_rejected(name: str, value: object) -> None:
     with pytest.raises(ValidationError):
         make(**{name: value})
+
+
+def test_the_cookie_name_gets_the_host_prefix_whenever_the_cookie_is_secure() -> None:
+    assert Settings(_env_file=None, SESSION_COOKIE_SECURE=True).session_cookie_name == (
+        "__Host-keos_session"
+    )
+    assert Settings(_env_file=None, SESSION_COOKIE_SECURE=False).session_cookie_name == (
+        "keos_session"
+    )
+
+
+def test_plain_http_development_keeps_the_plain_cookie_name() -> None:
+    development = Settings(_env_file=None, ENVIRONMENT="development")
+
+    assert development.session_cookie_secure is False
+    assert development.session_cookie_name == "keos_session"
+
+
+def test_a_name_that_already_has_the_prefix_is_not_prefixed_twice() -> None:
+    configured = Settings(
+        _env_file=None, SESSION_COOKIE_SECURE=True, SESSION_COOKIE_NAME="__Host-custom"
+    )
+
+    assert configured.session_cookie_name == "__Host-custom"

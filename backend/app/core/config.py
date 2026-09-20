@@ -136,6 +136,24 @@ class Settings(BaseSettings):
             return self.SESSION_COOKIE_SECURE
         return self.ENVIRONMENT not in ("development", "testing")
 
+    @property
+    def session_cookie_name(self) -> str:
+        """
+        The name the browser sees: SESSION_COOKIE_NAME with the __Host- prefix when Secure.
+
+        A browser accepts a __Host- cookie only if it is Secure, has Path=/ and names no Domain,
+        and only from the host itself. The sibling products on other sub-domains of the same
+        registrable domain can therefore neither set nor overwrite it (no "cookie tossing").
+        Plain-http development cannot use the prefix, because it needs Secure; there the plain
+        name is kept. Derived here, not typed into a server .env, so every secure environment
+        gets it and a test can prove it.
+        """
+
+        name = self.SESSION_COOKIE_NAME
+        if self.session_cookie_secure and not name.startswith("__Host-"):
+            return f"__Host-{name}"
+        return name
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -44,7 +44,7 @@ def _session_response(identity: AuthenticatedSession) -> SessionResponse:
 
 def _set_session_cookie(response: Response, token: str) -> None:
     response.set_cookie(
-        key=settings.SESSION_COOKIE_NAME,
+        key=settings.session_cookie_name,
         value=token,
         max_age=settings.SESSION_ABSOLUTE_LIFETIME_HOURS * 3600,
         path="/",
@@ -56,7 +56,7 @@ def _set_session_cookie(response: Response, token: str) -> None:
 
 def _clear_session_cookie(response: Response) -> None:
     response.delete_cookie(
-        key=settings.SESSION_COOKIE_NAME,
+        key=settings.session_cookie_name,
         path="/",
         secure=settings.session_cookie_secure,
         httponly=True,
