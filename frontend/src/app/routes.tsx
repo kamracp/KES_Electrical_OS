@@ -1,0 +1,57 @@
+import { Outlet, type RouteObject } from "react-router-dom";
+
+import { App } from "../App";
+import { CableSizingPage } from "../pages/CableSizingPage";
+import { ChangePasswordPage } from "../pages/ChangePasswordPage";
+import { FaultStudyPage } from "../pages/FaultStudyPage";
+import { LoginPage } from "../pages/LoginPage";
+import { AppShell } from "./AppShell";
+import { AuthProvider } from "./AuthProvider";
+import { CHANGE_PASSWORD_PATH, LOGIN_PATH, RequireAuth, SignedOutOnly } from "./routeGuards";
+
+// The route table, kept apart from createBrowserRouter so tests can run it in a memory router.
+//
+// Every route sits under the AuthProvider. Only the sign-in page is open; the shell and with
+// it every module page is behind RequireAuth. A new page added under the shell is guarded
+// without any further step.
+export const routes: RouteObject[] = [
+  {
+    element: (
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    ),
+    children: [
+      {
+        path: LOGIN_PATH,
+        element: (
+          <SignedOutOnly>
+            <LoginPage />
+          </SignedOutOnly>
+        ),
+      },
+      {
+        path: CHANGE_PASSWORD_PATH,
+        element: (
+          <RequireAuth allowPasswordChangePending>
+            <ChangePasswordPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        // Layout route: the shell renders navigation and footer around every page via <Outlet />.
+        path: "/",
+        element: (
+          <RequireAuth>
+            <AppShell />
+          </RequireAuth>
+        ),
+        children: [
+          { index: true, element: <App /> },
+          { path: "fault-study", element: <FaultStudyPage /> },
+          { path: "cable-sizing", element: <CableSizingPage /> },
+        ],
+      },
+    ],
+  },
+];
