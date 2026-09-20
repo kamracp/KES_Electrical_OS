@@ -28,7 +28,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 | P0 Governance | Active | Register `6100ce5`; `AGENTS.md` `bfd17b1`; CPWD 2023 verified `6e82126`, `88e30ab`; gap register `4aa4316`; this file. Remaining: ADR-0001 ID reconciliation (GAP-011), jurisdiction ADR (GAP-012), vendor-neutral register row (GAP-009) |
 | P1 Backend foundation | Implemented | health/version, async DB, Alembic, pytest |
 | P2 Units and standards | CRUD implemented; full registry pending | idempotent reference seed and applicability gate not built |
-| P3 Org / RBAC / design basis | Planned | jurisdiction profile now selectable per cable study (`jurisdiction_profile`, default IN); the project-level design-basis field is still to come (GAP-004, GAP-012) |
+| P3 Org / RBAC / design basis | **Identity and access live** (EOS-01 a, 2026-09-20, `202a2ed`): organizations, users, roles OWNER / ENGINEER / VIEWER, server-side sessions, every engineering route behind sign-in; project spine (EOS-01 b) planned | jurisdiction profile now selectable per cable study (`jurisdiction_profile`, default IN); the project-level design-basis field is still to come (GAP-004, GAP-012) |
 | P4 Load and demand | Backend/API implemented; UI pending | |
 | P5 Sources (Tx/DG/UPS/PV) | Backend/API implemented; UI pending | |
 | P6 Network / fault | **Second complete vertical slice** (EOS-04 Fault complete, 2026-09-19); SLD network UI not built | Fault study page with run persistence and the §19 layout `55313ea`, idempotent runs `0c78311`, Fault UI v2 (buses, sources, branches) with display rule A12 and readable validation messages `513c04c`, layout fix `1dda748`. Live smoke: SC-MSB-01 35.22 kA unchanged; two-bus SC-NET-01 12.52 kA at DB-01 against a hand check of 12.5197 kA. Declared limitation: symmetrical breaking, steady-state and thermal-equivalent currents are not evaluated (decay data blocked on REF-IEC-60909-0). |
@@ -42,6 +42,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 | Date | Commit | Notes |
 |---|---|---|
+| 2026-09-20 | `202a2ed` | EOS-01 (a) identity and access release (amendment A13; 23 commits `5eebdaf`..`202a2ed`): server-side sessions in an HttpOnly, Secure, SameSite=Strict cookie, argon2id passwords, organizations / users / memberships with OWNER / ENGINEER / VIEWER, lockout and audit trail, one protected router (every engineering route needs a session), owner bootstrap command, names on records from the session; frontend sign-in, change-password, route guards, topbar user, re-check of the session on HTTP 401 / 403, Users page for the owner. Backend 1079 / frontend 365 tests. **Released on the self-check, not independently reviewed (founder decision 2026-09-20)**: `docs/security/eos-01a-identity-access-review.md`. Server backup before the migration: `~/backups/kes_electrical_os-20260920-130958-before-eos01a.sql.gz` (7701 bytes, 5 tables, alembic `f3a9c2d1e8b7` inside); migration `f3a9c2d1e8b7` -> `a7d3e9b1c5f2`, 10 tables after; `deploy 202a2ed: DONE`, service `active`, healthcheck PASS, live bundle `index-DObQ5mZL.js` equal to the build. Owner created with `create_owner` on the server (organization `KES`; exactly one organization). Live proof: `/api/v1/units` answered 307 without a session before the release and answers 401 after it, as do `/auth/me`, `/users`, the Cable and Fault run routes and `POST /electrical/cable/calculate`; `/health` stays 200. Live smoke 7/7: redirect to the sign-in page, wrong-password message (audit trail `wrong password, attempt 1`), return to Cable sizing after sign-in, cookie `__Host-keos_session` with HttpOnly, Secure, SameSite=Strict, Path=/ and no Domain, CBL-001 run shown as `Calculated ... by <owner name> (<e-mail>)`, Users page and audit trail with the real client address, sign-out. Review checks at the release: `/docs`, `/redoc`, `/openapi.json` return the frontend `index.html` (F3); `pip-audit` no known vulnerabilities (the project package itself is not on PyPI and is skipped), `npm audit --omit=dev` 0; the page carries none of the security headers while the API carries three (F5 confirmed, fix is the first follow-up) |
 | 2026-09-19 | `1dda748` | Fault form layout release: in `forms.css` a row fieldset inside a fieldset spans the full grid width and Add / Remove buttons sit on their own line at normal size (they had stretched into a full-height grid cell beside the row; a double click on Add branch had left an empty Branch 2 during the `513c04c` smoke). `deploy 1dda748: DONE`, live bundle `index-CeOJ5BtP.js` and `index-DHeKf3XJ.css` equal to the build (the CSS name changed from `index-D3o-VUix.css`). Live check 2026-09-19 (founder, screenshot; the first look showed the old layout from the browser cache): Add bus / Add source / Add branch are normal buttons under the rows, row fields spread into two columns, representation hint and empty-branches note in place. Frontend 235 tests. Closes EOS-04 Fault complete (16b). |
 | 2026-09-18 | `513c04c` | EOS-04 (c1) Fault UI v2 and amendment A12 release (14 commits `50a2f7f`..`513c04c`, frontend only): shared `formatQuantity` - four significant figures with the exact engine decimal in the tooltip - in the Cable and Fault summaries and tables (A12); readable validation messages (`describeValidationIssue`, form label maps) in both forms; Fault form rebuilt on a draft model with bus / source / branch rows (stable row ids, Add / Remove, Fault at bus, Connected bus, In service, representation hint, same-bus warning); new Fault contract test mirroring the six backend enums; decimal message in field language. Frontend 235 tests / 30 files (was 126). `deploy 513c04c: DONE`, live bundle `index-8pgvQcAI.js` equal to the build. Live smoke 2026-09-19 (founder, browser) 6/6: SC-MSB-01 unchanged (35.22 kA, 84.58 kA, X/R 8.149, tooltip 35.219668322 kA); two-bus SC-NET-01 (TX-01 0.00087 + j0.00709 on MSB-01, cable CBL-01 0.0124 + j0.0080 to DB-01, c 1.05, fault at DB-01): Ik″ 12.52 kA against the hand check c·Un/(√3·Zk) = 12.5197 kA with Zk = 0.0200948 Ω, ip 19.30 kA (κ 1.090), X/R 1.137, sequence 0.01327 + j0.01509, path CBL-01, TX-01, three not-evaluated warnings; `Source 1 — Source name is required.` and, unplanned, `Branch 2 — Branch code is required.`; empty Cable form: `Study code is required.` |
 | 2026-09-18 | `0c78311` | Amendment A11 release: idempotent runs — shared `reusable_run()` in the generic run service returns the latest revision when content hash and engine version are unchanged; Cable and Fault `create()` reuse it, the run APIs answer 200 instead of 201; governance `ca87d0b`, code `0c78311`; backend 933 / frontend 126 tests; via `scripts/deploy.sh`, restart `active`; live proof on SC-MSB-01 (founder, browser): three Calculates with unchanged inputs → the same run `3750ff34-010c-43d9-96d9-34a431204046`, revision 13, hash `dc9584fe…ff890c` each time; X changed 0.00709 → 0.00710 → new run `ce34e333-0d89-4fd3-9f2d-609ace02b263`, revision 14 (behaviour exists only in `0c78311`, so it also proves the restart); the 12 earlier revisions stay — runs are never deleted |
@@ -60,7 +61,7 @@ Baseline: `master` = `origin/master` at `9b1ac55` (2026-09-17). `scripts/full_re
 
 ## Active slice
 
-**EOS-01 (a) Identity and access — in progress (A13).** Slice plan decided 2026-09-19 after reading the backend and
+**EOS-01 (a) Identity and access — CLOSED 2026-09-20, released at `202a2ed` (A13).** Slice plan decided 2026-09-19 after reading the backend and
 frontend structure. Design: server-side sessions - a random token in an HttpOnly, Secure, SameSite=Strict cookie,
 only its SHA-256 in the database, no JWT and no token in browser storage; argon2id password hashes (`argon2-cffi`,
 the only new dependency); organizations, users and memberships with the roles OWNER / ENGINEER / VIEWER; no public
@@ -77,6 +78,22 @@ frontend (14) auth service; (15) auth provider and route guard; (16) login page;
 (18) 401 handling in the study services; (19) users page and EOS-01 in the module registry; then (20) security
 review against a written checklist kept in the repo; (21) release with a database backup, owner creation and live
 smoke; (22) close.
+
+Closed 2026-09-20. Commits in plan order: `5eebdaf`, `c9a8cd6`, `1e079e9`, `0800b98`, `8f20869`, `a6c99ce`,
+`354660d`, `fa20151`, `d5f70a4`, `eaf3a80`, `e74c18a`, `a35dc52`, `4e51aef` (backend complete, 1063 tests),
+`d32d509`, `4157175`, `96839fc`, `0fe2524`, `8b16af5`, `1e5b996` (frontend complete, 365 tests), review `775c996`,
+release of `202a2ed`, this entry. Outside the plan: `d552ce1` (home module-card text wraps; the card carried
+`data-module-status` and caught `white-space: nowrap` from `shell.css`), `bee2af5` (Users tables left-aligned;
+`forms.css` loads after the page styles) and `202a2ed` (review finding F1: the cookie name gets the `__Host-`
+prefix whenever the cookie is Secure, derived in `Settings.session_cookie_name`, not typed into the server
+`.env`). Deviations from the plan: the module registry was not changed in commit 19 - EOS-01 stays
+`BACKEND_ONLY` until the project configuration page of (b) exists, and the Users page is reached from the topbar
+(owner only); the fixed company name left the topbar, the organization of the session is shown once. The review
+found sixteen points (F1-F16); F1 and F16 (a missing password hash raised instead of answering "no match"; not
+reachable live because the column is NOT NULL) were fixed before the release, the others are follow-ups below.
+Status of the slice: **self-checked, not independently reviewed**; the independent review stays open work.
+Backend 1079 tests (was 933), frontend 365 tests in 41 files (was 235 in 30). Next: the nginx security headers
+(F5), then EOS-01 (b) the project spine.
 
 **EOS-04 Fault complete (item 16b) — CLOSED 2026-09-19, released at `1dda748`.** (a) Run persistence CLOSED `c157522`, `6b25a4b`, `2e8c52f`,
 `e5d8750` (generic `calculation_runs`, no migration, runs isolated per module). (b) §19 study-page layout CLOSED
@@ -141,7 +158,8 @@ Follow-ups (not blocking):
   never reached the repo and were rebuilt on 2026-09-18).
 
 - Reused runs (A11): `calculated_by` and `notes` of a repeated request are ignored because the stored run is returned
-  unchanged; revisit with EOS-01 when users and notes become real inputs.
+  unchanged; revisit with EOS-01 when users and notes become real inputs. `calculated_by`: DONE with EOS-01 (a),
+  `4e51aef` - the name comes from the session and a request that sends one is refused; `notes` stays open.
 - Fault form: an empty form hides the impedance / current fields until a source representation is chosen and gives
   no hint of that (founder read it as missing fields on 2026-09-18); hint DONE, released `513c04c`.
 - GAP-007 text is stale: a search of `backend/app` for the literal `60909-0:2026` finds nothing on 2026-09-18 (it
@@ -155,6 +173,29 @@ Follow-ups (not blocking):
   three files; extract the shared pieces.
 - `exactDecimalSchema` lives in `faultContract.ts` and Cable imports it from there; move it with the jurisdiction
   schemas to a module-neutral file.
+
+From the EOS-01 (a) security review (`docs/security/eos-01a-identity-access-review.md`, findings F1-F16):
+
+- FIRST - nginx security headers (F5): `location /` and `location /assets/` set their own `add_header`, so the
+  three server-level headers are dropped there (nginx inheritance rule) and the page carries none; repeat them
+  per location (one included snippet), add `Strict-Transport-Security` and `Content-Security-Policy:
+  frame-ancestors 'none'`; through the repository file, installed with the commands in its header.
+- Independent review of EOS-01 (a): open; section 8 of the review is the slot for it.
+- OPERATING RULE until EOS-01 (b) is released (F2): exactly one organization on the live system - runs, the
+  audit trail and the reference data are not scoped to an organization yet; (b) must scope runs and events.
+- Second OWNER account (F8): there is no e-mail and no self-service reset; one lost password needs server access
+  (`create_owner --recover`).
+- Sign-in throttling per address (F6): lockout is per account only; a Cloudflare rate-limiting rule for
+  `POST /api/v1/auth/login` and a per-address counter before outside users are invited.
+- API documentation pages off in production (F3); `TrustedHostMiddleware` or removal of the unused
+  `ALLOWED_HOSTS` / `BACKEND_CORS_ORIGINS` settings (F4); ports 80 / 443 of the instance open to Cloudflare only (F7).
+- Review check 5: name the test that pins the 422 handler (no submitted values in the answer), or add one.
+- `scripts/deploy.sh`: take the database backup itself before `alembic upgrade head` when a release carries a
+  migration (done by hand in the release command on 2026-09-20); define a regular backup schedule in the runbook (F15).
+- A session that ends while a form is half filled loses the entries (F12): sign in again in place.
+- A VIEWER sees the Calculate button and gets the server's refusal (F13): hide or disable write actions by role.
+- Later: four-eyes rule with the approvals slice (F14); breached-password check (F11); second factor, OWNER first (F10).
+- Module registry: EOS-01 turns LIVE with the project configuration page of (b), not before.
 
 Founder decisions (2026-09-18, recorded in the Master Prompt §1A at `ca87d0b`):
 
@@ -170,6 +211,15 @@ Founder decision (2026-09-19, recorded in the Master Prompt §1A at `989971c`):
   client name goes on the live system. Two spine questions stay open for (b): old runs unassigned or moved to a
   sandbox project, and whether a study may still be calculated without a project.
 
+Founder decisions (2026-09-20):
+
+- EOS-01 (a) is released on the self-check. The slice plan asked for an independent review before the release;
+  no independent reviewer was available. Reason for not waiting: the live system had no sign-in at all and every
+  route, including the write routes of the units and standards registries, was public; this release closes that.
+  The status stays "self-checked, not independently reviewed" until section 8 of the review is filled.
+- The choice of the production cookie name (review finding F1) was delegated to the implementer: the `__Host-`
+  prefix is derived in code whenever the cookie is Secure (`202a2ed`), so no server `.env` is edited by hand.
+
 Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP-013 at `a2797ee`; Slice F at `fdb8023`.
 
 ## Next slices (in order — Master Prompt v2.1 §15, A9, A10, A11, A12)
@@ -180,9 +230,9 @@ Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP
    `55313ea`; A11 idempotent runs DONE `0c78311`; (c1) ~~Fault UI v2 + A12~~ DONE, released `513c04c` (smoke
    2026-09-19); ~~Add-button layout fix~~ DONE `1dda748`; ~~(d) close~~ DONE. (c2) decay data stays BLOCKED on
    REF-IEC-60909-0.
-4. **EOS-01 Project Configuration (order per A13):** (a) identity and access - organizations, users, roles,
-   login with a server-side session, every engineering API behind authentication, independent review before
-   release; (b) project spine (item 17) - site/project/revision, profile on project, runs linked, project
+4. **EOS-01 Project Configuration (order per A13):** (a) ~~identity and access~~ DONE - released `202a2ed`
+   (2026-09-20) on the self-check, independent review open; next the nginx security headers (F5);
+   (b) project spine (item 17) - site/project/revision, profile on project, runs linked, project
    selector in the topbar.
 5. Then EOS-02, EOS-03, EOS-05, EOS-07, EOS-08 … in §9 order; item 18 docs batch and item 19 §22 gate review
    (user manual = gate 17) scheduled between modules when a gate or reference row blocks the next module.

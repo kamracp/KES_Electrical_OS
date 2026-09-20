@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Slice | EOS-01 (a) Identity and access (Master Prompt v2.1 amendment A13) |
-| Reviewed state | `bee2af5` on `master`, 2026-09-20; not yet released (live is `1dda748`, which has no sign-in) |
+| Reviewed state | `bee2af5` on `master`, 2026-09-20; **released on 2026-09-20 at `202a2ed`** on this self-check (founder decision, see section 8); results of the release checks in section 6a |
 | Kind of review | **Self-check by the implementer against the checklist below, with evidence.** It is not an independent review: the same assistant designed, wrote and checked this code together with the founder. Section 8 is the slot for an independent reviewer. |
 | Evidence run | Backend gate `1063 passed` at the start of the review (100 of them in the twelve identity test files); commit `775c996` added 10 (7 cross-site, 3 for finding F16) and the F1 commit adds 6; frontend gate `365 passed` in 41 files; local browser smoke 6/6 and the Users page exercised by the founder on 2026-09-20 |
 
@@ -122,6 +122,21 @@ through recovery (F8: no remote recovery exists); a forgotten public route (chec
 9. Live smoke with the owner: sign-in, wrong password message, return path, change password page, sign-out, one Cable run and one Fault run carrying the owner's name in `calculated_by`.
 10. Exactly one organization exists (F2).
 
+## 6a. Result of the release checks (2026-09-20, release of `202a2ed`)
+
+| # | Result |
+|---|---|
+| 1 | DONE. `~/backups/kes_electrical_os-20260920-130958-before-eos01a.sql.gz`, 7701 bytes, 5 tables, alembic `f3a9c2d1e8b7` inside; opened and counted before the deploy went on. The same command had been tried once before the release. |
+| 2 | DONE. `KES_ENVIRONMENT=production`; the server `.env` holds no session key and needs none. |
+| 3 | DONE. `create_owner` over an interactive SSH terminal; the password was typed at the prompt only. `Owner created: ... in new organization KES.` |
+| 4 | PASS. Browser: cookie `__Host-keos_session`, HttpOnly, Secure, SameSite=Strict, Path=/, host-only domain. The screenshot sent during the check showed the cookie value; the session was closed by sign-out straight away, which deletes it on the server. Lesson for the runbook: never include the Value column. |
+| 5 | PASS (F3). `/docs`, `/redoc` and `/openapi.json` answer `200 text/html` with the frontend's `<!doctype html>`: the single-page fallback, not the API documentation. |
+| 6 | **F5 CONFIRMED.** The page (`/`) carries none of `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`, `Content-Security-Policy`, `Referrer-Policy`; the API (`/api/v1/health`) carries `X-Content-Type-Options`, `X-Frame-Options` and `Referrer-Policy`. First follow-up after the close. |
+| 7 | PASS. Without a session: `/api/v1/health` 200; `/auth/me`, `/users`, `/units`, the Cable and Fault run routes and `POST /electrical/cable/calculate` all 401. Before the release `/units` answered 307, that is, it was open. |
+| 8 | PASS. `pip-audit`: no known vulnerabilities (the project's own package is not on PyPI and is skipped); `npm audit --omit=dev`: 0 vulnerabilities. |
+| 9 | PASS 7/7. Redirect to the sign-in page; wrong-password message and `wrong password, attempt 1` in the audit trail; return to Cable sizing after sign-in; cookie (check 4); CBL-001 run shown as `Calculated ... by <owner name> (<e-mail>)`; Users page and audit trail with the real client address (through `CF-Connecting-IP`); sign-out. |
+| 10 | PASS. `organizations: 1`. |
+
 ## 7. Operating rules that follow from this review
 
 - One organization on the live system until EOS-01 (b) is released (F2).
@@ -146,3 +161,6 @@ releasing on this self-check. What speaks for releasing: the live system has no 
 and every route, including the write routes of the units and standards registries, is public;
 this slice closes that. What speaks against: nobody but its authors has read the code. The
 decision and its date belong in `docs/project-status.md` with the release row.
+
+**Decision, 2026-09-20:** the founder released on this self-check. It is recorded in
+`docs/project-status.md` under "Founder decisions (2026-09-20)". The independent review stays open.
