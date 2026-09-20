@@ -2,7 +2,9 @@
 Shared pytest fixtures for KES Electrical OS backend tests.
 """
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
+from datetime import UTC, datetime, timedelta
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
@@ -20,9 +22,18 @@ import app.models.identity
 import app.models.load_calculation_run
 import app.models.standard
 import app.models.unit
+from app.api.authentication import require_user
 from app.db.base import Base
 from app.db.session import get_db_session
 from app.main import app
+from app.models.identity import (
+    Organization,
+    OrganizationMembership,
+    OrganizationRole,
+    User,
+    UserSession,
+)
+from app.services.auth import AuthenticatedSession
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -50,10 +61,10 @@ async def test_engine() -> AsyncIterator[AsyncEngine]:
 
 
 @pytest_asyncio.fixture
-async def client(
+async def anonymous_client(
     test_engine: AsyncEngine,
 ) -> AsyncIterator[AsyncClient]:
-    """Provide an async API client with an isolated database session."""
+    """An API client with an isolated database and no signed-in user."""
 
     test_session_factory = async_sessionmaker(
         bind=test_engine,
@@ -81,6 +92,62 @@ async def client(
             yield test_client
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def make_identity() -> Callable[[OrganizationRole], AuthenticatedSession]:
+    """Build a signed-in identity with the given role, without touching the database."""
+
+    def build(role: OrganizationRole) -> AuthenticatedSession:
+        now = datetime.now(UTC)
+        organization = Organization(id=uuid4(), code="TEST", name="Test Organization")
+        user = User(
+            id=uuid4(),
+            email=f"{role.value.lower()}@example.com",
+            full_name=f"Test {role.value.title()}",
+            is_active=True,
+            must_change_password=False,
+        )
+        membership = OrganizationMembership(
+            id=uuid4(),
+            organization_id=organization.id,
+            user_id=user.id,
+            role=role.value,
+            is_active=True,
+        )
+        session = UserSession(
+            id=uuid4(),
+            user_id=user.id,
+            organization_id=organization.id,
+            token_hash="0" * 64,
+            expires_at=now + timedelta(days=7),
+            last_seen_at=now,
+        )
+        return AuthenticatedSession(user, organization, membership, session)
+
+    return build
+
+
+@pytest.fixture
+def sign_in_as(
+    anonymous_client: AsyncClient,
+    make_identity: Callable[[OrganizationRole], AuthenticatedSession],
+) -> Callable[[OrganizationRole], AsyncClient]:
+    """Make the shared client act as a signed-in member with the given role."""
+
+    def sign_in(role: OrganizationRole) -> AsyncClient:
+        identity = make_identity(role)
+        app.dependency_overrides[require_user] = lambda: identity
+        return anonymous_client
+
+    return sign_in
+
+
+@pytest.fixture
+def client(sign_in_as: Callable[[OrganizationRole], AsyncClient]) -> AsyncClient:
+    """The default API client: signed in as an owner, so module tests need no sign-in step."""
+
+    return sign_in_as(OrganizationRole.OWNER)
 
 
 @pytest.fixture

@@ -73,6 +73,17 @@ async def require_user(
 CurrentSession = Annotated[AuthenticatedSession, Depends(require_user)]
 
 
+_SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+
+
+def _forbidden(allowed_values: set[str]) -> HTTPException:
+    needed = " or ".join(sorted(allowed_values))
+    return HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail=f"This action needs the role {needed}.",
+    )
+
+
 def require_role(
     *allowed: OrganizationRole,
 ) -> Callable[[AuthenticatedSession], Awaitable[AuthenticatedSession]]:
@@ -82,11 +93,22 @@ def require_role(
 
     async def dependency(identity: CurrentSession) -> AuthenticatedSession:
         if identity.role not in allowed_values:
-            needed = " or ".join(sorted(allowed_values))
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"This action needs the role {needed}.",
-            )
+            raise _forbidden(allowed_values)
+        return identity
+
+    return dependency
+
+
+def require_role_for_writes(
+    *allowed: OrganizationRole,
+) -> Callable[[Request, AuthenticatedSession], Awaitable[AuthenticatedSession]]:
+    """Reading (GET) is open to every signed-in member; any other method needs a given role."""
+
+    allowed_values = {role.value for role in allowed}
+
+    async def dependency(request: Request, identity: CurrentSession) -> AuthenticatedSession:
+        if request.method not in _SAFE_METHODS and identity.role not in allowed_values:
+            raise _forbidden(allowed_values)
         return identity
 
     return dependency
@@ -94,6 +116,9 @@ def require_role(
 
 require_owner = require_role(OrganizationRole.OWNER)
 require_engineer = require_role(OrganizationRole.OWNER, OrganizationRole.ENGINEER)
+
+engineer_writes = require_role_for_writes(OrganizationRole.OWNER, OrganizationRole.ENGINEER)
+owner_writes = require_role_for_writes(OrganizationRole.OWNER)
 
 OwnerSession = Annotated[AuthenticatedSession, Depends(require_owner)]
 EngineerSession = Annotated[AuthenticatedSession, Depends(require_engineer)]
@@ -105,11 +130,14 @@ __all__ = [
     "EngineerSession",
     "OwnerSession",
     "RequestContextDependency",
+    "engineer_writes",
     "get_auth_service",
     "get_request_context",
     "get_session_token",
+    "owner_writes",
     "require_engineer",
     "require_owner",
     "require_role",
+    "require_role_for_writes",
     "require_user",
 ]

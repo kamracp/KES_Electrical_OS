@@ -32,7 +32,9 @@ def cheap_argon2(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest_asyncio.fixture
-async def api(client: AsyncClient, test_engine: AsyncEngine) -> AsyncIterator[AsyncClient]:
+async def api(
+    anonymous_client: AsyncClient, test_engine: AsyncEngine
+) -> AsyncIterator[AsyncClient]:
     """The shared client over https (a Secure cookie must come back) with one owner in place."""
 
     factory = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
@@ -49,8 +51,8 @@ async def api(client: AsyncClient, test_engine: AsyncEngine) -> AsyncIterator[As
         )
         await repo.commit()
 
-    client.base_url = "https://testserver"
-    yield client
+    anonymous_client.base_url = "https://testserver"
+    yield anonymous_client
 
 
 async def sign_in(api: AsyncClient, password: str = PASSWORD) -> None:
