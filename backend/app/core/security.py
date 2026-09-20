@@ -51,8 +51,18 @@ def hash_password(password: str) -> str:
     return _hasher.hash(password)
 
 
-def verify_password(password: str, password_hash: str) -> bool:
-    """True only for the matching password; a damaged or foreign hash counts as no match."""
+def verify_password(password: str, password_hash: str | None) -> bool:
+    """
+    True only for the matching password; a missing, damaged or foreign hash counts as no match.
+
+    The database column is NOT NULL, so a missing hash cannot come from a stored user. It is
+    answered all the same, and it costs one verification like every other refusal, so that no
+    caller can turn a missing value into an error page or into a faster answer.
+    """
+
+    if not password_hash:
+        verify_dummy_password(password)
+        return False
 
     try:
         return _hasher.verify(password_hash, password)
@@ -66,8 +76,11 @@ def verify_dummy_password(password: str) -> None:
     verify_password(password, _DUMMY_HASH)
 
 
-def password_needs_rehash(password_hash: str) -> bool:
-    """True when the hash was made with weaker parameters than today's, or cannot be read."""
+def password_needs_rehash(password_hash: str | None) -> bool:
+    """True when the hash is missing, unreadable, or made with weaker parameters than today's."""
+
+    if not password_hash:
+        return True
 
     try:
         return _hasher.check_needs_rehash(password_hash)

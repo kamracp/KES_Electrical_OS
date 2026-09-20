@@ -105,3 +105,12 @@ def test_token_matching_is_exact() -> None:
     assert session_tokens_match(token, hash_session_token(token)) is True
     assert session_tokens_match(token + "x", hash_session_token(token)) is False
     assert session_tokens_match(token, "0" * 64) is False
+
+
+@pytest.mark.parametrize("missing", [None, ""])
+def test_verify_treats_a_missing_hash_as_no_match(missing: str | None) -> None:
+    assert verify_password("correct horse battery staple", missing) is False
+
+
+def test_a_missing_hash_always_needs_a_rehash() -> None:
+    assert password_needs_rehash(None) is True
