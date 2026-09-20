@@ -69,6 +69,19 @@ class Settings(BaseSettings):
     LOG_LEVEL: LogLevel = "INFO"
 
     # ------------------------------------------------------------------
+    # Identity and access (EOS-01 a)
+    # ------------------------------------------------------------------
+
+    SESSION_COOKIE_NAME: str = Field(default="keos_session", pattern=r"^[A-Za-z0-9_-]+$")
+    SESSION_IDLE_TIMEOUT_MINUTES: int = Field(default=720, ge=5, le=1440)
+    SESSION_ABSOLUTE_LIFETIME_HOURS: int = Field(default=168, ge=1, le=720)
+    # None = decided by the environment, see session_cookie_secure.
+    SESSION_COOKIE_SECURE: bool | None = None
+
+    LOGIN_MAX_FAILED_ATTEMPTS: int = Field(default=5, ge=3, le=20)
+    LOGIN_LOCKOUT_MINUTES: int = Field(default=15, ge=1, le=1440)
+
+    # ------------------------------------------------------------------
     # Validators
     # ------------------------------------------------------------------
 
@@ -110,7 +123,18 @@ class Settings(BaseSettings):
             if "*" in self.ALLOWED_HOSTS:
                 raise ValueError("Wildcard hosts are not allowed")
 
+            if self.SESSION_COOKIE_SECURE is False:
+                raise ValueError("The session cookie must be secure in production")
+
         return self
+
+    @property
+    def session_cookie_secure(self) -> bool:
+        """Secure cookie everywhere except plain-http development and testing."""
+
+        if self.SESSION_COOKIE_SECURE is not None:
+            return self.SESSION_COOKIE_SECURE
+        return self.ENVIRONMENT not in ("development", "testing")
 
 
 @lru_cache
