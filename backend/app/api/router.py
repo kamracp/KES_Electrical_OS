@@ -6,12 +6,19 @@ which requires a signed-in user (401 otherwise); tests/api/test_route_protection
 route and fails when one is reachable without a session and is not on its short public list.
 
 Roles: every signed-in member may read (GET). Calculating and saving studies needs OWNER or
-ENGINEER; changing the shared reference data (units, standards) needs OWNER.
+ENGINEER; changing the shared reference data (units, standards) and everything under /users
+needs OWNER. A user with a first or reset password reaches nothing here before changing it.
 """
 
 from fastapi import APIRouter, Depends
 
-from app.api.authentication import engineer_writes, owner_writes, require_user
+from app.api.authentication import (
+    engineer_writes,
+    owner_writes,
+    require_owner,
+    require_password_changed,
+    require_user,
+)
 from app.api.v1.auth import router as auth_router
 from app.api.v1.cable import router as cable_router
 from app.api.v1.cable_run import router as cable_run_router
@@ -25,6 +32,7 @@ from app.api.v1.lt_pcc import router as lt_pcc_router
 from app.api.v1.standard import router as standard_router
 from app.api.v1.transformer_sizing import router as transformer_sizing_router
 from app.api.v1.unit import router as unit_router
+from app.api.v1.users import router as users_router
 
 api_router = APIRouter()
 
@@ -57,7 +65,9 @@ async def version() -> dict[str, str]:
 
 api_router.include_router(auth_router)
 
-protected_router = APIRouter(dependencies=[Depends(require_user)])
+protected_router = APIRouter(
+    dependencies=[Depends(require_user), Depends(require_password_changed)]
+)
 
 REFERENCE_DATA_ROUTERS = (unit_router, standard_router)
 STUDY_ROUTERS = (
@@ -78,5 +88,7 @@ for reference_data_router in REFERENCE_DATA_ROUTERS:
 
 for study_router in STUDY_ROUTERS:
     protected_router.include_router(study_router, dependencies=[Depends(engineer_writes)])
+
+protected_router.include_router(users_router, dependencies=[Depends(require_owner)])
 
 api_router.include_router(protected_router)

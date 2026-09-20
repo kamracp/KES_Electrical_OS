@@ -73,6 +73,17 @@ async def require_user(
 CurrentSession = Annotated[AuthenticatedSession, Depends(require_user)]
 
 
+async def require_password_changed(identity: CurrentSession) -> AuthenticatedSession:
+    """A first or reset password opens nothing but the password change itself."""
+
+    if identity.user.must_change_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Change your password before you continue.",
+        )
+    return identity
+
+
 _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 
 
@@ -137,6 +148,7 @@ __all__ = [
     "owner_writes",
     "require_engineer",
     "require_owner",
+    "require_password_changed",
     "require_role",
     "require_role_for_writes",
     "require_user",
