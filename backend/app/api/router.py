@@ -4,6 +4,7 @@ Main API router.
 
 from fastapi import APIRouter
 
+from app.api.v1.auth import router as auth_router
 from app.api.v1.cable import (
     router as cable_router,
 )
@@ -66,6 +67,7 @@ async def version() -> dict[str, str]:
     }
 
 
+api_router.include_router(auth_router)
 api_router.include_router(unit_router)
 api_router.include_router(standard_router)
 api_router.include_router(fault_router)

@@ -6,7 +6,9 @@ Application Entry Point
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 
+from app.api.errors import validation_error_handler
 from app.api.router import api_router
 from app.core.config import settings
 from app.core.logging import configure_logging
@@ -27,6 +29,9 @@ app = FastAPI(
     description=settings.APP_DESCRIPTION,
     lifespan=lifespan,
 )
+
+# 422 answers never repeat the submitted values: they may be passwords.
+app.add_exception_handler(RequestValidationError, validation_error_handler)
 
 # Register all API routes
 app.include_router(
