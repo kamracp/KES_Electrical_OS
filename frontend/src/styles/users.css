@@ -13,9 +13,10 @@
 }
 
 /* forms.css right-aligns every column after the first for engineering figures; here the
-   columns hold names and words. */
-[data-users-page] th,
-[data-users-page] td {
+   columns hold names and words. forms.css is loaded after this file, so the selector needs
+   one element more than its "td:not(:first-child)" to win the cascade. */
+[data-users-page] table th,
+[data-users-page] table td {
   text-align: left;
   vertical-align: middle;
 }
