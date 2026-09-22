@@ -24,6 +24,7 @@ from app.services.calculation_run import (
     CABLE_MODULE_CODE,
     CableRunService,
     project_summaries,
+    run_is_visible,
     with_project,
 )
 from app.services.project import ProjectConflictError, ProjectNotFoundError, ProjectService
@@ -135,13 +136,17 @@ async def get_cable_run(
 
     service = get_service(db)
     run = await service.get(run_id)
+    missing = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Cable run {run_id} was not found",
+    )
     if run is None or run.module_code != CABLE_MODULE_CODE:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Cable run {run_id} was not found",
-        )
+        raise missing
 
     summaries = await project_summaries(service.projects, identity.organization.id, [run])
+    # A run of another organization's project is not shown and not confirmed to exist.
+    if not run_is_visible(run, summaries):
+        raise missing
 
     return with_project(CalculationRunDetail.model_validate(run), summaries)
 

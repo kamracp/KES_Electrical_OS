@@ -127,6 +127,18 @@ async def project_summaries(
     }
 
 
+def run_is_visible(run: CalculationRun, summaries: dict[UUID, ProjectRevisionSummary]) -> bool:
+    """Whether this run may be read by the caller the summaries were resolved for.
+
+    A run outside any project is readable by every member of every organization, as it was
+    before EOS-01 (b) - those runs carry no organization at all. A run of a project revision
+    is readable only where that revision was named, and project_summaries names a revision
+    only within the reader's own organization.
+    """
+
+    return run.project_revision_id is None or run.project_revision_id in summaries
+
+
 def with_project[SummaryT: CalculationRunSummary](
     summary: SummaryT, summaries: dict[UUID, ProjectRevisionSummary]
 ) -> SummaryT:
@@ -348,5 +360,6 @@ __all__ = [
     "project_summaries",
     "resolve_run_scope",
     "reusable_run",
+    "run_is_visible",
     "with_project",
 ]

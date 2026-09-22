@@ -386,7 +386,7 @@ async def test_a_run_outside_any_project_is_named_by_nothing(
     assert [item["project"] for item in listed.json()["items"]] == [None]
 
 
-async def test_another_organization_never_reads_the_project_name_of_a_run(
+async def test_another_organization_does_not_reach_a_run_of_this_one(
     act_as: Callable[[str], AsyncClient],
 ) -> None:
     client = act_as("kes")
@@ -395,12 +395,51 @@ async def test_another_organization_never_reads_the_project_name_of_a_run(
         CABLE_RUNS, json={"study": cable_study(), "project_revision_id": revision_id}
     )
     assert created.status_code == 201, created.text
+    run_id = created.json()["run"]["id"]
 
-    # The run itself is still readable by id (organization scoping of the run detail is a
-    # separate step); its project and client are not named to a stranger.
+    # The run belongs to a project of another organization: it is not shown, and its
+    # existence is not confirmed either - the same answer as for an unknown id.
     stranger = act_as("rival")
-    detail = await stranger.get(f"{CABLE_RUNS}/{created.json()['run']['id']}")
+    detail = await stranger.get(f"{CABLE_RUNS}/{run_id}")
+
+    assert detail.status_code == 404
+    assert detail.json()["detail"] == f"Cable run {run_id} was not found"
+    assert (await stranger.get(f"{CABLE_RUNS}/{uuid4()}")).status_code == 404
+
+    # Its own organization still reads it, with the project named.
+    own = await act_as("kes").get(f"{CABLE_RUNS}/{run_id}")
+    assert own.status_code == 200
+    assert own.json()["project"]["project_code"] == "PRJ-001"
+
+
+async def test_a_fault_run_of_another_organization_is_out_of_reach_too(
+    act_as: Callable[[str], AsyncClient],
+) -> None:
+    client = act_as("kes")
+    revision_id = (await open_project(client))["open_revision_id"]
+    created = await client.post(
+        FAULT_RUNS, json={"study": fault_study(), "project_revision_id": revision_id}
+    )
+    assert created.status_code == 201, created.text
+
+    stranger = act_as("rival")
+
+    assert (await stranger.get(f"{FAULT_RUNS}/{created.json()['run']['id']}")).status_code == 404
+
+
+async def test_a_run_outside_any_project_stays_readable_by_every_member(
+    act_as: Callable[[str], AsyncClient],
+) -> None:
+    client = act_as("kes")
+    created = await client.post(CABLE_RUNS, json={"study": cable_study()})
+    assert created.status_code == 201, created.text
+    run_id = created.json()["run"]["id"]
+
+    # A run that belongs to no project carries no organization; it is readable by anybody who
+    # is signed in, exactly as before EOS-01 (b). This limit is recorded in the register.
+    stranger = act_as("rival")
+    detail = await stranger.get(f"{CABLE_RUNS}/{run_id}")
 
     assert detail.status_code == 200
     assert detail.json()["project"] is None
-    assert detail.json()["project_revision_id"] == revision_id
+    assert detail.json()["project_revision_id"] is None
