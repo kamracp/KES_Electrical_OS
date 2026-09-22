@@ -8,6 +8,7 @@ import { LoginPage } from "../pages/LoginPage";
 import { UsersPage } from "../pages/UsersPage";
 import { AppShell } from "./AppShell";
 import { AuthProvider } from "./AuthProvider";
+import { ProjectProvider } from "./ProjectProvider";
 import {
   CHANGE_PASSWORD_PATH,
   LOGIN_PATH,
@@ -18,14 +19,17 @@ import {
 
 // The route table, kept apart from createBrowserRouter so tests can run it in a memory router.
 //
-// Every route sits under the AuthProvider. Only the sign-in page is open; the shell and with
-// it every module page is behind RequireAuth. A new page added under the shell is guarded
+// Every route sits under the AuthProvider, and the ProjectProvider sits inside it so the
+// chosen project follows the session. Only the sign-in page is open; the shell and with it
+// every module page is behind RequireAuth. A new page added under the shell is guarded
 // without any further step.
 export const routes: RouteObject[] = [
   {
     element: (
       <AuthProvider>
-        <Outlet />
+        <ProjectProvider>
+          <Outlet />
+        </ProjectProvider>
       </AuthProvider>
     ),
     children: [
