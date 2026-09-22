@@ -13,6 +13,7 @@ scope carries its own revision numbering and its own A11 reuse rule.
 
 import hashlib
 import json
+from collections.abc import Sequence
 from typing import Any
 from uuid import UUID
 
@@ -23,8 +24,13 @@ from app.models.load_calculation_run import (
 )
 from app.repositories.calculation_run import CalculationRunRepository
 from app.schemas.cable import CableSizingResponse
-from app.schemas.calculation_run import CableRunCreateRequest, FaultRunCreateRequest
+from app.schemas.calculation_run import (
+    CableRunCreateRequest,
+    CalculationRunSummary,
+    FaultRunCreateRequest,
+)
 from app.schemas.fault import ShortCircuitStudyResponse
+from app.schemas.project import ProjectRevisionSummary
 from app.services.cable import CableSizingService
 from app.services.fault import FaultCalculationService
 from app.services.project import ProjectConflictError, ProjectService
@@ -95,6 +101,40 @@ async def resolve_run_scope(
     if project.jurisdiction_profile != jurisdiction_profile:
         raise ProjectConflictError("The study's jurisdiction profile must match the project's.")
     return revision.id
+
+
+async def project_summaries(
+    projects: ProjectService,
+    organization_id: UUID,
+    runs: Sequence[CalculationRun],
+) -> dict[UUID, ProjectRevisionSummary]:
+    """Name the project and revision of every run in one query, keyed by revision id."""
+
+    found = await projects.revision_summaries(
+        organization_id,
+        {run.project_revision_id for run in runs if run.project_revision_id is not None},
+    )
+    return {
+        revision_id: ProjectRevisionSummary(
+            revision_id=revision.id,
+            revision_number=revision.revision_number,
+            revision_label=revision.label,
+            project_id=project.id,
+            project_code=project.code,
+            project_name=project.name,
+        )
+        for revision_id, (project, revision) in found.items()
+    }
+
+
+def with_project[SummaryT: CalculationRunSummary](
+    summary: SummaryT, summaries: dict[UUID, ProjectRevisionSummary]
+) -> SummaryT:
+    """Attach the project and revision names to a run summary or detail."""
+
+    if summary.project_revision_id is None:
+        return summary
+    return summary.model_copy(update={"project": summaries.get(summary.project_revision_id)})
 
 
 class CableRunService:
@@ -305,6 +345,8 @@ __all__ = [
     "CableRunService",
     "FaultRunService",
     "content_hash",
+    "project_summaries",
     "resolve_run_scope",
     "reusable_run",
+    "with_project",
 ]

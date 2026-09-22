@@ -8,7 +8,7 @@ issued revision is never reopened; archived projects accept no new revisions or 
 Roles are enforced by the API layer (app.api.router), not here.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -271,6 +271,18 @@ class ProjectService:
         await self.repository.commit()
         await self.repository.refresh(revision)
         return revision
+
+    async def revision_summaries(
+        self, organization_id: UUID, revision_ids: Collection[UUID]
+    ) -> dict[UUID, tuple[Project, ProjectRevision]]:
+        """Name the project and the revision behind each revision id, in one query.
+
+        Only revisions of the caller's own organization are named, so a record that points at
+        another organization's revision is answered without its project.
+        """
+
+        found = await self.repository.list_revisions_with_projects(organization_id, revision_ids)
+        return {revision.id: (project, revision) for revision, project in found}
 
     async def revision_for_new_run(
         self, organization_id: UUID, revision_id: UUID

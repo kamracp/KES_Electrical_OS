@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.cable import CableSizingRequest, CableSizingResponse
 from app.schemas.fault import ShortCircuitStudyRequest, ShortCircuitStudyResponse
+from app.schemas.project import ProjectRevisionSummary
 
 
 class _ResponseBase(BaseModel):
@@ -27,6 +28,9 @@ class CalculationRunSummary(_ResponseBase):
 
     id: UUID
     project_revision_id: UUID | None
+    # The project and revision behind that id, named for the study page; None for a run that
+    # belongs to no project and for a revision outside the reader's organization.
+    project: ProjectRevisionSummary | None = None
     module_code: str
     calculation_type: str
     calculation_key: str

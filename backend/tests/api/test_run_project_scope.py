@@ -294,3 +294,113 @@ async def test_a_study_of_another_jurisdiction_profile_is_refused(
     assert (await client.get(CABLE_RUNS, params={"project_revision_id": revision_id})).json()[
         "items"
     ] == []
+
+
+# -- the project and revision named on a run ----------------------------------------------
+
+
+async def test_a_run_names_its_project_and_revision(
+    act_as: Callable[[str], AsyncClient],
+) -> None:
+    client = act_as("kes")
+    project = await open_project(client, code="PRJ-009")
+    revision_id = project["open_revision_id"]
+
+    created = await client.post(
+        CABLE_RUNS, json={"study": cable_study(), "project_revision_id": revision_id}
+    )
+    assert created.status_code == 201, created.text
+
+    summary = created.json()["run"]["project"]
+    assert summary == {
+        "revision_id": revision_id,
+        "revision_number": 1,
+        "revision_label": "Rev 1",
+        "project_id": project["id"],
+        "project_code": "PRJ-009",
+        "project_name": "Pump House",
+    }
+    # The raw id stays next to the names, for the frontend and for a later run filter.
+    assert created.json()["run"]["project_revision_id"] == revision_id
+
+    detail = await client.get(f"{CABLE_RUNS}/{created.json()['run']['id']}")
+    assert detail.status_code == 200
+    assert detail.json()["project"] == summary
+
+
+async def test_a_later_revision_is_named_with_its_own_number_and_label(
+    act_as: Callable[[str], AsyncClient],
+) -> None:
+    client = act_as("kes")
+    project = await open_project(client)
+    next_revision = await client.post(
+        f"{PROJECTS}/{project['id']}/revisions", json={"label": "Rev 2 - client review"}
+    )
+    assert next_revision.status_code == 201, next_revision.text
+
+    created = await client.post(
+        FAULT_RUNS,
+        json={"study": fault_study(), "project_revision_id": next_revision.json()["id"]},
+    )
+
+    assert created.status_code == 201, created.text
+    summary = created.json()["run"]["project"]
+    assert summary["revision_number"] == 2
+    assert summary["revision_label"] == "Rev 2 - client review"
+    assert summary["project_code"] == "PRJ-001"
+
+
+async def test_every_item_of_a_revision_listing_carries_the_same_summary(
+    act_as: Callable[[str], AsyncClient],
+) -> None:
+    client = act_as("kes")
+    revision_id = (await open_project(client))["open_revision_id"]
+    for code in ("CBL-A", "CBL-B", "CBL-C"):
+        created = await client.post(
+            CABLE_RUNS,
+            json={"study": cable_study(code), "project_revision_id": revision_id},
+        )
+        assert created.status_code == 201, created.text
+
+    listed = await client.get(CABLE_RUNS, params={"project_revision_id": revision_id})
+
+    assert listed.status_code == 200
+    items = listed.json()["items"]
+    assert len(items) == 3
+    assert {item["project"]["revision_id"] for item in items} == {revision_id}
+    assert {item["project"]["project_code"] for item in items} == {"PRJ-001"}
+
+
+async def test_a_run_outside_any_project_is_named_by_nothing(
+    act_as: Callable[[str], AsyncClient],
+) -> None:
+    client = act_as("kes")
+
+    created = await client.post(CABLE_RUNS, json={"study": cable_study()})
+    assert created.status_code == 201, created.text
+    assert created.json()["run"]["project"] is None
+
+    detail = await client.get(f"{CABLE_RUNS}/{created.json()['run']['id']}")
+    assert detail.json()["project"] is None
+    listed = await client.get(CABLE_RUNS)
+    assert [item["project"] for item in listed.json()["items"]] == [None]
+
+
+async def test_another_organization_never_reads_the_project_name_of_a_run(
+    act_as: Callable[[str], AsyncClient],
+) -> None:
+    client = act_as("kes")
+    revision_id = (await open_project(client))["open_revision_id"]
+    created = await client.post(
+        CABLE_RUNS, json={"study": cable_study(), "project_revision_id": revision_id}
+    )
+    assert created.status_code == 201, created.text
+
+    # The run itself is still readable by id (organization scoping of the run detail is a
+    # separate step); its project and client are not named to a stranger.
+    stranger = act_as("rival")
+    detail = await stranger.get(f"{CABLE_RUNS}/{created.json()['run']['id']}")
+
+    assert detail.status_code == 200
+    assert detail.json()["project"] is None
+    assert detail.json()["project_revision_id"] == revision_id

@@ -20,7 +20,12 @@ from app.schemas.calculation_run import (
     FaultRunCreateRequest,
     FaultRunResponse,
 )
-from app.services.calculation_run import FAULT_MODULE_CODE, FaultRunService
+from app.services.calculation_run import (
+    FAULT_MODULE_CODE,
+    FaultRunService,
+    project_summaries,
+    with_project,
+)
 from app.services.project import ProjectConflictError, ProjectNotFoundError, ProjectService
 
 router = APIRouter(
@@ -59,8 +64,9 @@ async def create_fault_run(
 ) -> FaultRunResponse:
     """Calculate a short-circuit study and persist it as a new run revision."""
 
+    service = get_service(db)
     try:
-        run, result, created = await get_service(db).create(
+        run, result, created = await service.create(
             payload,
             calculated_by=identity.label,
             organization_id=identity.organization.id,
@@ -79,8 +85,10 @@ async def create_fault_run(
         # A11: the latest revision already holds this exact evidence.
         response.status_code = status.HTTP_200_OK
 
+    summaries = await project_summaries(service.projects, identity.organization.id, [run])
+
     return FaultRunResponse(
-        run=CalculationRunSummary.model_validate(run),
+        run=with_project(CalculationRunSummary.model_validate(run), summaries),
         result=result,
     )
 
@@ -107,8 +115,10 @@ async def list_fault_runs(
     else:
         runs = await service.list_recent(limit=limit, project_revision_id=project_revision_id)
 
+    summaries = await project_summaries(service.projects, identity.organization.id, runs)
+
     return CalculationRunListResponse(
-        items=[CalculationRunSummary.model_validate(run) for run in runs],
+        items=[with_project(CalculationRunSummary.model_validate(run), summaries) for run in runs],
     )
 
 
@@ -119,17 +129,21 @@ async def list_fault_runs(
 async def get_fault_run(
     run_id: UUID,
     db: DatabaseSession,
+    identity: CurrentSession,
 ) -> CalculationRunDetail:
     """Return one persisted fault run with its frozen snapshots."""
 
-    run = await get_service(db).get(run_id)
+    service = get_service(db)
+    run = await service.get(run_id)
     if run is None or run.module_code != FAULT_MODULE_CODE:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Fault run {run_id} was not found",
         )
 
-    return CalculationRunDetail.model_validate(run)
+    summaries = await project_summaries(service.projects, identity.organization.id, [run])
+
+    return with_project(CalculationRunDetail.model_validate(run), summaries)
 
 
 __all__ = ["router"]

@@ -7,6 +7,7 @@ ends each operation with one commit(): a project and its first revision reach th
 together or not at all. Nothing is deleted; sites are deactivated and projects archived.
 """
 
+from collections.abc import Collection
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -118,6 +119,27 @@ class ProjectRepository:
             ProjectRevision.project_id == project_id
         )
         return int((await self.db.execute(stmt)).scalar_one())
+
+    async def list_revisions_with_projects(
+        self, organization_id: UUID, revision_ids: Collection[UUID]
+    ) -> list[tuple[ProjectRevision, Project]]:
+        """The named revisions of this organization with their projects, in one query.
+
+        A list of runs names many revisions; this answers all of them at once instead of one
+        query per run. Revisions of another organization are simply not returned.
+        """
+
+        if not revision_ids:
+            return []
+        stmt = (
+            select(ProjectRevision, Project)
+            .join(Project, Project.id == ProjectRevision.project_id)
+            .where(
+                ProjectRevision.id.in_(set(revision_ids)),
+                Project.organization_id == organization_id,
+            )
+        )
+        return [(revision, project) for revision, project in (await self.db.execute(stmt)).all()]
 
 
 __all__ = ["ProjectRepository"]
