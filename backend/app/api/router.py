@@ -5,9 +5,11 @@ Public: health, version and the sign-in routes. Everything else hangs under prot
 which requires a signed-in user (401 otherwise); tests/api/test_route_protection.py walks every
 route and fails when one is reachable without a session and is not on its short public list.
 
-Roles: every signed-in member may read (GET). Calculating and saving studies needs OWNER or
-ENGINEER; changing the shared reference data (units, standards) and everything under /users
-needs OWNER. A user with a first or reset password reaches nothing here before changing it.
+Roles: every signed-in member may read (GET). Calculating and saving studies, and keeping the
+sites and projects, needs OWNER or ENGINEER; changing the shared reference data (units,
+standards), everything under /users and the two steps that cannot be taken back (archiving a
+project, issuing a revision) need OWNER. A user with a first or reset password reaches nothing
+here before changing it.
 """
 
 from fastapi import APIRouter, Depends
@@ -29,6 +31,7 @@ from app.api.v1.ht_panel import router as ht_panel_router
 from app.api.v1.load_calculation_run import router as load_calculation_run_router
 from app.api.v1.load_demand import router as load_demand_router
 from app.api.v1.lt_pcc import router as lt_pcc_router
+from app.api.v1.projects import router as projects_router
 from app.api.v1.standard import router as standard_router
 from app.api.v1.transformer_sizing import router as transformer_sizing_router
 from app.api.v1.unit import router as unit_router
@@ -88,6 +91,10 @@ for reference_data_router in REFERENCE_DATA_ROUTERS:
 
 for study_router in STUDY_ROUTERS:
     protected_router.include_router(study_router, dependencies=[Depends(engineer_writes)])
+
+# The project spine reads like a study for the roles; archiving and issuing carry their own
+# OWNER requirement on the route itself, so the router stays out of STUDY_ROUTERS.
+protected_router.include_router(projects_router, dependencies=[Depends(engineer_writes)])
 
 protected_router.include_router(users_router, dependencies=[Depends(require_owner)])
 
