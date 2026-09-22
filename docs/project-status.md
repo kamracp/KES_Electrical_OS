@@ -96,8 +96,7 @@ prefix whenever the cookie is Secure, derived in `Settings.session_cookie_name`,
 found sixteen points (F1-F16); F1 and F16 (a missing password hash raised instead of answering "no match"; not
 reachable live because the column is NOT NULL) were fixed before the release, the others are follow-ups below.
 Status of the slice: **self-checked, not independently reviewed**; the independent review stays open work.
-Backend 1079 tests (was 933), frontend 365 tests in 41 files (was 235 in 30). Next: the nginx security headers
-(F5), then EOS-01 (b) the project spine.
+Backend 1079 tests (was 933), frontend 365 tests in 41 files (was 235 in 30). F5 nginx security headers DONE 2026-09-22 (`f19a75a`). Next: EOS-01 (b) the project spine.
 
 **EOS-04 Fault complete (item 16b) — CLOSED 2026-09-19, released at `1dda748`.** (a) Run persistence CLOSED `c157522`, `6b25a4b`, `2e8c52f`,
 `e5d8750` (generic `calculation_runs`, no migration, runs isolated per module). (b) §19 study-page layout CLOSED
@@ -180,7 +179,7 @@ Follow-ups (not blocking):
 
 From the EOS-01 (a) security review (`docs/security/eos-01a-identity-access-review.md`, findings F1-F16):
 
-- FIRST - nginx security headers (F5): `location /` and `location /assets/` set their own `add_header`, so the
+- ~~FIRST - nginx security headers (F5)~~ DONE 2026-09-22 (`1c12c75`..`f19a75a`, see Active slice): `location /` and `location /assets/` set their own `add_header`, so the
   three server-level headers are dropped there (nginx inheritance rule) and the page carries none; repeat them
   per location (one included snippet), add `Strict-Transport-Security` and `Content-Security-Policy:
   frame-ancestors 'none'`; through the repository file, installed with the commands in its header.
@@ -235,7 +234,7 @@ Previously: item 16a shell closed at `7efc071`; Fault UI slice at `bc22fda`; GAP
    2026-09-19); ~~Add-button layout fix~~ DONE `1dda748`; ~~(d) close~~ DONE. (c2) decay data stays BLOCKED on
    REF-IEC-60909-0.
 4. **EOS-01 Project Configuration (order per A13):** (a) ~~identity and access~~ DONE - released `202a2ed`
-   (2026-09-20) on the self-check, independent review open; next the nginx security headers (F5);
+   (2026-09-20) on the self-check, independent review open; F5 nginx security headers done 2026-09-22;
    (b) project spine (item 17) - site/project/revision, profile on project, runs linked, project
    selector in the topbar.
 5. Then EOS-02, EOS-03, EOS-05, EOS-07, EOS-08 … in §9 order; item 18 docs batch and item 19 §22 gate review
