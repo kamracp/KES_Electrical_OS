@@ -8,6 +8,8 @@ import { RunTraceabilityPanel } from "./RunTraceabilityPanel";
 const run: CalculationRunSummary = {
   id: "48a782d0-4331-4aa2-bcd0-f24f5016334a",
   module_code: "EOS-06",
+  project_revision_id: null,
+  project: null,
   calculation_type: "CABLE_SIZING",
   calculation_key: "CBL-001",
   revision_number: 2,

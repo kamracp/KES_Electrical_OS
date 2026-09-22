@@ -268,10 +268,14 @@ export type FaultRunResponse = z.infer<typeof faultRunResponseSchema>;
  * The persisted run is the only thing a study page may export (section 20):
  * the returned summary carries the run ID, engine version, profile, reference
  * status and content hash shown in the traceability panel.
+ *
+ * With a project revision id the run is stored under that revision of the selected
+ * project; without one it belongs to no project, exactly as before EOS-01 (b).
  */
 export async function createFaultRun(
   payload: ShortCircuitStudyRequest,
   signal?: AbortSignal,
+  projectRevisionId?: string,
 ): Promise<FaultRunResponse> {
   const validatedPayload = shortCircuitStudyRequestSchema.parse(payload);
   const timeoutSignal = AbortSignal.timeout(30_000);
@@ -285,7 +289,11 @@ export async function createFaultRun(
       Accept: "application/json",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ study: validatedPayload }),
+    body: JSON.stringify(
+      projectRevisionId === undefined
+        ? { study: validatedPayload }
+        : { study: validatedPayload, project_revision_id: projectRevisionId },
+    ),
     cache: "no-store",
     signal: requestSignal,
   });

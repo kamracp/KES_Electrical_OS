@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { projectRevisionSummarySchema } from "./projects";
+
 // Traceability record of one persisted calculation run (Master Prompt v2.1
 // item 15 / section 19). The backend keeps every module's runs in one generic
 // table, so this summary is shared by all study pages and never belongs to a
@@ -7,6 +9,10 @@ import { z } from "zod";
 export const calculationRunSummarySchema = z
   .object({
     id: z.string().uuid(),
+    // The project revision the run belongs to, and the names behind that id; both are null
+    // for a run made outside any project (EOS-01 b).
+    project_revision_id: z.string().uuid().nullable(),
+    project: projectRevisionSummarySchema.nullable(),
     module_code: z.string(),
     calculation_type: z.string(),
     calculation_key: z.string(),

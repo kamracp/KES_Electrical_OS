@@ -282,10 +282,14 @@ export type CableRunResponse = z.infer<typeof cableRunResponseSchema>;
  * The persisted run is the only thing a study page may export (section 20):
  * the returned summary carries the run ID, engine version, profile, reference
  * status and content hash shown in the traceability panel.
+ *
+ * With a project revision id the run is stored under that revision of the selected
+ * project; without one it belongs to no project, exactly as before EOS-01 (b).
  */
 export async function createCableRun(
   payload: CableSizingRequest,
   signal?: AbortSignal,
+  projectRevisionId?: string,
 ): Promise<CableRunResponse> {
   const validatedPayload = cableSizingRequestSchema.parse(payload);
   const timeoutSignal = AbortSignal.timeout(30_000);
@@ -297,7 +301,11 @@ export async function createCableRun(
       Accept: "application/json",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ study: validatedPayload }),
+    body: JSON.stringify(
+      projectRevisionId === undefined
+        ? { study: validatedPayload }
+        : { study: validatedPayload, project_revision_id: projectRevisionId },
+    ),
     cache: "no-store",
     signal: requestSignal,
   });

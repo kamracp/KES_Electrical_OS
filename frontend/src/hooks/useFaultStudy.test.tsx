@@ -50,6 +50,8 @@ const response = {
 const sampleRun: FaultRunResponse["run"] = {
   id: "48a782d0-4331-4aa2-bcd0-f24f5016334a",
   module_code: "EOS-04",
+  project_revision_id: null,
+  project: null,
   calculation_type: "SHORT_CIRCUIT",
   calculation_key: "SC-001",
   revision_number: 1,

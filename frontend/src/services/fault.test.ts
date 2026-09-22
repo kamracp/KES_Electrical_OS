@@ -72,6 +72,8 @@ const validResponse = {
 const validRun = {
   id: "48a782d0-4331-4aa2-bcd0-f24f5016334a",
   module_code: "EOS-04",
+  project_revision_id: null,
+  project: null,
   calculation_type: "SHORT_CIRCUIT",
   calculation_key: "FAULT-001",
   revision_number: 1,
@@ -246,6 +248,36 @@ describe("createFaultRun", () => {
     expect(init?.cache).toBe("no-store");
     expect(init?.signal).toBeInstanceOf(AbortSignal);
     expect(JSON.parse(String(init?.body))).toEqual({ study: validRequest });
+  });
+
+  it("sends the chosen project revision and reads the project named on the run", async () => {
+    const revisionId = "4b8e6d42-1c3f-4b5a-9e7d-8f9a0b1c2d3e";
+    const inProject = {
+      ...validRunResponse,
+      run: {
+        ...validRunResponse.run,
+        project_revision_id: revisionId,
+        project: {
+          revision_id: revisionId,
+          revision_number: 1,
+          revision_label: "Rev 1",
+          project_id: "2a7d5c31-9b0e-4a21-8f6c-7d8e9f0a1b2c",
+          project_code: "PRJ-001",
+          project_name: "Pump House",
+        },
+      },
+    };
+    fetchMock.mockResolvedValue(Response.json(inProject, { status: 201 }));
+
+    const answer = await createFaultRun(validRequest, undefined, revisionId);
+
+    expect(answer.run.project?.project_code).toBe("PRJ-001");
+    expect(answer.run.project_revision_id).toBe(revisionId);
+    const [, init] = fetchMock.mock.calls[0] ?? [];
+    expect(JSON.parse(String(init?.body))).toEqual({
+      study: validRequest,
+      project_revision_id: revisionId,
+    });
   });
 
   it("rejects an invalid request before calling the API", async () => {
