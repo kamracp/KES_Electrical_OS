@@ -42,6 +42,7 @@ cd backend && ../.venv/bin/alembic upgrade head && cd ..
 sudo cp deployment/systemd/kes-electrical-os.service /etc/systemd/system/
 sudo systemctl daemon-reload && sudo systemctl enable --now kes-electrical-os
 sudo cp deployment/nginx/electrical.kamraengineeringsolution.com.conf /etc/nginx/sites-available/
+sudo mkdir -p /etc/nginx/snippets && sudo cp deployment/nginx/snippets/kes-security-headers.conf /etc/nginx/snippets/
 sudo ln -sf /etc/nginx/sites-available/electrical.kamraengineeringsolution.com.conf /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 curl -s http://127.0.0.1:8040/api/v1/health
@@ -90,6 +91,13 @@ migration that must be reverted is handled by a new forward migration.
 ## 5. Operations
 
 - Logs: `journalctl -u kes-electrical-os -f`; nginx `/var/log/nginx/kes-electrical-os.*.log`.
+- nginx change (site file `deployment/nginx/*.conf` or the security-headers snippet
+  `deployment/nginx/snippets/kes-security-headers.conf`): commit and push, then in a fresh shell
+  `set -a; source ~/.keos-deploy.env; set +a; bash scripts/deploy_nginx.sh`. The script requires a clean
+  tree at `origin/master`, keeps a dated copy of the old site file in `/etc/nginx/backups`, installs both
+  files, runs `nginx -t` (a failed test restores the copy), reloads nginx and proves the seven security
+  headers on `/` and `/api/v1/health`. `scripts/deploy.sh` never touches nginx. The headers are included
+  inside every location that sets a header because nginx does not inherit `add_header` into such a location.
 - Health: `scripts/healthcheck.sh https://electrical.kamraengineeringsolution.com`.
 - Backups: the instance's existing nightly PostgreSQL backup job must include `kes_electrical_os`
   (verify with the backup script's database list before the first release).
