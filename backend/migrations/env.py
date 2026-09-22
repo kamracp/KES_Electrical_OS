@@ -6,6 +6,7 @@ from sqlalchemy import engine_from_config, pool
 # Import all models so that SQLAlchemy metadata is populated.
 import app.models.calculation_run
 import app.models.identity
+import app.models.project
 import app.models.load_calculation_run
 import app.models.standard
 import app.models.unit  # noqa: F401

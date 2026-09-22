@@ -20,6 +20,7 @@ from sqlalchemy.pool import StaticPool
 import app.models.calculation_run
 import app.models.identity
 import app.models.load_calculation_run
+import app.models.project
 import app.models.standard
 import app.models.unit
 from app.api.authentication import require_user
