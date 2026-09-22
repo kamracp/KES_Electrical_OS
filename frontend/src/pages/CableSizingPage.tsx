@@ -7,6 +7,7 @@ import { CableSizingForm } from "../components/CableSizingForm";
 import { CableSizingResultPanel } from "../components/CableSizingResultPanel";
 import { CableWarningPanel } from "../components/CableWarningPanel";
 import { RunTraceabilityPanel } from "../components/RunTraceabilityPanel";
+import { StudyProjectLine } from "../components/StudyProjectLine";
 import { useCableSizing } from "../hooks/useCableSizing";
 
 function describeError(error: unknown): string {
@@ -47,6 +48,7 @@ export function CableSizingPage() {
             <summary>
               <h2 id="cable-sizing-inputs-heading">Inputs</h2>
             </summary>
+            <StudyProjectLine />
             <CableSizingForm disabled={isPending} onSubmit={handleSubmit} />
           </details>
         </section>

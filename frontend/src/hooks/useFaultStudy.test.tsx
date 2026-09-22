@@ -5,6 +5,12 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  ProjectContext,
+  type ProjectContextValue,
+  type ProjectState,
+} from "../app/projectContext";
+
 import type {
   FaultRunResponse,
   ShortCircuitStudyRequest,
@@ -72,12 +78,29 @@ const sampleRun: FaultRunResponse["run"] = {
 
 const runResponse: FaultRunResponse = { run: sampleRun, result: response };
 
-function createWrapper() {
+// The study pages and hooks read the chosen project from the provider; these tests run with
+// no project unless they say otherwise, so every existing expectation is unchanged.
+function workingIn(state: ProjectState): ProjectContextValue {
+  return {
+    state,
+    select: vi.fn(),
+    clear: vi.fn(),
+    activeRevisionId: () => (state.status === "selected" ? state.revision.id : null),
+  };
+}
+
+const NO_PROJECT = workingIn({ status: "none" });
+
+function createWrapper(project: ProjectContextValue = NO_PROJECT) {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
   });
   return function Wrapper({ children }: PropsWithChildren) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ProjectContext.Provider value={project}>{children}</ProjectContext.Provider>
+      </QueryClientProvider>
+    );
   };
 }
 

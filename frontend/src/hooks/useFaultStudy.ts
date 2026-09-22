@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 
+import { useProject } from "../app/projectContext";
+
 import {
   createFaultRun,
   type FaultRunResponse,
@@ -14,11 +16,14 @@ import {
  * - One in-flight request at a time: a new submit aborts the previous one.
  * - The in-flight request is aborted on unmount so no state update lands on
  *   an unmounted component.
+ * - The run is attached to the revision chosen in the top bar, read at submit time; with
+ *   no project, or one without an open revision, nothing is sent and the run is unassigned.
  * - Every calculation is persisted as a run (Master Prompt v2.1 item 16b);
  *   the typed result and the run summary are exposed exactly as parsed.
  */
 export function useFaultStudy() {
   const controllerRef = useRef<AbortController | null>(null);
+  const { activeRevisionId } = useProject();
 
   const mutation = useMutation<FaultRunResponse, Error, ShortCircuitStudyRequest>({
     mutationKey: ["electrical", "fault", "runs", "create"],
@@ -26,7 +31,7 @@ export function useFaultStudy() {
       controllerRef.current?.abort();
       const controller = new AbortController();
       controllerRef.current = controller;
-      return createFaultRun(payload, controller.signal);
+      return createFaultRun(payload, controller.signal, activeRevisionId() ?? undefined);
     },
   });
 

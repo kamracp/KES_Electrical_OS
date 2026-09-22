@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 
+import { useProject } from "../app/projectContext";
+
 import {
   createCableRun,
   type CableRunResponse,
@@ -13,11 +15,14 @@ import {
  * - One in-flight request at a time: a new submit aborts the previous one.
  * - The in-flight request is aborted on unmount so no state update lands on
  *   an unmounted component.
+ * - The run is attached to the revision chosen in the top bar, read at submit time; with
+ *   no project, or one without an open revision, nothing is sent and the run is unassigned.
  * - Every calculation is persisted as a run (Master Prompt v2.1 item 15);
  *   the typed result and the run summary are exposed exactly as parsed.
  */
 export function useCableSizing() {
   const controllerRef = useRef<AbortController | null>(null);
+  const { activeRevisionId } = useProject();
 
   const mutation = useMutation<CableRunResponse, Error, CableSizingRequest>({
     mutationKey: ["electrical", "cable", "runs", "create"],
@@ -25,7 +30,7 @@ export function useCableSizing() {
       controllerRef.current?.abort();
       const controller = new AbortController();
       controllerRef.current = controller;
-      return createCableRun(payload, controller.signal);
+      return createCableRun(payload, controller.signal, activeRevisionId() ?? undefined);
     },
   });
 

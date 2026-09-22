@@ -203,3 +203,20 @@
 [data-summary-strip] dd[data-summary-warnings]:not([data-summary-warnings="0"]) {
   color: var(--kes-color-warning);
 }
+
+/* ---- Project context of a study (EOS-01 b) ------------------------------ */
+
+/* One quiet line above the inputs: which project the next run is saved in. */
+[data-study-project] {
+  margin: 0 0 var(--kes-space-3);
+  padding: var(--kes-space-2) var(--kes-space-3);
+  background: var(--kes-color-surface-muted);
+  border-radius: var(--kes-radius-sm);
+  color: var(--kes-color-text);
+  font-size: var(--kes-text-sm);
+}
+
+[data-study-project][data-study-project-state="none"],
+[data-study-project] [data-study-project-hint] {
+  color: var(--kes-color-muted);
+}

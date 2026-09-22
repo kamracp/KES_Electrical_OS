@@ -4,7 +4,16 @@ import "@testing-library/jest-dom/vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { ApiError } from "../services/http";
+
+import {
+  ProjectContext,
+  type ProjectContextValue,
+  type ProjectState,
+} from "../app/projectContext";
 
 import type {
   FaultRunResponse,
@@ -16,6 +25,7 @@ import { FaultStudyPage } from "./FaultStudyPage";
 type CreateFaultRun = (
   payload: ShortCircuitStudyRequest,
   signal?: AbortSignal,
+  projectRevisionId?: string,
 ) => Promise<FaultRunResponse>;
 
 const createFaultRunMock = vi.hoisted(() => vi.fn<CreateFaultRun>());
@@ -81,12 +91,31 @@ const response: ShortCircuitStudyResponse = {
   notes: null,
 };
 
-function createWrapper() {
+// The study pages and hooks read the chosen project from the provider; these tests run with
+// no project unless they say otherwise, so every existing expectation is unchanged.
+function workingIn(state: ProjectState): ProjectContextValue {
+  return {
+    state,
+    select: vi.fn(),
+    clear: vi.fn(),
+    activeRevisionId: () => (state.status === "selected" ? state.revision.id : null),
+  };
+}
+
+const NO_PROJECT = workingIn({ status: "none" });
+
+function createWrapper(project: ProjectContextValue = NO_PROJECT) {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
   });
   return function Wrapper({ children }: PropsWithChildren) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ProjectContext.Provider value={project}>
+          <MemoryRouter>{children}</MemoryRouter>
+        </ProjectContext.Provider>
+      </QueryClientProvider>
+    );
   };
 }
 
@@ -134,6 +163,32 @@ function precedes(first: Node | null, second: Node | null): boolean {
 function successState(): Element | null {
   return document.querySelector('[data-calculation-state="success"]');
 }
+
+const PROJECT_FIXTURE = {
+  id: "2a7d5c31-9b0e-4a21-8f6c-7d8e9f0a1b2c",
+  site_id: "6f1c9f1e-6a2b-4f5c-9b3d-1e2f3a4b5c6d",
+  code: "PRJ-001",
+  name: "Pump House",
+  client_name: null,
+  jurisdiction_profile: "IN",
+  status: "ACTIVE",
+  description: null,
+  created_at: "2026-09-22T09:00:00Z",
+  updated_at: "2026-09-22T09:00:00Z",
+} as const;
+
+const REVISION_FIXTURE = {
+  id: "4b8e6d42-1c3f-4b5a-9e7d-8f9a0b1c2d3e",
+  project_id: PROJECT_FIXTURE.id,
+  revision_number: 2,
+  label: "Rev 2",
+  status: "OPEN",
+  created_by: null,
+  issued_by: null,
+  issued_at: null,
+  notes: null,
+  created_at: "2026-09-22T09:00:00Z",
+} as const;
 
 describe("FaultStudyPage", () => {
   it("renders the EOS-04 workspace in the idle state", () => {
@@ -244,4 +299,93 @@ describe("FaultStudyPage", () => {
     anchorClick.mockRestore();
     expect(successState()).not.toBeNull();
   });
+
+  // -- the project a run is saved in (EOS-01 b) --------------------------------------------
+
+  it("sends the chosen revision and shows the project with the result", async () => {
+    const revisionId = "4b8e6d42-1c3f-4b5a-9e7d-8f9a0b1c2d3e";
+    const summary = {
+      revision_id: revisionId,
+      revision_number: 2,
+      revision_label: "Rev 2",
+      project_id: "2a7d5c31-9b0e-4a21-8f6c-7d8e9f0a1b2c",
+      project_code: "PRJ-001",
+      project_name: "Pump House",
+    };
+    createFaultRunMock.mockResolvedValue({
+      ...runResponse,
+      run: { ...runResponse.run, project_revision_id: revisionId, project: summary },
+    });
+    render(<FaultStudyPage />, {
+      wrapper: createWrapper(
+        workingIn({
+          status: "selected",
+          project: PROJECT_FIXTURE,
+          revision: REVISION_FIXTURE,
+        }),
+      ),
+    });
+
+    expect(screen.getByText(/Project PRJ-001 — Pump House · Rev 2 \(Open\)/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit fixture" }));
+
+    await waitFor(() => expect(successState()).not.toBeNull());
+    expect(createFaultRunMock.mock.calls[0]?.[2]).toBe(revisionId);
+    expect(document.querySelector('[data-field="project"]')?.textContent).toBe(
+      "PRJ-001 — Pump House · Rev 2 (revision 2)",
+    );
+  });
+
+  it("sends no revision and reports an unassigned run when no project is chosen", async () => {
+    createFaultRunMock.mockResolvedValue(runResponse);
+    render(<FaultStudyPage />, { wrapper: createWrapper() });
+
+    expect(screen.getByText(/No project — this run will be unassigned/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit fixture" }));
+
+    await waitFor(() => expect(successState()).not.toBeNull());
+    expect(createFaultRunMock.mock.calls[0]?.[2]).toBeUndefined();
+    expect(document.querySelector('[data-field="project"]')?.textContent).toBe("Unassigned");
+  });
+
+  it("sends no revision from a project that has no open revision", async () => {
+    createFaultRunMock.mockResolvedValue(runResponse);
+    render(<FaultStudyPage />, {
+      wrapper: createWrapper(
+        workingIn({
+          status: "read-only",
+          project: PROJECT_FIXTURE,
+          revision: { ...REVISION_FIXTURE, status: "ISSUED" },
+        }),
+      ),
+    });
+
+    expect(
+      screen.getByText(/No open revision — this run will not be linked to this project/),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit fixture" }));
+
+    await waitFor(() => expect(successState()).not.toBeNull());
+    expect(createFaultRunMock.mock.calls[0]?.[2]).toBeUndefined();
+  });
+
+  it("shows the server's own refusal when the revision takes no run", async () => {
+    createFaultRunMock.mockRejectedValue(
+      new ApiError("Runs can only be added to the open revision.", 409),
+    );
+    render(<FaultStudyPage />, { wrapper: createWrapper() });
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit fixture" }));
+
+    await waitFor(() =>
+      expect(document.querySelector('[data-calculation-state="error"]')).not.toBeNull(),
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Runs can only be added to the open revision.",
+    );
+  });
+
 });

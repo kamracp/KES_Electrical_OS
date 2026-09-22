@@ -12,6 +12,15 @@ const APPROVAL_LABELS: Record<string, string> = {
   REJECTED: "Rejected",
 };
 
+/** The project and revision the run was stored in, as the server recorded them. */
+function describeProject(run: CalculationRunSummary): string {
+  const project = run.project;
+
+  return project === null
+    ? "Unassigned"
+    : `${project.project_code} — ${project.project_name} · ${project.revision_label} (revision ${project.revision_number})`;
+}
+
 // Traceability record of a persisted run (Master Prompt v2.1 section 19):
 // every value comes from the stored run, never from the client-side result.
 export function RunTraceabilityPanel({ run, onExport }: RunTraceabilityPanelProps) {
@@ -26,6 +35,8 @@ export function RunTraceabilityPanel({ run, onExport }: RunTraceabilityPanelProp
       <dl>
         <dt>Run ID</dt>
         <dd data-field="run-id">{run.id}</dd>
+        <dt>Project</dt>
+        <dd data-field="project">{describeProject(run)}</dd>
         <dt>Revision</dt>
         <dd data-field="revision">{run.revision_number}</dd>
         <dt>Engine version</dt>

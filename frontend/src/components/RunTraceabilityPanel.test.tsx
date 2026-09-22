@@ -31,6 +31,36 @@ const run: CalculationRunSummary = {
 describe("RunTraceabilityPanel", () => {
   afterEach(cleanup);
 
+  it("names the project and revision the run was stored in", () => {
+    render(
+      <RunTraceabilityPanel
+        run={{
+          ...run,
+          project_revision_id: "4b8e6d42-1c3f-4b5a-9e7d-8f9a0b1c2d3e",
+          project: {
+            revision_id: "4b8e6d42-1c3f-4b5a-9e7d-8f9a0b1c2d3e",
+            revision_number: 2,
+            revision_label: "Rev 2 - client review",
+            project_id: "2a7d5c31-9b0e-4a21-8f6c-7d8e9f0a1b2c",
+            project_code: "PRJ-001",
+            project_name: "Pump House",
+          },
+        }}
+      />,
+    );
+
+    // The label is what the engineer typed; the number is what the record is keyed by.
+    expect(document.querySelector('[data-field="project"]')?.textContent).toBe(
+      "PRJ-001 — Pump House · Rev 2 - client review (revision 2)",
+    );
+  });
+
+  it("says a run outside any project is unassigned", () => {
+    render(<RunTraceabilityPanel run={run} />);
+
+    expect(document.querySelector('[data-field="project"]')?.textContent).toBe("Unassigned");
+  });
+
   it("renders the stored run identity, engine, references, hash and approval state", () => {
     render(<RunTraceabilityPanel run={run} />);
 

@@ -7,6 +7,7 @@ import { FaultStudyForm } from "../components/FaultStudyForm";
 import { FaultStudyResultPanel } from "../components/FaultStudyResultPanel";
 import { FaultWarningPanel } from "../components/FaultWarningPanel";
 import { RunTraceabilityPanel } from "../components/RunTraceabilityPanel";
+import { StudyProjectLine } from "../components/StudyProjectLine";
 import { useFaultStudy } from "../hooks/useFaultStudy";
 
 function describeError(error: unknown): string {
@@ -47,6 +48,7 @@ export function FaultStudyPage() {
             <summary>
               <h2 id="fault-study-inputs-heading">Inputs</h2>
             </summary>
+            <StudyProjectLine />
             <FaultStudyForm disabled={isPending} onSubmit={handleSubmit} />
           </details>
         </section>
