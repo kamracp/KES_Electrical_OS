@@ -10,6 +10,7 @@ import { useAuth } from "./authContext";
 export const LOGIN_PATH = "/login";
 export const CHANGE_PASSWORD_PATH = "/change-password";
 export const USERS_PATH = "/users";
+export const PROJECTS_PATH = "/projects";
 
 type ReturnState = { from: string };
 

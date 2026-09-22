@@ -5,6 +5,7 @@ import { CableSizingPage } from "../pages/CableSizingPage";
 import { ChangePasswordPage } from "../pages/ChangePasswordPage";
 import { FaultStudyPage } from "../pages/FaultStudyPage";
 import { LoginPage } from "../pages/LoginPage";
+import { ProjectsPage } from "../pages/ProjectsPage";
 import { UsersPage } from "../pages/UsersPage";
 import { AppShell } from "./AppShell";
 import { AuthProvider } from "./AuthProvider";
@@ -12,6 +13,7 @@ import { ProjectProvider } from "./ProjectProvider";
 import {
   CHANGE_PASSWORD_PATH,
   LOGIN_PATH,
+  PROJECTS_PATH,
   RequireAuth,
   SignedOutOnly,
   USERS_PATH,
@@ -61,6 +63,9 @@ export const routes: RouteObject[] = [
           { index: true, element: <App /> },
           { path: "fault-study", element: <FaultStudyPage /> },
           { path: "cable-sizing", element: <CableSizingPage /> },
+          // Every signed-in member may read the project configuration; the server decides
+          // who may write, and the page hides the actions a role cannot use.
+          { path: PROJECTS_PATH.slice(1), element: <ProjectsPage /> },
           // Owner only: the page says so to anybody else, and the server refuses them (403).
           { path: USERS_PATH.slice(1), element: <UsersPage /> },
         ],

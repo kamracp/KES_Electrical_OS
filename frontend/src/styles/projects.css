@@ -1,0 +1,64 @@
+/* Projects page (EOS-01 b). Structure-based selectors: components carry no className. */
+
+[data-projects-page] > section[aria-label] {
+  margin-bottom: var(--kes-space-5);
+}
+
+[data-projects-page] section[aria-label] > h2 {
+  font-size: var(--kes-text-lg);
+}
+
+[data-projects-page] section[aria-label] > h3 {
+  margin-top: var(--kes-space-4);
+  font-size: var(--kes-text-base);
+}
+
+[data-projects-page] [data-table-scroll] {
+  overflow-x: auto;
+}
+
+/* forms.css right-aligns every column after the first for engineering figures; these columns
+   hold codes, names and words. forms.css is loaded after this file, so the selector needs one
+   element more than its "td:not(:first-child)" to win the cascade. */
+[data-projects-page] table th,
+[data-projects-page] table td {
+  text-align: left;
+  vertical-align: middle;
+}
+
+[data-projects-page] td button {
+  min-height: 2rem;
+  padding: 0 var(--kes-space-3);
+}
+
+[data-projects-page] tr[data-site-active="false"] td,
+[data-projects-page] tr[data-project-status="ARCHIVED"] td {
+  color: var(--kes-color-muted);
+}
+
+[data-projects-page] [data-projects-actions] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kes-space-3);
+}
+
+[data-projects-page] [data-projects-note] {
+  color: var(--kes-color-muted);
+  font-size: var(--kes-text-sm);
+}
+
+[data-projects-page] [role="status"] {
+  padding: var(--kes-space-3) var(--kes-space-4);
+  background: var(--kes-color-pass-soft);
+  border: 1px solid var(--kes-color-pass);
+  border-radius: var(--kes-radius);
+  color: var(--kes-color-pass);
+}
+
+/* The detail panel is a second reading of the same data: set it apart without a new colour. */
+[data-projects-page] section[aria-label="Project detail"] {
+  padding: var(--kes-space-4);
+  background: var(--kes-color-surface);
+  border: 1px solid var(--kes-color-border);
+  border-radius: var(--kes-radius);
+}

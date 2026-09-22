@@ -24,8 +24,8 @@ export const MODULES: readonly ModuleDefinition[] = [
     code: "EOS-01",
     name: "Project configuration",
     summary: "Project identity, jurisdiction profile, units and applicable standards.",
-    status: "BACKEND_ONLY",
-    route: null,
+    status: "LIVE",
+    route: "/projects",
   },
   {
     code: "EOS-02",

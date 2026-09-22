@@ -30,6 +30,10 @@ describe("module registry", () => {
   it("exposes lookups", () => {
     expect(getModule("EOS-06")?.route).toBe("/cable-sizing");
     expect(getModule("EOS-99")).toBeUndefined();
-    expect(liveModules().map((module) => module.code)).toEqual(["EOS-04", "EOS-06"]);
+    expect(liveModules().map((module) => module.code)).toEqual([
+      "EOS-01",
+      "EOS-04",
+      "EOS-06",
+    ]);
   });
 });
