@@ -25,6 +25,13 @@ Status register: docs/project-status.md (Active slice, Releases, Follow-ups). Re
 - Keep docs/project-status.md truthful: the register entry opens a slice, the close records commits and
   live proof. Do not edit governance docs without the founder's decision.
 
+## Language
+- Talk to the founder in Hindi written in Devanagari script: explanations, plans, questions,
+  summaries and the first-time explanation of every new concept or command.
+- Everything that goes into the repository stays in English: code, identifiers, comments,
+  docstrings, tests, commit messages, documentation and register entries.
+- Technical terms may stay in English inside Hindi sentences (e.g. migration, commit, router).
+
 ## Tooling facts
 - Python venv: `.venv` at repo root (`.venv/bin/python`, `.venv/bin/ruff`, `.venv/bin/alembic`).
 - Local PostgreSQL is used for Alembic proofs; tests use in-memory SQLite (models must be imported in
