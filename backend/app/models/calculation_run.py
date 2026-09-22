@@ -21,9 +21,9 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    UniqueConstraint,
     Uuid,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -57,11 +57,28 @@ class CalculationRun(
     __tablename__ = "calculation_runs"
 
     __table_args__ = (
-        UniqueConstraint(
+        # One study key has its own revision line per scope: the runs that belong to no
+        # project keep the original rule, and the runs of a project revision are numbered
+        # inside that revision. Both databases carry the same condition, so the SQLite tests
+        # prove the rule that PostgreSQL enforces live (EOS-01 b).
+        Index(
+            "uq_calculation_runs_unassigned_key",
             "module_code",
             "calculation_key",
             "revision_number",
-            name="calculation_runs_key_revision_unique",
+            unique=True,
+            postgresql_where=text("project_revision_id IS NULL"),
+            sqlite_where=text("project_revision_id IS NULL"),
+        ),
+        Index(
+            "uq_calculation_runs_project_key",
+            "project_revision_id",
+            "module_code",
+            "calculation_key",
+            "revision_number",
+            unique=True,
+            postgresql_where=text("project_revision_id IS NOT NULL"),
+            sqlite_where=text("project_revision_id IS NOT NULL"),
         ),
         CheckConstraint(
             "revision_number > 0",
@@ -119,6 +136,13 @@ class CalculationRun(
         ),
     )
 
+    # The revision of the project this run belongs to; NULL is a run made outside any
+    # project, as every run was before EOS-01 (b).
+    project_revision_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("project_revisions.id", ondelete="RESTRICT"),
+        index=True,
+    )
     module_code: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
     calculation_type: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
     calculation_key: Mapped[str] = mapped_column(String(100), nullable=False, index=True)

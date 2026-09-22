@@ -4,6 +4,11 @@ Service that executes an engine and persists the run as frozen evidence.
 The engine result is computed exactly as the stateless calculate endpoint
 does; the service then snapshots input, result, warnings and references,
 hashes them and stores one immutable CalculationRun revision.
+
+A run may belong to the open revision of a project (EOS-01 b). The revision is checked against
+the caller's organization before the engine runs, so a study that cannot be stored costs no
+calculation; without a revision the run belongs to no project, as every run did before. Each
+scope carries its own revision numbering and its own A11 reuse rule.
 """
 
 import hashlib
@@ -22,6 +27,7 @@ from app.schemas.calculation_run import CableRunCreateRequest, FaultRunCreateReq
 from app.schemas.fault import ShortCircuitStudyResponse
 from app.services.cable import CableSizingService
 from app.services.fault import FaultCalculationService
+from app.services.project import ProjectConflictError, ProjectService
 
 CABLE_MODULE_CODE = "EOS-06"
 # Bump whenever the cable engine's method, rounding or reference handling changes.
@@ -70,11 +76,33 @@ def reusable_run(
     return latest
 
 
+async def resolve_run_scope(
+    projects: ProjectService,
+    organization_id: UUID,
+    project_revision_id: UUID | None,
+    jurisdiction_profile: str,
+) -> UUID | None:
+    """Return the revision a new run is stored under, or None for a run outside any project.
+
+    A revision of another organization is not found; a revision that cannot take runs (an
+    archived project, a revision that is no longer open) and a study designed under another
+    jurisdiction profile than the project are conflicts.
+    """
+
+    if project_revision_id is None:
+        return None
+    project, revision = await projects.revision_for_new_run(organization_id, project_revision_id)
+    if project.jurisdiction_profile != jurisdiction_profile:
+        raise ProjectConflictError("The study's jurisdiction profile must match the project's.")
+    return revision.id
+
+
 class CableRunService:
     """Calculate a cable study and persist it as a CalculationRun."""
 
-    def __init__(self, repository: CalculationRunRepository) -> None:
+    def __init__(self, repository: CalculationRunRepository, projects: ProjectService) -> None:
         self.repository = repository
+        self.projects = projects
         self.engine_service = CableSizingService()
 
     async def create(
@@ -82,9 +110,16 @@ class CableRunService:
         payload: CableRunCreateRequest,
         *,
         calculated_by: str,
+        organization_id: UUID,
     ) -> tuple[CalculationRun, CableSizingResponse, bool]:
         """Run the engine and freeze the evidence; False flag = latest revision reused (A11)."""
 
+        project_revision_id = await resolve_run_scope(
+            self.projects,
+            organization_id,
+            payload.project_revision_id,
+            str(payload.study.jurisdiction_profile),
+        )
         result = self.engine_service.calculate_cable_sizing(payload.study)
         response = CableSizingResponse.from_domain(result)
 
@@ -99,7 +134,11 @@ class CableRunService:
         }
         calculation_key = payload.study.code
         evidence_hash = content_hash(input_snapshot, result_snapshot)
-        latest = await self.repository.get_latest_revision(CABLE_MODULE_CODE, calculation_key)
+        latest = await self.repository.get_latest_revision(
+            CABLE_MODULE_CODE,
+            calculation_key,
+            project_revision_id=project_revision_id,
+        )
         existing = reusable_run(latest, evidence_hash, CABLE_ENGINE_VERSION)
         if existing is not None:
             return existing, response, False
@@ -107,9 +146,11 @@ class CableRunService:
         revision = await self.repository.get_next_revision_number(
             CABLE_MODULE_CODE,
             calculation_key,
+            project_revision_id=project_revision_id,
         )
 
         run = CalculationRun(
+            project_revision_id=project_revision_id,
             module_code=CABLE_MODULE_CODE,
             calculation_type=EngineeringCalculationType.CABLE_SIZING.value,
             calculation_key=calculation_key,
@@ -137,25 +178,33 @@ class CableRunService:
 
         return await self.repository.get_by_id(run_id)
 
-    async def list_for_key(self, calculation_key: str) -> list[CalculationRun]:
-        """Return every cable run revision for a study code, newest first."""
+    async def list_for_key(
+        self, calculation_key: str, *, project_revision_id: UUID | None = None
+    ) -> list[CalculationRun]:
+        """Return every cable run revision for a study code in one scope, newest first."""
 
         return await self.repository.list_by_calculation_key(
             CABLE_MODULE_CODE,
             calculation_key,
+            project_revision_id=project_revision_id,
         )
 
-    async def list_recent(self, limit: int = 20) -> list[CalculationRun]:
-        """Return the most recent cable runs."""
+    async def list_recent(
+        self, limit: int = 20, *, project_revision_id: UUID | None = None
+    ) -> list[CalculationRun]:
+        """Return the most recent cable runs of one scope."""
 
-        return await self.repository.list_recent(CABLE_MODULE_CODE, limit=limit)
+        return await self.repository.list_recent(
+            CABLE_MODULE_CODE, limit=limit, project_revision_id=project_revision_id
+        )
 
 
 class FaultRunService:
     """Calculate a short-circuit study and persist it as a CalculationRun."""
 
-    def __init__(self, repository: CalculationRunRepository) -> None:
+    def __init__(self, repository: CalculationRunRepository, projects: ProjectService) -> None:
         self.repository = repository
+        self.projects = projects
         self.engine_service = FaultCalculationService()
 
     async def create(
@@ -163,9 +212,16 @@ class FaultRunService:
         payload: FaultRunCreateRequest,
         *,
         calculated_by: str,
+        organization_id: UUID,
     ) -> tuple[CalculationRun, ShortCircuitStudyResponse, bool]:
         """Run the engine and freeze the evidence; False flag = latest revision reused (A11)."""
 
+        project_revision_id = await resolve_run_scope(
+            self.projects,
+            organization_id,
+            payload.project_revision_id,
+            str(payload.study.jurisdiction_profile),
+        )
         result = self.engine_service.calculate_short_circuit(payload.study)
         response = ShortCircuitStudyResponse.from_domain(result)
 
@@ -176,7 +232,11 @@ class FaultRunService:
         references_snapshot = {name: result_snapshot[name] for name in _FAULT_REFERENCE_FIELDS}
         calculation_key = payload.study.code
         evidence_hash = content_hash(input_snapshot, result_snapshot)
-        latest = await self.repository.get_latest_revision(FAULT_MODULE_CODE, calculation_key)
+        latest = await self.repository.get_latest_revision(
+            FAULT_MODULE_CODE,
+            calculation_key,
+            project_revision_id=project_revision_id,
+        )
         existing = reusable_run(latest, evidence_hash, FAULT_ENGINE_VERSION)
         if existing is not None:
             return existing, response, False
@@ -184,9 +244,11 @@ class FaultRunService:
         revision = await self.repository.get_next_revision_number(
             FAULT_MODULE_CODE,
             calculation_key,
+            project_revision_id=project_revision_id,
         )
 
         run = CalculationRun(
+            project_revision_id=project_revision_id,
             module_code=FAULT_MODULE_CODE,
             calculation_type=EngineeringCalculationType.SHORT_CIRCUIT.value,
             calculation_key=calculation_key,
@@ -214,18 +276,25 @@ class FaultRunService:
 
         return await self.repository.get_by_id(run_id)
 
-    async def list_for_key(self, calculation_key: str) -> list[CalculationRun]:
-        """Return every fault run revision for a study code, newest first."""
+    async def list_for_key(
+        self, calculation_key: str, *, project_revision_id: UUID | None = None
+    ) -> list[CalculationRun]:
+        """Return every fault run revision for a study code in one scope, newest first."""
 
         return await self.repository.list_by_calculation_key(
             FAULT_MODULE_CODE,
             calculation_key,
+            project_revision_id=project_revision_id,
         )
 
-    async def list_recent(self, limit: int = 20) -> list[CalculationRun]:
-        """Return the most recent fault runs."""
+    async def list_recent(
+        self, limit: int = 20, *, project_revision_id: UUID | None = None
+    ) -> list[CalculationRun]:
+        """Return the most recent fault runs of one scope."""
 
-        return await self.repository.list_recent(FAULT_MODULE_CODE, limit=limit)
+        return await self.repository.list_recent(
+            FAULT_MODULE_CODE, limit=limit, project_revision_id=project_revision_id
+        )
 
 
 __all__ = [
@@ -236,5 +305,6 @@ __all__ = [
     "CableRunService",
     "FaultRunService",
     "content_hash",
+    "resolve_run_scope",
     "reusable_run",
 ]

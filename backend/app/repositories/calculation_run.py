@@ -4,14 +4,27 @@ Repository for the generic engineering calculation-run audit table.
 Runs are retained as evidence records: there is intentionally no delete.
 Every lookup is scoped by module code so calculation keys may repeat across
 modules (a cable study and a fault study may share a project code).
+
+Since EOS-01 (b) every lookup is also scoped by project revision: a run either belongs to one
+revision of a project or to none at all, and the two scopes never see each other. Passing
+project_revision_id=None therefore means "the runs that belong to no project", not "any run" -
+that is what keeps the revision numbering and the A11 reuse rule of the two scopes apart.
 """
 
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.calculation_run import CalculationRun
+
+
+def _in_scope(stmt: Select, project_revision_id: UUID | None) -> Select:
+    """Limit a query to one project revision, or to the runs outside any project."""
+
+    if project_revision_id is None:
+        return stmt.where(CalculationRun.project_revision_id.is_(None))
+    return stmt.where(CalculationRun.project_revision_id == project_revision_id)
 
 
 class CalculationRunRepository:
@@ -37,31 +50,38 @@ class CalculationRunRepository:
         self,
         module_code: str,
         calculation_key: str,
+        *,
+        project_revision_id: UUID | None = None,
     ) -> CalculationRun | None:
-        """Return the highest revision for a module and calculation key."""
+        """Return the highest revision for a module and key within one scope."""
 
-        stmt = (
-            select(CalculationRun)
-            .where(
+        stmt = _in_scope(
+            select(CalculationRun).where(
                 CalculationRun.module_code == module_code,
                 CalculationRun.calculation_key == calculation_key,
-            )
-            .order_by(CalculationRun.revision_number.desc())
-            .limit(1)
+            ),
+            project_revision_id,
         )
-        result = await self.db.execute(stmt)
+        result = await self.db.execute(
+            stmt.order_by(CalculationRun.revision_number.desc()).limit(1)
+        )
         return result.scalar_one_or_none()
 
     async def get_next_revision_number(
         self,
         module_code: str,
         calculation_key: str,
+        *,
+        project_revision_id: UUID | None = None,
     ) -> int:
-        """Return the next available revision number for a module and key."""
+        """Return the next available revision number for a module and key within one scope."""
 
-        stmt = select(func.coalesce(func.max(CalculationRun.revision_number), 0) + 1).where(
-            CalculationRun.module_code == module_code,
-            CalculationRun.calculation_key == calculation_key,
+        stmt = _in_scope(
+            select(func.coalesce(func.max(CalculationRun.revision_number), 0) + 1).where(
+                CalculationRun.module_code == module_code,
+                CalculationRun.calculation_key == calculation_key,
+            ),
+            project_revision_id,
         )
         result = await self.db.execute(stmt)
         return int(result.scalar_one())
@@ -70,30 +90,35 @@ class CalculationRunRepository:
         self,
         module_code: str,
         calculation_key: str,
+        *,
+        project_revision_id: UUID | None = None,
     ) -> list[CalculationRun]:
-        """Return every revision for a module and key, newest first."""
+        """Return every revision for a module and key within one scope, newest first."""
 
-        stmt = (
-            select(CalculationRun)
-            .where(
+        stmt = _in_scope(
+            select(CalculationRun).where(
                 CalculationRun.module_code == module_code,
                 CalculationRun.calculation_key == calculation_key,
-            )
-            .order_by(CalculationRun.revision_number.desc())
+            ),
+            project_revision_id,
         )
-        result = await self.db.execute(stmt)
+        result = await self.db.execute(stmt.order_by(CalculationRun.revision_number.desc()))
         return list(result.scalars().all())
 
-    async def list_recent(self, module_code: str, limit: int = 20) -> list[CalculationRun]:
-        """Return the most recent runs of a module, newest first."""
+    async def list_recent(
+        self,
+        module_code: str,
+        limit: int = 20,
+        *,
+        project_revision_id: UUID | None = None,
+    ) -> list[CalculationRun]:
+        """Return the most recent runs of a module within one scope, newest first."""
 
-        stmt = (
-            select(CalculationRun)
-            .where(CalculationRun.module_code == module_code)
-            .order_by(CalculationRun.created_at.desc())
-            .limit(limit)
+        stmt = _in_scope(
+            select(CalculationRun).where(CalculationRun.module_code == module_code),
+            project_revision_id,
         )
-        result = await self.db.execute(stmt)
+        result = await self.db.execute(stmt.order_by(CalculationRun.created_at.desc()).limit(limit))
         return list(result.scalars().all())
 
     async def save(self, calculation_run: CalculationRun) -> CalculationRun:

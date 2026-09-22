@@ -12,6 +12,7 @@ from fastapi import APIRouter, HTTPException, Query, Response, status
 from app.api.authentication import CurrentSession
 from app.api.dependencies import DatabaseSession
 from app.repositories.calculation_run import CalculationRunRepository
+from app.repositories.project import ProjectRepository
 from app.schemas.calculation_run import (
     CableRunCreateRequest,
     CableRunResponse,
@@ -20,6 +21,7 @@ from app.schemas.calculation_run import (
     CalculationRunSummary,
 )
 from app.services.calculation_run import CABLE_MODULE_CODE, CableRunService
+from app.services.project import ProjectConflictError, ProjectNotFoundError, ProjectService
 
 router = APIRouter(
     prefix="/electrical/cable/runs",
@@ -28,7 +30,20 @@ router = APIRouter(
 
 
 def get_service(db: DatabaseSession) -> CableRunService:
-    return CableRunService(CalculationRunRepository(db))
+    return CableRunService(CalculationRunRepository(db), ProjectService(ProjectRepository(db)))
+
+
+async def revision_in_scope(
+    db: DatabaseSession, identity: CurrentSession, revision_id: UUID
+) -> None:
+    """A run filter may only name a revision of the caller's own organization."""
+
+    try:
+        await ProjectService(ProjectRepository(db)).get_revision(
+            identity.organization.id, revision_id
+        )
+    except ProjectNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @router.post(
@@ -45,7 +60,15 @@ async def create_cable_run(
     """Calculate a cable study and persist it as a new run revision."""
 
     try:
-        run, result, created = await get_service(db).create(payload, calculated_by=identity.label)
+        run, result, created = await get_service(db).create(
+            payload,
+            calculated_by=identity.label,
+            organization_id=identity.organization.id,
+        )
+    except ProjectNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ProjectConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     except (TypeError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -68,16 +91,21 @@ async def create_cable_run(
 )
 async def list_cable_runs(
     db: DatabaseSession,
+    identity: CurrentSession,
     calculation_key: str | None = Query(default=None, min_length=1, max_length=100),
+    project_revision_id: UUID | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
 ) -> CalculationRunListResponse:
-    """List cable runs: every revision of one study code, or the most recent runs."""
+    """List the cable runs of one scope: a project revision, or the runs outside any project."""
+
+    if project_revision_id is not None:
+        await revision_in_scope(db, identity, project_revision_id)
 
     service = get_service(db)
     if calculation_key is not None:
-        runs = await service.list_for_key(calculation_key)
+        runs = await service.list_for_key(calculation_key, project_revision_id=project_revision_id)
     else:
-        runs = await service.list_recent(limit=limit)
+        runs = await service.list_recent(limit=limit, project_revision_id=project_revision_id)
 
     return CalculationRunListResponse(
         items=[CalculationRunSummary.model_validate(run) for run in runs],

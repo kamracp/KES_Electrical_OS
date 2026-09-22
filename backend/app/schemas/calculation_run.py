@@ -26,6 +26,7 @@ class CalculationRunSummary(_ResponseBase):
     """Traceability record of one persisted run."""
 
     id: UUID
+    project_revision_id: UUID | None
     module_code: str
     calculation_type: str
     calculation_key: str
@@ -68,6 +69,9 @@ class CableRunCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     study: CableSizingRequest
+    # The open revision this study belongs to; without it the run belongs to no project,
+    # exactly as every run did before EOS-01 (b).
+    project_revision_id: UUID | None = None
     notes: str | None = Field(default=None, max_length=2000)
 
 
@@ -86,6 +90,8 @@ class FaultRunCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     study: ShortCircuitStudyRequest
+    # The open revision this study belongs to; without it the run belongs to no project.
+    project_revision_id: UUID | None = None
     notes: str | None = Field(default=None, max_length=2000)
 
 
