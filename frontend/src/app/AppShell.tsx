@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 
 import "../styles/shell.css";
 import { BackButton } from "../components/BackButton";
+import { ProjectSelector } from "../components/ProjectSelector";
 import { UserMenu } from "../components/UserMenu";
 import { MODULES, MODULE_STATUS_LABELS } from "./modules";
 
@@ -50,6 +51,7 @@ export function AppShell() {
         <header aria-label="Product">
           <BackButton />
           <span>Engineering design checks against referenced standard data</span>
+          <ProjectSelector />
           <UserMenu />
         </header>
 

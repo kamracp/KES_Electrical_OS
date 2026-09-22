@@ -231,3 +231,72 @@ header[aria-label="Product"] > span:first-of-type {
     display: none;
   }
 }
+
+/* ---- Project selector (EOS-01 b) ---------------------------------------- */
+
+/* Sits between the tagline and the signed-in user, in the same quiet topbar language:
+   the existing tokens only, no colour of its own. On a narrow screen the whole control
+   moves to its own row under the tagline instead of pushing the topbar into a scroll. */
+[data-shell-project] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--kes-space-2);
+  min-width: 0;
+  padding: var(--kes-space-2) var(--kes-space-4) var(--kes-space-2) 0;
+  border-right: 1px solid var(--kes-color-border);
+}
+
+[data-shell-project-label] {
+  color: var(--kes-color-muted);
+  font-size: var(--kes-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+[data-shell-project] > select {
+  max-width: min(18rem, 100%);
+  min-height: 2rem;
+  padding: 0 var(--kes-space-2);
+  border: 1px solid var(--kes-color-border-strong);
+  border-radius: var(--kes-radius-sm);
+  background: var(--kes-color-surface);
+  color: var(--kes-color-text);
+  font: inherit;
+}
+
+[data-shell-project] > select:focus-visible {
+  outline: 2px solid var(--kes-color-focus);
+  outline-offset: 2px;
+}
+
+[data-shell-project] > select:disabled {
+  color: var(--kes-color-muted);
+  background: var(--kes-color-surface-muted);
+}
+
+[data-shell-project-revision] {
+  color: var(--kes-color-text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+[data-shell-project-hint] {
+  flex-basis: 100%;
+  color: var(--kes-color-muted);
+  font-size: var(--kes-text-xs);
+}
+
+@media (max-width: 64rem) {
+  [data-shell-project] {
+    flex-basis: 100%;
+    padding: var(--kes-space-2) 0;
+    border-right: 0;
+  }
+}
+
+@media print {
+  [data-shell-project] {
+    display: none;
+  }
+}

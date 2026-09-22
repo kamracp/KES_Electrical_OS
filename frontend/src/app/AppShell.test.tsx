@@ -1,12 +1,25 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Session } from "../services/auth";
 import { AppShell } from "./AppShell";
 import { AuthContext, type AuthContextValue } from "./authContext";
+import { ProjectContext, type ProjectContextValue } from "./projectContext";
 import { MODULES } from "./modules";
+
+// The topbar carries the project selector, which reads the project list through react-query;
+// the shell tests are about the shell, so they run with no project chosen.
+vi.mock("../services/projects", () => ({ getProject: vi.fn(), listProjects: vi.fn(() => []) }));
+
+const NO_PROJECT: ProjectContextValue = {
+  state: { status: "none" },
+  select: vi.fn(),
+  clear: vi.fn(),
+  activeRevisionId: () => null,
+};
 
 const SESSION: Session = {
   user: {
@@ -44,10 +57,18 @@ function renderShell(initialEntry: string) {
     ],
     { initialEntries: [initialEntry] },
   );
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+  });
+
   return render(
-    <AuthContext.Provider value={AUTH}>
-      <RouterProvider router={router} />
-    </AuthContext.Provider>,
+    <QueryClientProvider client={queryClient}>
+      <AuthContext.Provider value={AUTH}>
+        <ProjectContext.Provider value={NO_PROJECT}>
+          <RouterProvider router={router} />
+        </ProjectContext.Provider>
+      </AuthContext.Provider>
+    </QueryClientProvider>,
   );
 }
 
