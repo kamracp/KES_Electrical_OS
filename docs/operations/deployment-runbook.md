@@ -77,6 +77,53 @@ chmod 600 ~/.keos-deploy.env
    reference draft (see `docs/project-status.md`), confirm the result and warnings match the local smoke.
 4. Record the deployed commit and date in `docs/project-status.md`.
 
+## 3A. Release with a migration
+
+A release that carries an Alembic migration changes the live database. Take a verified dump
+first; it is the only way back if the migration turns out to be wrong.
+
+```bash
+set -a; source ~/.keos-deploy.env; set +a
+bash scripts/backup_db.sh before-<slice>      # e.g. before-eos01b
+source ~/.keos-deploy.env && scripts/deploy.sh
+```
+
+1. **Backup.** `scripts/backup_db.sh` reads the database name from the server's own
+   `backend/.env` (never a password, never a hard-coded name), writes
+   `~/backups/kes-electrical-os-<UTC stamp>[-<label>].dump` in the custom format, reads it back
+   with `pg_restore --list`, and only then removes dumps beyond the last ten. It prints the file
+   path, the size, the number of tables with data and the Alembic revision the server is on.
+   Copy those four values into the release entry in `docs/project-status.md`. A failure at any
+   step exits non-zero and leaves no partial file behind.
+2. **Deploy.** `scripts/deploy.sh` runs the full regression, checks the commit out on the
+   server, installs, runs `alembic upgrade head`, rsyncs the frontend, restarts the service and
+   checks the version endpoint.
+3. **Smoke.** Sign in and exercise the slice in the browser, then record what was seen in the
+   register entry. Confirm the migration with
+   `ssh -i $KEOS_SSH_KEY $KEOS_SSH_HOST 'cd /opt/kes-electrical-os/backend && ../.venv/bin/alembic current'`.
+
+### Restoring from a dump
+
+Restoring is written down, not automated: it overwrites live data and must be a decision, not a
+script that can run by accident.
+
+```bash
+# 1. Prove the dump first, in a scratch database - this touches nothing that is in use.
+sudo -u postgres createdb kes_restore_check
+sudo -u postgres pg_restore --dbname=kes_restore_check --no-owner ~/backups/<file>.dump
+sudo -u postgres psql -d kes_restore_check -c '\dt'
+sudo -u postgres dropdb kes_restore_check
+
+# 2. Only then the live database, with the service stopped so nothing writes during the restore.
+sudo systemctl stop kes-electrical-os
+sudo -u postgres pg_restore --clean --if-exists --no-owner --dbname=kes_electrical_os ~/backups/<file>.dump
+sudo systemctl start kes-electrical-os
+cd /opt/kes-electrical-os/backend && ../.venv/bin/alembic current
+```
+
+After a restore the code on the server is still the newer commit: check the Alembic revision the
+dump carried and, if it is older than the code expects, roll the code back as in section 4.
+
 ## 4. Rollback
 
 ```bash
@@ -99,8 +146,10 @@ migration that must be reverted is handled by a new forward migration.
   headers on `/` and `/api/v1/health`. `scripts/deploy.sh` never touches nginx. The headers are included
   inside every location that sets a header because nginx does not inherit `add_header` into such a location.
 - Health: `scripts/healthcheck.sh https://electrical.kamraengineeringsolution.com`.
-- Backups: the instance's existing nightly PostgreSQL backup job must include `kes_electrical_os`
-  (verify with the backup script's database list before the first release).
+- Backups: before a migrating release take one with `bash scripts/backup_db.sh <label>` (section 3A,
+  verified dump in `~/backups`, last ten kept). Independently of that, the instance's existing nightly
+  PostgreSQL backup job must include `kes_electrical_os` (verify with the backup script's database
+  list).
 - Port map and shared-instance rules: see the KES server infrastructure notes; never bind 8000
   (belongs to another product) and never restart another product's service during a release.
 
