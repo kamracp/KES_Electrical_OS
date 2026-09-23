@@ -48,7 +48,10 @@ def calculate_load_group(
 
     result = _service.calculate_load_group(payload)
 
-    return LoadGroupCalculationResponse.model_validate(result)
+    return LoadGroupCalculationResponse.from_domain(
+        result,
+        jurisdiction_profile=payload.jurisdiction_profile,
+    )
 
 
 __all__ = [

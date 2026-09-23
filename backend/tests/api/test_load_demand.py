@@ -202,3 +202,53 @@ async def test_empty_load_group_is_rejected(
     )
 
     assert response.status_code == 422
+
+
+@pytest.mark.api
+async def test_ac_load_without_power_factor_is_rejected(
+    client: AsyncClient,
+) -> None:
+    """An AC load must state its power factor at the API too (A15 (a))."""
+
+    payload = motor_payload()
+    del payload["power_factor"]
+
+    response = await client.post(
+        LOAD_URL,
+        json=payload,
+    )
+
+    assert response.status_code == 422
+    assert "power_factor is required for AC loads" in response.text
+
+
+@pytest.mark.api
+async def test_group_with_blank_coincidence_factor_needs_review(
+    client: AsyncClient,
+) -> None:
+    """A blank coincidence factor is calculated with 1 and flagged (A15 (a))."""
+
+    payload = {
+        "code": "PUMP-GRP",
+        "name": "Process Pump Loads",
+        "loads": [motor_payload()],
+    }
+
+    response = await client.post(
+        GROUP_URL,
+        json=payload,
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["status"] == "REVIEW_REQUIRED"
+    assert [warning["code"] for warning in data["warnings"]] == [
+        "COINCIDENCE_FACTOR_NOT_ESTABLISHED"
+    ]
+    assert data["coincidence_factor"] == "1"
+    assert data["jurisdiction_profile"] == "IN"
+    assert data["assumptions"] == [
+        "The group coincidence factor is applied equally to active and reactive demand."
+    ]

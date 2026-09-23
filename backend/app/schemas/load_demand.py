@@ -4,7 +4,7 @@ KESE-S2-M2
 """
 
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import (
     BaseModel,
@@ -15,6 +15,9 @@ from pydantic import (
     model_validator,
 )
 
+from app.domain.electrical.jurisdiction.jurisdiction_models import (
+    JurisdictionProfile,
+)
 from app.domain.electrical.loads.models import (
     LoadGroupInput,
     LoadInput,
@@ -24,6 +27,7 @@ from app.domain.electrical.loads.models import (
 )
 from app.domain.electrical.loads.results import (
     CalculationStatus,
+    LoadGroupCalculationResult,
     LoadWarningCode,
 )
 
@@ -88,29 +92,32 @@ class LoadCalculationRequest(_RequestBase):
         max_digits=38,
         decimal_places=18,
     )
-    power_factor: ExactDecimal = Field(
-        default=Decimal("1"),
+    # A blank factor means NOT ESTABLISHED and reaches the engine as None: it calculates
+    # with 1, names the factor in a warning and reports REVIEW_REQUIRED (A15 (a)). The
+    # schema never fills a default in its place.
+    power_factor: ExactDecimal | None = Field(
+        default=None,
         gt=Decimal("0"),
         le=Decimal("1"),
         max_digits=38,
         decimal_places=18,
     )
-    efficiency: ExactDecimal = Field(
-        default=Decimal("1"),
+    efficiency: ExactDecimal | None = Field(
+        default=None,
         gt=Decimal("0"),
         le=Decimal("1"),
         max_digits=38,
         decimal_places=18,
     )
-    utilization_factor: ExactDecimal = Field(
-        default=Decimal("1"),
+    utilization_factor: ExactDecimal | None = Field(
+        default=None,
         ge=Decimal("0"),
         le=Decimal("1"),
         max_digits=38,
         decimal_places=18,
     )
-    demand_factor: ExactDecimal = Field(
-        default=Decimal("1"),
+    demand_factor: ExactDecimal | None = Field(
+        default=None,
         ge=Decimal("0"),
         le=Decimal("1"),
         max_digits=38,
@@ -123,11 +130,14 @@ class LoadCalculationRequest(_RequestBase):
     @model_validator(mode="after")
     def validate_phase_configuration(
         self,
-    ) -> "LoadCalculationRequest":
+    ) -> Self:
         """Validate phase-specific input requirements."""
 
-        if self.phase_system is PhaseSystem.DC and self.power_factor != Decimal("1"):
-            raise ValueError("DC loads must use a power_factor of 1")
+        if self.phase_system is PhaseSystem.DC:
+            if self.power_factor is not None and self.power_factor != Decimal("1"):
+                raise ValueError("DC loads must use a power_factor of 1")
+        elif self.power_factor is None:
+            raise ValueError("power_factor is required for AC loads")
 
         return self
 
@@ -165,13 +175,17 @@ class LoadGroupCalculationRequest(_RequestBase):
     loads: tuple[LoadCalculationRequest, ...] = Field(
         min_length=1,
     )
-    coincidence_factor: ExactDecimal = Field(
-        default=Decimal("1"),
+    # Blank means NOT ESTABLISHED, exactly as the per-load factors above.
+    coincidence_factor: ExactDecimal | None = Field(
+        default=None,
         ge=Decimal("0"),
         le=Decimal("1"),
         max_digits=38,
         decimal_places=18,
     )
+    # The load engine has no profile-dependent value; the profile is carried for the
+    # result, the run record and the design basis of the project revision.
+    jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
 
     def to_domain(self) -> LoadGroupInput:
         """Convert the validated API request to a domain group."""
@@ -213,6 +227,8 @@ class LoadGroupCalculationResponse(_ResponseBase):
 
     group_code: str
     group_name: str
+    # The coincidence factor the aggregation used; 1 when it was not established, which
+    # the matching COINCIDENCE_FACTOR_NOT_ESTABLISHED warning states.
     coincidence_factor: Decimal
     connected_power_kw: Decimal
     pre_coincidence_demand_kw: Decimal
@@ -222,6 +238,44 @@ class LoadGroupCalculationResponse(_ResponseBase):
     load_results: tuple[LoadCalculationResponse, ...]
     status: CalculationStatus
     warnings: tuple[CalculationWarningResponse, ...]
+    # Declared engineering assumptions of the aggregation (A15 (e)).
+    assumptions: tuple[str, ...]
+    jurisdiction_profile: JurisdictionProfile
+
+    @classmethod
+    def from_domain(
+        cls,
+        result: LoadGroupCalculationResult,
+        *,
+        jurisdiction_profile: JurisdictionProfile,
+    ) -> Self:
+        """
+        Create the response from the domain result and the requested profile.
+
+        The load engine carries no jurisdiction profile, so the profile of the
+        request is echoed here rather than read from the result.
+        """
+
+        return cls(
+            group_code=result.group_code,
+            group_name=result.group_name,
+            coincidence_factor=result.coincidence_factor,
+            connected_power_kw=result.connected_power_kw,
+            pre_coincidence_demand_kw=result.pre_coincidence_demand_kw,
+            demand_power_kw=result.demand_power_kw,
+            apparent_power_kva=result.apparent_power_kva,
+            reactive_power_kvar=result.reactive_power_kvar,
+            load_results=tuple(
+                LoadCalculationResponse.model_validate(load_result)
+                for load_result in result.load_results
+            ),
+            status=result.status,
+            warnings=tuple(
+                CalculationWarningResponse.model_validate(warning) for warning in result.warnings
+            ),
+            assumptions=result.assumptions,
+            jurisdiction_profile=jurisdiction_profile,
+        )
 
 
 __all__ = [

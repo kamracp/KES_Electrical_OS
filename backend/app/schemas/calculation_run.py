@@ -14,6 +14,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.cable import CableSizingRequest, CableSizingResponse
 from app.schemas.fault import ShortCircuitStudyRequest, ShortCircuitStudyResponse
+from app.schemas.load_demand import (
+    LoadGroupCalculationRequest,
+    LoadGroupCalculationResponse,
+)
 from app.schemas.project import ProjectRevisionSummary
 
 
@@ -108,6 +112,28 @@ class FaultRunResponse(BaseModel):
     result: ShortCircuitStudyResponse
 
 
+class LoadRunCreateRequest(BaseModel):
+    """Calculate a load schedule and persist the result as a run."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    # The persisted load study is the group: a schedule of loads with its coincidence
+    # factor. The single-load route stays a stateless quick calculation.
+    study: LoadGroupCalculationRequest
+    # The open revision this study belongs to; without it the run belongs to no project.
+    project_revision_id: UUID | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class LoadRunResponse(BaseModel):
+    """The persisted run record together with the typed load-group result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    run: CalculationRunSummary
+    result: LoadGroupCalculationResponse
+
+
 __all__ = [
     "CableRunCreateRequest",
     "CableRunResponse",
@@ -116,4 +142,6 @@ __all__ = [
     "CalculationRunSummary",
     "FaultRunCreateRequest",
     "FaultRunResponse",
+    "LoadRunCreateRequest",
+    "LoadRunResponse",
 ]
