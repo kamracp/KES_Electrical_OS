@@ -34,6 +34,7 @@ from app.api.v1.load_run import router as load_run_router
 from app.api.v1.lt_pcc import router as lt_pcc_router
 from app.api.v1.projects import router as projects_router
 from app.api.v1.standard import router as standard_router
+from app.api.v1.transformer_run import router as transformer_run_router
 from app.api.v1.transformer_sizing import router as transformer_sizing_router
 from app.api.v1.unit import router as unit_router
 from app.api.v1.users import router as users_router
@@ -86,6 +87,7 @@ STUDY_ROUTERS = (
     cable_run_router,
     fault_run_router,
     load_run_router,
+    transformer_run_router,
 )
 
 for reference_data_router in REFERENCE_DATA_ROUTERS:

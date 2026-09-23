@@ -16,6 +16,7 @@ CASES = [
     (f"{API}/cable/runs", "calculated_by"),
     (f"{API}/fault/runs", "calculated_by"),
     (f"{API}/load-demand/runs", "calculated_by"),
+    (f"{API}/transformer-sizing/runs", "calculated_by"),
     (f"{API}/calculation-runs/{RUN_ID}/submit", "submitted_by"),
     (f"{API}/calculation-runs/{RUN_ID}/approve", "approved_by"),
     (f"{API}/calculation-runs/{RUN_ID}/reject", "rejected_by"),
