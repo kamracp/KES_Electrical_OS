@@ -4,7 +4,12 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { TransformerStudyForm } from "./TransformerStudyForm";
+import { transformerRedundancyModeSchema } from "../services/transformerSizingContract";
+import {
+  REDUNDANCY_HINTS,
+  REDUNDANCY_LABELS,
+  TransformerStudyForm,
+} from "./TransformerStudyForm";
 
 afterEach(() => {
   cleanup();
@@ -215,5 +220,18 @@ describe("TransformerStudyForm", () => {
     expect(within(group("Demand")).getByLabelText("Power factor")).toBeDisabled();
     expect(within(group("Unit ratings")).getByLabelText("Unit rating 1")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Add rating" })).toBeDisabled();
+  });
+});
+
+describe("the TransformerStudyForm redundancy maps", () => {
+  it("name and explain every redundancy mode the contract can carry", () => {
+    // Drift guard: a mode the backend adds must get an option label and a hint
+    // here, not fall through as a blank option or an empty line.
+    expect(Object.keys(REDUNDANCY_LABELS).sort()).toEqual(
+      [...transformerRedundancyModeSchema.options].sort(),
+    );
+    expect(Object.keys(REDUNDANCY_HINTS).sort()).toEqual(
+      [...transformerRedundancyModeSchema.options].sort(),
+    );
   });
 });

@@ -44,6 +44,8 @@ type TransformerStudyFormProps = {
 //
 // The payload carries no project revision: the page adds the selected revision
 // when it calls the API, exactly as the Load and Fault pages do.
+export { REDUNDANCY_HINTS, REDUNDANCY_LABELS };
+
 export function TransformerStudyForm({
   disabled = false,
   onSubmit,
