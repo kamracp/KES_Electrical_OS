@@ -181,19 +181,21 @@ function formatApiError(data: unknown, status: number): string {
  * Calculate a load schedule and persist it as a run revision.
  *
  * The persisted study is the load group: several loads with their coincidence
- * factor. The returned summary carries the run ID, engine version, profile,
- * reference status and content hash shown in the traceability panel.
+ * factor. The request carries the whole run body, because a load study's notes
+ * belong to the run, not to the group the engine calculates. The returned
+ * summary carries the run ID, engine version, profile, reference status and
+ * content hash shown in the traceability panel.
  *
  * With a project revision id the run is stored under that revision of the selected
  * project; without one it belongs to no project. An unchanged study returns the
  * stored revision with HTTP 200 instead of a new one (A11); both are valid here.
  */
 export async function createLoadRun(
-  payload: LoadGroupRequest,
+  payload: LoadRunCreateRequest,
   signal?: AbortSignal,
   projectRevisionId?: string,
 ): Promise<LoadRunResponse> {
-  const validatedPayload = loadGroupRequestSchema.parse(payload);
+  const validatedPayload = loadRunCreateRequestSchema.parse(payload);
   const timeoutSignal = AbortSignal.timeout(30_000);
   const requestSignal = signal
     ? AbortSignal.any([signal, timeoutSignal])
@@ -207,8 +209,8 @@ export async function createLoadRun(
     },
     body: JSON.stringify(
       projectRevisionId === undefined
-        ? { study: validatedPayload }
-        : { study: validatedPayload, project_revision_id: projectRevisionId },
+        ? validatedPayload
+        : { ...validatedPayload, project_revision_id: projectRevisionId },
     ),
     cache: "no-store",
     signal: requestSignal,

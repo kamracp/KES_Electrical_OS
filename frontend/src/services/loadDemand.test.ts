@@ -3,7 +3,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "./http";
-import { createLoadRun, loadGroupRequestSchema, type LoadGroupRequest } from "./loadDemand";
+import {
+  createLoadRun,
+  loadGroupRequestSchema,
+  type LoadGroupRequest,
+  type LoadRunCreateRequest,
+} from "./loadDemand";
 import { AC_POWER_FACTOR_REQUIRED } from "./loadDemandContract";
 
 const motorLoad = {
@@ -29,6 +34,10 @@ const validRequest: LoadGroupRequest = {
 
 // The exact JSON the backend returns for this study, taken from
 // LoadGroupCalculationResponse at commit 2a25a8b.
+// The run body: the study plus whatever belongs to the run itself. A load
+// study's notes live here, because the group the engine calculates has none.
+const validRunRequest: LoadRunCreateRequest = { study: validRequest };
+
 const validResult = {
   group_code: "LOAD-001",
   group_name: "Process Pump Loads",
@@ -208,7 +217,7 @@ describe("createLoadRun", () => {
   it("posts the study to the runs endpoint and returns the run with its result", async () => {
     fetchMock.mockResolvedValue(Response.json(validRunResponse, { status: 201 }));
 
-    await expect(createLoadRun(validRequest)).resolves.toEqual(validRunResponse);
+    await expect(createLoadRun(validRunRequest)).resolves.toEqual(validRunResponse);
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const [url, init] = fetchMock.mock.calls[0] ?? [];
@@ -221,19 +230,32 @@ describe("createLoadRun", () => {
     expect(init?.cache).toBe("no-store");
     expect(init?.signal).toBeInstanceOf(AbortSignal);
     expect(JSON.parse(String(init?.body))).toEqual({ study: validRequest });
+    expect(Object.keys(JSON.parse(String(init?.body)))).not.toContain("project_revision_id");
+  });
+
+  it("carries the run's own notes, which the study itself has no field for", async () => {
+    fetchMock.mockResolvedValue(Response.json(validRunResponse, { status: 201 }));
+
+    await createLoadRun({ study: validRequest, notes: "Preliminary schedule." });
+
+    const [, init] = fetchMock.mock.calls[0] ?? [];
+    expect(JSON.parse(String(init?.body))).toEqual({
+      study: validRequest,
+      notes: "Preliminary schedule.",
+    });
   });
 
   it("accepts the reused revision the backend answers with HTTP 200 (A11)", async () => {
     fetchMock.mockResolvedValue(Response.json(validRunResponse, { status: 200 }));
 
-    await expect(createLoadRun(validRequest)).resolves.toEqual(validRunResponse);
+    await expect(createLoadRun(validRunRequest)).resolves.toEqual(validRunResponse);
   });
 
   it("sends the chosen project revision with the study", async () => {
     const revisionId = "b6b3f4d2-8a1c-4a5e-9a3b-2f7c1d0e5a44";
     fetchMock.mockResolvedValue(Response.json(validRunResponse, { status: 201 }));
 
-    await createLoadRun(validRequest, undefined, revisionId);
+    await createLoadRun(validRunRequest, undefined, revisionId);
 
     const [, init] = fetchMock.mock.calls[0] ?? [];
     expect(JSON.parse(String(init?.body))).toEqual({
@@ -261,7 +283,7 @@ describe("createLoadRun", () => {
     };
     fetchMock.mockResolvedValue(Response.json(reviewed, { status: 201 }));
 
-    const answer = await createLoadRun(validRequest);
+    const answer = await createLoadRun(validRunRequest);
 
     expect(answer.result.status).toBe("REVIEW_REQUIRED");
     expect(answer.result.warnings[0]?.code).toBe("COINCIDENCE_FACTOR_NOT_ESTABLISHED");
@@ -273,18 +295,17 @@ describe("createLoadRun", () => {
       Response.json({ detail: "Not authenticated" }, { status: 401 }),
     );
 
-    await expect(createLoadRun(validRequest)).rejects.toMatchObject({
+    await expect(createLoadRun(validRunRequest)).rejects.toMatchObject({
       message: "Not authenticated",
       status: 401,
     });
-    await expect(createLoadRun(validRequest)).rejects.toBeInstanceOf(ApiError);
+    await expect(createLoadRun(validRunRequest)).rejects.toBeInstanceOf(ApiError);
   });
 
   it("rejects an invalid request before calling the API", async () => {
     const invalid = {
-      ...validRequest,
-      loads: [{ ...motorLoad, power_factor: undefined }],
-    } as unknown as LoadGroupRequest;
+      study: { ...validRequest, loads: [{ ...motorLoad, power_factor: undefined }] },
+    } as unknown as LoadRunCreateRequest;
 
     await expect(createLoadRun(invalid)).rejects.toThrow();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -295,7 +316,7 @@ describe("createLoadRun", () => {
       Response.json({ run: validRun, result: { ...validResult, status: "PASS" } }),
     );
 
-    await expect(createLoadRun(validRequest)).rejects.toThrow(
+    await expect(createLoadRun(validRunRequest)).rejects.toThrow(
       "Unexpected response from the KES Electrical OS load runs API.",
     );
   });
