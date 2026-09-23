@@ -63,6 +63,14 @@ const EMPTY_PROJECT: NewProjectDraft = {
   firstRevisionLabel: "Rev 1",
 };
 
+/** Asked before a site stops taking new projects; existing ones are untouched. */
+function switchOffQuestion(code: string): string {
+  return (
+    `Switch off site ${code}? It will take no new projects. ` +
+    "Existing projects stay unchanged."
+  );
+}
+
 function describeFailure(caught: unknown, fallback: string): string {
   return caught instanceof Error && caught.message.trim() !== "" ? caught.message : fallback;
 }
@@ -478,6 +486,13 @@ export function ProjectsPage() {
   }
 
   async function switchSite(site: Site): Promise<void> {
+    // Switching a site off is one click away from a list of sites, and it stops
+    // every new project there, so it asks first. Switching one back on takes
+    // nothing away and stays a single click.
+    if (site.is_active && !window.confirm(switchOffQuestion(site.code))) {
+      return;
+    }
+
     setSiteError(null);
     setNotice(null);
 

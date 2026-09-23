@@ -375,7 +375,8 @@ describe("ProjectsPage", () => {
     );
   });
 
-  it("switches a site off and on again", async () => {
+  it("switches a site off once the question is answered", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     updateSiteMock.mockResolvedValue({ ...SITE, is_active: false });
     renderPage();
     await sitesLoaded();
@@ -384,7 +385,44 @@ describe("ProjectsPage", () => {
     const row = within(sites).getByRole("row", { name: /PLANT-A/ });
     fireEvent.click(within(row).getByRole("button", { name: "Switch off" }));
 
+    expect(confirmSpy).toHaveBeenCalledWith(
+      "Switch off site PLANT-A? It will take no new projects. Existing projects stay unchanged.",
+    );
     await waitFor(() => expect(updateSiteMock).toHaveBeenCalledWith(SITE_ID, { is_active: false }));
+    confirmSpy.mockRestore();
+  });
+
+  it("changes nothing when the question is answered no", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderPage();
+    await sitesLoaded();
+    const sites = screen.getByRole("region", { name: "Sites" });
+
+    const row = within(sites).getByRole("row", { name: /PLANT-A/ });
+    fireEvent.click(within(row).getByRole("button", { name: "Switch off" }));
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(updateSiteMock).not.toHaveBeenCalled();
+    // No request means nothing to report either way.
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    confirmSpy.mockRestore();
+  });
+
+  it("switches a site back on with one click", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm");
+    listSitesMock.mockResolvedValue([{ ...SITE, is_active: false }]);
+    updateSiteMock.mockResolvedValue({ ...SITE, is_active: true });
+    renderPage();
+    await sitesLoaded();
+    const sites = screen.getByRole("region", { name: "Sites" });
+
+    const row = within(sites).getByRole("row", { name: /PLANT-A/ });
+    fireEvent.click(within(row).getByRole("button", { name: "Switch on" }));
+
+    // Switching on takes nothing away, so it asks nothing.
+    expect(confirmSpy).not.toHaveBeenCalled();
+    await waitFor(() => expect(updateSiteMock).toHaveBeenCalledWith(SITE_ID, { is_active: true }));
+    confirmSpy.mockRestore();
   });
 
   it("shows a viewer everything and lets them write nothing", async () => {
