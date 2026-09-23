@@ -37,9 +37,11 @@ export const MODULES: readonly ModuleDefinition[] = [
   {
     code: "EOS-03",
     name: "Transformer, DG, UPS and PV",
-    summary: "Source sizing for transformers, generators, UPS and PV systems.",
-    status: "BACKEND_ONLY",
-    route: null,
+    summary:
+      "Source sizing for transformers, generators, UPS and PV systems. " +
+      "Transformer sizing is live; DG, UPS and PV follow.",
+    status: "LIVE",
+    route: "/transformer-sizing",
   },
   {
     code: "EOS-04",

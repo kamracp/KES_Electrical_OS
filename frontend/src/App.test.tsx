@@ -53,10 +53,16 @@ describe("App home page", () => {
       "/load-demand",
     );
 
+    const transformer = modules.querySelector('[data-module-code="EOS-03"]') as HTMLElement;
+    expect(transformer.getAttribute("data-module-status")).toBe("LIVE");
+    expect(
+      within(transformer).getByRole("link", { name: "Open Transformer, DG, UPS and PV" }).getAttribute("href"),
+    ).toBe("/transformer-sizing");
+
     // A module whose engine is built but has no page yet still carries no link.
-    const sources = modules.querySelector('[data-module-code="EOS-03"]') as HTMLElement;
-    expect(sources.getAttribute("data-module-status")).toBe("BACKEND_ONLY");
-    expect(within(sources).queryByRole("link")).toBeNull();
+    const panels = modules.querySelector('[data-module-code="EOS-07"]') as HTMLElement;
+    expect(panels.getAttribute("data-module-status")).toBe("BACKEND_ONLY");
+    expect(within(panels).queryByRole("link")).toBeNull();
   });
 
   it("keeps the workspace heading and the API health status", () => {
