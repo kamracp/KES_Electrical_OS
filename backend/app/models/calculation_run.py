@@ -32,6 +32,7 @@ from app.models.load_calculation_run import (
     CalculationApprovalStatus,
     CalculationRunStatus,
 )
+from app.models.project import _in_list
 
 
 class EngineeringCalculationType(StrEnum):
@@ -39,6 +40,7 @@ class EngineeringCalculationType(StrEnum):
 
     CABLE_SIZING = "CABLE_SIZING"
     SHORT_CIRCUIT = "SHORT_CIRCUIT"
+    LOAD_DEMAND = "LOAD_DEMAND"
 
 
 class CalculationRun(
@@ -89,7 +91,7 @@ class CalculationRun(
             name="module_code_format",
         ),
         CheckConstraint(
-            ("calculation_type IN ('CABLE_SIZING', 'SHORT_CIRCUIT')"),
+            _in_list("calculation_type", EngineeringCalculationType),
             name="type_valid",
         ),
         CheckConstraint(
