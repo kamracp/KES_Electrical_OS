@@ -83,6 +83,24 @@ def _require_ratio(
         raise ValueError(f"{field_name} must be {expected_range}")
 
 
+def _require_optional_ratio(
+    field_name: str,
+    value: Decimal | None,
+    *,
+    allow_zero: bool,
+) -> None:
+    """Validate a ratio only when it is given; None means NOT ESTABLISHED."""
+
+    if value is None:
+        return
+
+    _require_ratio(
+        field_name,
+        value,
+        allow_zero=allow_zero,
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class LoadInput:
     """
@@ -90,6 +108,12 @@ class LoadInput:
 
     rated_power_kw is the rated power of one unit. The total connected
     power is calculated using rated_power_kw multiplied by quantity.
+
+    A blank utilization, demand or efficiency factor (None) means NOT
+    ESTABLISHED, not unity: the engine calculates with 1, warns and
+    reports REVIEW_REQUIRED (Master Prompt A15). The power factor has no
+    such default. An AC load must state it, because a silent unity power
+    factor understates the design current.
     """
 
     code: str
@@ -98,10 +122,10 @@ class LoadInput:
     rated_power_kw: Decimal
     phase_system: PhaseSystem
     voltage_v: Decimal
-    power_factor: Decimal = Decimal("1")
-    efficiency: Decimal = Decimal("1")
-    utilization_factor: Decimal = Decimal("1")
-    demand_factor: Decimal = Decimal("1")
+    power_factor: Decimal | None = None
+    efficiency: Decimal | None = None
+    utilization_factor: Decimal | None = None
+    demand_factor: Decimal | None = None
     scenario: LoadScenario = LoadScenario.NORMAL
     power_basis: PowerBasis = PowerBasis.ELECTRICAL_INPUT
     notes: str | None = None
@@ -144,29 +168,32 @@ class LoadInput:
             "voltage_v",
             self.voltage_v,
         )
-        _require_ratio(
+        _require_optional_ratio(
             "power_factor",
             self.power_factor,
             allow_zero=False,
         )
-        _require_ratio(
+        _require_optional_ratio(
             "efficiency",
             self.efficiency,
             allow_zero=False,
         )
-        _require_ratio(
+        _require_optional_ratio(
             "utilization_factor",
             self.utilization_factor,
             allow_zero=True,
         )
-        _require_ratio(
+        _require_optional_ratio(
             "demand_factor",
             self.demand_factor,
             allow_zero=True,
         )
 
-        if self.phase_system is PhaseSystem.DC and self.power_factor != Decimal("1"):
-            raise ValueError("DC loads must use a power_factor of 1")
+        if self.phase_system is PhaseSystem.DC:
+            if self.power_factor is not None and self.power_factor != Decimal("1"):
+                raise ValueError("DC loads must use a power_factor of 1")
+        elif self.power_factor is None:
+            raise ValueError("power_factor is required for AC loads")
 
         normalized_notes = self.notes.strip() if self.notes is not None else None
 
@@ -181,12 +208,14 @@ class LoadGroupInput:
     Immutable group of electrical loads.
 
     coincidence_factor is applied when the group demand is aggregated.
+    A blank coincidence factor (None) means NOT ESTABLISHED: the engine
+    aggregates with 1, warns and reports REVIEW_REQUIRED (A15).
     """
 
     code: str
     name: str
     loads: tuple[LoadInput, ...]
-    coincidence_factor: Decimal = Decimal("1")
+    coincidence_factor: Decimal | None = None
 
     def __post_init__(self) -> None:
         """Validate the load group and its coincidence factor."""
@@ -211,7 +240,7 @@ class LoadGroupInput:
         if len(load_codes) != len(set(load_codes)):
             raise ValueError("load codes must be unique within a group")
 
-        _require_ratio(
+        _require_optional_ratio(
             "coincidence_factor",
             self.coincidence_factor,
             allow_zero=True,

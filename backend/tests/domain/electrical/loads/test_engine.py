@@ -19,6 +19,7 @@ from app.domain.electrical.loads.models import (
     PowerBasis,
 )
 from app.domain.electrical.loads.results import (
+    GROUP_COINCIDENCE_ASSUMPTION,
     CalculationStatus,
     LoadWarningCode,
 )
@@ -27,10 +28,10 @@ from app.domain.electrical.loads.results import (
 def make_motor_load(
     *,
     code: str = "MTR-001",
-    power_factor: Decimal = Decimal("0.85"),
-    efficiency: Decimal = Decimal("0.92"),
-    utilization_factor: Decimal = Decimal("0.80"),
-    demand_factor: Decimal = Decimal("0.90"),
+    power_factor: Decimal | None = Decimal("0.85"),
+    efficiency: Decimal | None = Decimal("0.92"),
+    utilization_factor: Decimal | None = Decimal("0.80"),
+    demand_factor: Decimal | None = Decimal("0.90"),
 ) -> LoadInput:
     """Create the approved three-phase motor reference load."""
 
@@ -145,31 +146,125 @@ def test_zero_demand_produces_warning() -> None:
 
 
 @pytest.mark.unit
-def test_low_power_factor_produces_warning() -> None:
-    """AC power factors below 0.80 should produce a warning."""
+def test_low_power_factor_and_efficiency_no_longer_warn() -> None:
+    """The unreferenced 0.80 limits are withdrawn (A15 (b), GAP-015)."""
 
     load = make_motor_load(
-        power_factor=Decimal("0.75"),
+        power_factor=Decimal("0.50"),
+        efficiency=Decimal("0.50"),
     )
 
     result = calculate_load(load)
 
-    assert result.status is CalculationStatus.WARNING
-    assert any(warning.code is LoadWarningCode.LOW_POWER_FACTOR for warning in result.warnings)
+    assert result.status is CalculationStatus.VALID
+    assert result.warnings == ()
 
 
 @pytest.mark.unit
-def test_low_mechanical_efficiency_produces_warning() -> None:
-    """Low efficiency should be flagged for mechanical-output loads."""
+def test_blank_utilization_factor_is_reported_as_not_established() -> None:
+    """A blank utilization factor calculates with 1 and needs review."""
 
-    load = make_motor_load(
-        efficiency=Decimal("0.75"),
+    established = calculate_load(
+        make_motor_load(
+            utilization_factor=Decimal("1"),
+        )
+    )
+
+    result = calculate_load(
+        make_motor_load(
+            utilization_factor=None,
+        )
+    )
+
+    assert result.status is CalculationStatus.REVIEW_REQUIRED
+    assert [warning.code for warning in result.warnings] == [
+        LoadWarningCode.UTILIZATION_FACTOR_NOT_ESTABLISHED
+    ]
+    assert result.utilized_power_kw == established.utilized_power_kw
+    assert result.demand_power_kw == established.demand_power_kw
+    assert result.design_current_a == established.design_current_a
+
+
+@pytest.mark.unit
+def test_blank_demand_factor_is_reported_as_not_established() -> None:
+    """A blank demand factor calculates with 1 and needs review."""
+
+    established = calculate_load(
+        make_motor_load(
+            demand_factor=Decimal("1"),
+        )
+    )
+
+    result = calculate_load(
+        make_motor_load(
+            demand_factor=None,
+        )
+    )
+
+    assert result.status is CalculationStatus.REVIEW_REQUIRED
+    assert [warning.code for warning in result.warnings] == [
+        LoadWarningCode.DEMAND_FACTOR_NOT_ESTABLISHED
+    ]
+    assert result.demand_power_kw == established.demand_power_kw
+
+
+@pytest.mark.unit
+def test_blank_efficiency_warns_only_for_mechanical_output() -> None:
+    """Efficiency is used, and therefore required, only for shaft ratings."""
+
+    mechanical_result = calculate_load(
+        make_motor_load(
+            efficiency=None,
+        )
+    )
+
+    electrical_load = LoadInput(
+        code="HTR-002",
+        name="Electric Heater",
+        quantity=1,
+        rated_power_kw=Decimal("10"),
+        phase_system=PhaseSystem.THREE_PHASE,
+        voltage_v=Decimal("415"),
+        power_factor=Decimal("1"),
+        utilization_factor=Decimal("1"),
+        demand_factor=Decimal("1"),
+        power_basis=PowerBasis.ELECTRICAL_INPUT,
+    )
+
+    electrical_result = calculate_load(electrical_load)
+
+    assert mechanical_result.status is CalculationStatus.REVIEW_REQUIRED
+    assert [warning.code for warning in mechanical_result.warnings] == [
+        LoadWarningCode.EFFICIENCY_NOT_ESTABLISHED
+    ]
+    assert mechanical_result.connected_power_kw == Decimal("30.0000")
+
+    assert electrical_result.status is CalculationStatus.VALID
+    assert electrical_result.warnings == ()
+
+
+@pytest.mark.unit
+def test_dc_load_without_power_factor_is_calculated_with_unity() -> None:
+    """A DC load has no power factor and produces no warning for it."""
+
+    load = LoadInput(
+        code="DC-003",
+        name="DC Control Load",
+        quantity=2,
+        rated_power_kw=Decimal("2.4"),
+        phase_system=PhaseSystem.DC,
+        voltage_v=Decimal("48"),
+        utilization_factor=Decimal("0.50"),
+        demand_factor=Decimal("0.75"),
     )
 
     result = calculate_load(load)
 
-    assert result.status is CalculationStatus.WARNING
-    assert any(warning.code is LoadWarningCode.LOW_EFFICIENCY for warning in result.warnings)
+    assert result.apparent_power_kva == Decimal("1.8000")
+    assert result.reactive_power_kvar == Decimal("0.0000")
+    assert result.design_current_a == Decimal("37.5000")
+    assert result.status is CalculationStatus.VALID
+    assert result.warnings == ()
 
 
 @pytest.mark.unit
@@ -177,8 +272,7 @@ def test_multiple_load_warnings_are_preserved() -> None:
     """One load may produce more than one controlled warning."""
 
     load = make_motor_load(
-        power_factor=Decimal("0.75"),
-        efficiency=Decimal("0.75"),
+        utilization_factor=None,
         demand_factor=Decimal("0"),
     )
 
@@ -186,11 +280,10 @@ def test_multiple_load_warnings_are_preserved() -> None:
 
     warning_codes = {warning.code for warning in result.warnings}
 
-    assert result.status is CalculationStatus.WARNING
+    assert result.status is CalculationStatus.REVIEW_REQUIRED
     assert warning_codes == {
+        LoadWarningCode.UTILIZATION_FACTOR_NOT_ESTABLISHED,
         LoadWarningCode.ZERO_DEMAND,
-        LoadWarningCode.LOW_POWER_FACTOR,
-        LoadWarningCode.LOW_EFFICIENCY,
     }
 
 
@@ -207,6 +300,8 @@ def test_electrical_input_efficiency_does_not_change_power() -> None:
         voltage_v=Decimal("415"),
         power_factor=Decimal("1"),
         efficiency=Decimal("0.70"),
+        utilization_factor=Decimal("1"),
+        demand_factor=Decimal("1"),
         power_basis=PowerBasis.ELECTRICAL_INPUT,
     )
 
@@ -214,7 +309,7 @@ def test_electrical_input_efficiency_does_not_change_power() -> None:
 
     assert result.connected_power_kw == Decimal("30.0000")
     assert result.demand_power_kw == Decimal("30.0000")
-    assert not any(warning.code is LoadWarningCode.LOW_EFFICIENCY for warning in result.warnings)
+    assert result.status is CalculationStatus.VALID
 
 
 @pytest.mark.unit
@@ -230,6 +325,8 @@ def test_load_group_vector_aggregation_reference() -> None:
         phase_system=PhaseSystem.THREE_PHASE,
         voltage_v=Decimal("415"),
         power_factor=Decimal("0.80"),
+        utilization_factor=Decimal("1"),
+        demand_factor=Decimal("1"),
     )
 
     lighting = LoadInput(
@@ -241,6 +338,7 @@ def test_load_group_vector_aggregation_reference() -> None:
         voltage_v=Decimal("230"),
         power_factor=Decimal("1"),
         utilization_factor=Decimal("0.50"),
+        demand_factor=Decimal("1"),
     )
 
     group = LoadGroupInput(
@@ -259,6 +357,7 @@ def test_load_group_vector_aggregation_reference() -> None:
     assert result.apparent_power_kva == Decimal("11.6619")
     assert len(result.load_results) == 2
     assert result.status is CalculationStatus.VALID
+    assert result.warnings == ()
 
 
 @pytest.mark.unit
@@ -273,6 +372,7 @@ def test_group_coincidence_factor_is_applied_once() -> None:
         phase_system=PhaseSystem.THREE_PHASE,
         voltage_v=Decimal("415"),
         power_factor=Decimal("1"),
+        utilization_factor=Decimal("1"),
         demand_factor=Decimal("0.80"),
     )
 
@@ -284,6 +384,7 @@ def test_group_coincidence_factor_is_applied_once() -> None:
         phase_system=PhaseSystem.THREE_PHASE,
         voltage_v=Decimal("415"),
         power_factor=Decimal("1"),
+        utilization_factor=Decimal("1"),
         demand_factor=Decimal("0.50"),
     )
 
@@ -307,22 +408,88 @@ def test_group_coincidence_factor_is_applied_once() -> None:
 def test_group_warnings_include_load_code() -> None:
     """Group warnings should identify the originating load."""
 
-    low_pf_load = make_motor_load(
-        code="MTR-LOW-PF",
-        power_factor=Decimal("0.75"),
+    blank_factor_load = make_motor_load(
+        code="MTR-NO-UF",
+        utilization_factor=None,
     )
 
     group = LoadGroupInput(
         code="WARNING-GRP",
         name="Warning Group",
-        loads=(low_pf_load,),
+        loads=(blank_factor_load,),
+        coincidence_factor=Decimal("1"),
     )
 
     result = calculate_load_group(group)
 
-    assert result.status is CalculationStatus.WARNING
-    assert result.warnings[0].code is LoadWarningCode.LOW_POWER_FACTOR
-    assert result.warnings[0].message.startswith("MTR-LOW-PF:")
+    assert result.status is CalculationStatus.REVIEW_REQUIRED
+    assert result.warnings[0].code is LoadWarningCode.UTILIZATION_FACTOR_NOT_ESTABLISHED
+    assert result.warnings[0].message.startswith("MTR-NO-UF:")
+
+
+@pytest.mark.unit
+def test_blank_group_coincidence_is_reported_as_not_established() -> None:
+    """A blank coincidence factor aggregates with 1 and needs review."""
+
+    group = LoadGroupInput(
+        code="BLANK-CF-GRP",
+        name="Unestablished Coincidence Group",
+        loads=(make_motor_load(),),
+    )
+
+    result = calculate_load_group(group)
+
+    assert result.coincidence_factor == Decimal("1")
+    assert result.pre_coincidence_demand_kw == Decimal("23.4783")
+    assert result.demand_power_kw == Decimal("23.4783")
+    assert result.status is CalculationStatus.REVIEW_REQUIRED
+    assert [warning.code for warning in result.warnings] == [
+        LoadWarningCode.COINCIDENCE_FACTOR_NOT_ESTABLISHED
+    ]
+
+
+@pytest.mark.unit
+def test_group_is_review_required_when_one_member_is() -> None:
+    """One unestablished member factor raises the whole group."""
+
+    group = LoadGroupInput(
+        code="MIXED-GRP",
+        name="Mixed Group",
+        loads=(
+            make_motor_load(code="MTR-OK"),
+            make_motor_load(
+                code="MTR-NO-DF",
+                demand_factor=None,
+            ),
+        ),
+        coincidence_factor=Decimal("0.90"),
+    )
+
+    result = calculate_load_group(group)
+
+    assert result.status is CalculationStatus.REVIEW_REQUIRED
+    assert [warning.code for warning in result.warnings] == [
+        LoadWarningCode.DEMAND_FACTOR_NOT_ESTABLISHED
+    ]
+    assert result.warnings[0].message.startswith("MTR-NO-DF:")
+
+
+@pytest.mark.unit
+def test_group_with_every_factor_established_is_valid() -> None:
+    """A fully specified group carries no warning at all."""
+
+    group = LoadGroupInput(
+        code="CLEAN-GRP",
+        name="Established Group",
+        loads=(make_motor_load(),),
+        coincidence_factor=Decimal("0.90"),
+    )
+
+    result = calculate_load_group(group)
+
+    assert result.status is CalculationStatus.VALID
+    assert result.warnings == ()
+    assert result.assumptions == (GROUP_COINCIDENCE_ASSUMPTION,)
 
 
 @pytest.mark.unit

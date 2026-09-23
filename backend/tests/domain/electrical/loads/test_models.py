@@ -68,6 +68,7 @@ def test_load_text_fields_are_trimmed() -> None:
         rated_power_kw=Decimal("5"),
         phase_system=PhaseSystem.SINGLE_PHASE,
         voltage_v=Decimal("230"),
+        power_factor=Decimal("1"),
         notes="  Office lighting  ",
     )
 
@@ -166,6 +167,7 @@ def test_invalid_ratios_are_rejected(
         "rated_power_kw": Decimal("10"),
         "phase_system": PhaseSystem.THREE_PHASE,
         "voltage_v": Decimal("415"),
+        "power_factor": Decimal("0.90"),
         field_name: field_value,
     }
 
@@ -188,6 +190,68 @@ def test_dc_load_requires_unity_power_factor() -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    "phase_system",
+    [
+        PhaseSystem.SINGLE_PHASE,
+        PhaseSystem.THREE_PHASE,
+    ],
+)
+def test_ac_load_requires_a_power_factor(
+    phase_system: PhaseSystem,
+) -> None:
+    """An AC load must state its power factor; 1 is never assumed (A15)."""
+
+    with pytest.raises(
+        ValueError,
+        match="power_factor is required for AC loads",
+    ):
+        LoadInput(
+            code="NO-PF",
+            name="Missing Power Factor",
+            quantity=1,
+            rated_power_kw=Decimal("10"),
+            phase_system=phase_system,
+            voltage_v=Decimal("415"),
+        )
+
+
+@pytest.mark.unit
+def test_dc_load_accepts_a_blank_power_factor() -> None:
+    """A DC load has no power factor, so a blank value is permitted."""
+
+    load = LoadInput(
+        code="DC-002",
+        name="DC Control Load",
+        quantity=1,
+        rated_power_kw=Decimal("2.4"),
+        phase_system=PhaseSystem.DC,
+        voltage_v=Decimal("48"),
+    )
+
+    assert load.power_factor is None
+
+
+@pytest.mark.unit
+def test_blank_factors_are_kept_as_not_established() -> None:
+    """Blank factors stay None; the model never substitutes unity (A15)."""
+
+    load = LoadInput(
+        code="BLANK-001",
+        name="Unestablished Factors",
+        quantity=1,
+        rated_power_kw=Decimal("10"),
+        phase_system=PhaseSystem.THREE_PHASE,
+        voltage_v=Decimal("415"),
+        power_factor=Decimal("0.90"),
+    )
+
+    assert load.utilization_factor is None
+    assert load.demand_factor is None
+    assert load.efficiency is None
+
+
+@pytest.mark.unit
 def test_create_valid_load_group() -> None:
     """A valid group should preserve its loads and coincidence factor."""
 
@@ -204,6 +268,19 @@ def test_create_valid_load_group() -> None:
     assert group.name == "Process Pumps"
     assert group.loads == (load,)
     assert group.coincidence_factor == Decimal("0.90")
+
+
+@pytest.mark.unit
+def test_blank_group_coincidence_is_kept_as_not_established() -> None:
+    """A blank coincidence factor stays None on the group input (A15)."""
+
+    group = LoadGroupInput(
+        code="BLANK-GRP",
+        name="Unestablished Coincidence",
+        loads=(make_load(),),
+    )
+
+    assert group.coincidence_factor is None
 
 
 @pytest.mark.unit

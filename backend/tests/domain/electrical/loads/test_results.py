@@ -12,11 +12,13 @@ from app.domain.electrical.loads.models import (
     PhaseSystem,
 )
 from app.domain.electrical.loads.results import (
+    GROUP_COINCIDENCE_ASSUMPTION,
     CalculationStatus,
     CalculationWarning,
     LoadCalculationResult,
     LoadGroupCalculationResult,
     LoadWarningCode,
+    resolve_status,
 )
 
 
@@ -49,12 +51,12 @@ def test_create_calculation_warning() -> None:
     """A warning should retain its controlled code and trimmed message."""
 
     warning = CalculationWarning(
-        code=LoadWarningCode.LOW_POWER_FACTOR,
-        message="  Power factor is below 0.80.  ",
+        code=LoadWarningCode.DEMAND_FACTOR_NOT_ESTABLISHED,
+        message="  Demand factor is not established.  ",
     )
 
-    assert warning.code is LoadWarningCode.LOW_POWER_FACTOR
-    assert warning.message == "Power factor is below 0.80."
+    assert warning.code is LoadWarningCode.DEMAND_FACTOR_NOT_ESTABLISHED
+    assert warning.message == "Demand factor is not established."
 
 
 @pytest.mark.unit
@@ -156,8 +158,8 @@ def test_valid_status_must_not_contain_warnings() -> None:
     """VALID results cannot contain engineering warnings."""
 
     warning = CalculationWarning(
-        code=LoadWarningCode.LOW_POWER_FACTOR,
-        message="Power factor is below the preferred limit.",
+        code=LoadWarningCode.ZERO_DEMAND,
+        message="Calculated demand is zero.",
     )
 
     with pytest.raises(
@@ -285,8 +287,8 @@ def test_group_coincidence_above_one_is_rejected() -> None:
             CalculationStatus.VALID,
             (
                 CalculationWarning(
-                    code=LoadWarningCode.LOW_EFFICIENCY,
-                    message="Efficiency is below the preferred limit.",
+                    code=LoadWarningCode.ZERO_DEMAND,
+                    message="Calculated demand is zero.",
                 ),
             ),
             "VALID result must not contain warnings",
@@ -295,6 +297,26 @@ def test_group_coincidence_above_one_is_rejected() -> None:
             CalculationStatus.WARNING,
             (),
             "WARNING result must contain at least one warning",
+        ),
+        (
+            CalculationStatus.WARNING,
+            (
+                CalculationWarning(
+                    code=LoadWarningCode.COINCIDENCE_FACTOR_NOT_ESTABLISHED,
+                    message="Group coincidence factor is not established.",
+                ),
+            ),
+            "the status must be REVIEW_REQUIRED",
+        ),
+        (
+            CalculationStatus.REVIEW_REQUIRED,
+            (
+                CalculationWarning(
+                    code=LoadWarningCode.ZERO_DEMAND,
+                    message="Calculated demand is zero.",
+                ),
+            ),
+            "REVIEW_REQUIRED result must contain at least one not-established warning",
         ),
     ],
 )
@@ -321,4 +343,140 @@ def test_group_status_and_warning_consistency(
             load_results=(make_load_result(),),
             status=status,
             warnings=warnings,
+        )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("warning_codes", "expected_status"),
+    [
+        ((), CalculationStatus.VALID),
+        (
+            (LoadWarningCode.ZERO_DEMAND,),
+            CalculationStatus.WARNING,
+        ),
+        (
+            (LoadWarningCode.UTILIZATION_FACTOR_NOT_ESTABLISHED,),
+            CalculationStatus.REVIEW_REQUIRED,
+        ),
+        (
+            (
+                LoadWarningCode.ZERO_DEMAND,
+                LoadWarningCode.EFFICIENCY_NOT_ESTABLISHED,
+            ),
+            CalculationStatus.REVIEW_REQUIRED,
+        ),
+    ],
+)
+def test_resolve_status_precedence(
+    warning_codes: tuple[LoadWarningCode, ...],
+    expected_status: CalculationStatus,
+) -> None:
+    """A not-established factor outranks every other warning (A15)."""
+
+    warnings = tuple(
+        CalculationWarning(
+            code=code,
+            message=f"{code.value} message.",
+        )
+        for code in warning_codes
+    )
+
+    assert resolve_status(warnings) is expected_status
+
+
+@pytest.mark.unit
+def test_warning_status_rejects_a_not_established_warning() -> None:
+    """A not-established factor may not be reported as a plain WARNING."""
+
+    warning = CalculationWarning(
+        code=LoadWarningCode.DEMAND_FACTOR_NOT_ESTABLISHED,
+        message="Demand factor is not established.",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="the status must be REVIEW_REQUIRED",
+    ):
+        make_load_result(
+            status=CalculationStatus.WARNING,
+            warnings=(warning,),
+        )
+
+
+@pytest.mark.unit
+def test_review_required_requires_a_not_established_warning() -> None:
+    """REVIEW_REQUIRED without an unestablished factor is inconsistent."""
+
+    warning = CalculationWarning(
+        code=LoadWarningCode.ZERO_DEMAND,
+        message="Calculated demand is zero.",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="REVIEW_REQUIRED result must contain at least one not-established warning",
+    ):
+        make_load_result(
+            status=CalculationStatus.REVIEW_REQUIRED,
+            warnings=(warning,),
+        )
+
+
+@pytest.mark.unit
+def test_review_required_result_is_accepted() -> None:
+    """A REVIEW_REQUIRED result carrying its not-established warning is valid."""
+
+    warning = CalculationWarning(
+        code=LoadWarningCode.UTILIZATION_FACTOR_NOT_ESTABLISHED,
+        message="Utilization factor is not established.",
+    )
+
+    result = make_load_result(
+        status=CalculationStatus.REVIEW_REQUIRED,
+        warnings=(warning,),
+    )
+
+    assert result.status is CalculationStatus.REVIEW_REQUIRED
+    assert result.warnings == (warning,)
+
+
+@pytest.mark.unit
+def test_group_result_declares_the_coincidence_assumption() -> None:
+    """A15 (e): the group result states how coincidence was applied."""
+
+    group_result = LoadGroupCalculationResult(
+        group_code="PUMP-GRP",
+        group_name="Process Pumps",
+        coincidence_factor=Decimal("0.90"),
+        connected_power_kw=Decimal("32.6087"),
+        pre_coincidence_demand_kw=Decimal("23.4783"),
+        demand_power_kw=Decimal("21.1305"),
+        apparent_power_kva=Decimal("24.8594"),
+        reactive_power_kvar=Decimal("13.0842"),
+        load_results=(make_load_result(),),
+    )
+
+    assert GROUP_COINCIDENCE_ASSUMPTION in group_result.assumptions
+
+
+@pytest.mark.unit
+def test_group_blank_assumption_text_is_rejected() -> None:
+    """A declared assumption must carry readable text."""
+
+    with pytest.raises(
+        ValueError,
+        match="assumptions must contain non-empty text",
+    ):
+        LoadGroupCalculationResult(
+            group_code="BLANK-ASSUMPTION",
+            group_name="Blank Assumption Group",
+            coincidence_factor=Decimal("1"),
+            connected_power_kw=Decimal("10"),
+            pre_coincidence_demand_kw=Decimal("8"),
+            demand_power_kw=Decimal("8"),
+            apparent_power_kva=Decimal("8"),
+            reactive_power_kvar=Decimal("0"),
+            load_results=(make_load_result(),),
+            assumptions=("   ",),
         )

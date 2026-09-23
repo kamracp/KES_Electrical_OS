@@ -17,18 +17,24 @@ from app.domain.electrical.loads.models import (
     PowerBasis,
 )
 from app.domain.electrical.loads.results import (
-    CalculationStatus,
     CalculationWarning,
     LoadCalculationResult,
     LoadGroupCalculationResult,
     LoadWarningCode,
+    resolve_status,
 )
 
 POWER_QUANTUM = Decimal("0.0001")
 CURRENT_QUANTUM = Decimal("0.0001")
 
-LOW_POWER_FACTOR_LIMIT = Decimal("0.80")
-LOW_EFFICIENCY_LIMIT = Decimal("0.80")
+NOT_ESTABLISHED_FACTOR = Decimal("1")
+
+NOT_ESTABLISHED_MESSAGES = {
+    LoadWarningCode.UTILIZATION_FACTOR_NOT_ESTABLISHED: "Utilization factor",
+    LoadWarningCode.DEMAND_FACTOR_NOT_ESTABLISHED: "Demand factor",
+    LoadWarningCode.EFFICIENCY_NOT_ESTABLISHED: "Equipment efficiency",
+    LoadWarningCode.COINCIDENCE_FACTOR_NOT_ESTABLISHED: "Group coincidence factor",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,6 +67,26 @@ def _round_current(value: Decimal) -> Decimal:
     )
 
 
+def _resolve_factor(value: Decimal | None) -> Decimal:
+    """Use the established factor, or 1 when the factor is not established."""
+
+    return NOT_ESTABLISHED_FACTOR if value is None else value
+
+
+def _not_established_warning(
+    code: LoadWarningCode,
+) -> CalculationWarning:
+    """Name a factor that the engineer still has to establish (A15)."""
+
+    return CalculationWarning(
+        code=code,
+        message=(
+            f"{NOT_ESTABLISHED_MESSAGES[code]} is not established; the calculation "
+            "used 1. The engineer must establish this factor."
+        ),
+    )
+
+
 def _square_root(value: Decimal) -> Decimal:
     """Calculate a high-precision Decimal square root."""
 
@@ -85,7 +111,7 @@ def _calculate_connected_power(
     quantity = Decimal(load.quantity)
 
     if load.power_basis is PowerBasis.MECHANICAL_OUTPUT:
-        per_unit_input_kw = load.rated_power_kw / load.efficiency
+        per_unit_input_kw = load.rated_power_kw / _resolve_factor(load.efficiency)
     else:
         per_unit_input_kw = load.rated_power_kw
 
@@ -102,9 +128,9 @@ def _calculate_raw_load(
 
         connected_power_kw = _calculate_connected_power(load)
 
-        utilized_power_kw = connected_power_kw * load.utilization_factor
+        utilized_power_kw = connected_power_kw * _resolve_factor(load.utilization_factor)
 
-        demand_power_kw = utilized_power_kw * load.demand_factor
+        demand_power_kw = utilized_power_kw * _resolve_factor(load.demand_factor)
 
         if load.phase_system is PhaseSystem.DC:
             apparent_power_kva = demand_power_kw
@@ -112,7 +138,7 @@ def _calculate_raw_load(
 
             design_current_a = demand_power_kw * Decimal("1000") / load.voltage_v
         else:
-            apparent_power_kva = demand_power_kw / load.power_factor
+            apparent_power_kva = demand_power_kw / _resolve_factor(load.power_factor)
 
             reactive_squared = (
                 apparent_power_kva * apparent_power_kva - demand_power_kw * demand_power_kw
@@ -147,6 +173,17 @@ def _build_load_warnings(
 
     warnings: list[CalculationWarning] = []
 
+    if load.utilization_factor is None:
+        warnings.append(
+            _not_established_warning(LoadWarningCode.UTILIZATION_FACTOR_NOT_ESTABLISHED)
+        )
+
+    if load.demand_factor is None:
+        warnings.append(_not_established_warning(LoadWarningCode.DEMAND_FACTOR_NOT_ESTABLISHED))
+
+    if load.power_basis is PowerBasis.MECHANICAL_OUTPUT and load.efficiency is None:
+        warnings.append(_not_established_warning(LoadWarningCode.EFFICIENCY_NOT_ESTABLISHED))
+
     if raw_values.demand_power_kw == Decimal("0"):
         warnings.append(
             CalculationWarning(
@@ -155,22 +192,6 @@ def _build_load_warnings(
                     "Calculated demand is zero because the "
                     "utilization factor or demand factor is zero."
                 ),
-            )
-        )
-
-    if load.phase_system is not PhaseSystem.DC and load.power_factor < LOW_POWER_FACTOR_LIMIT:
-        warnings.append(
-            CalculationWarning(
-                code=LoadWarningCode.LOW_POWER_FACTOR,
-                message=("Power factor is below the preferred limit of 0.80."),
-            )
-        )
-
-    if load.power_basis is PowerBasis.MECHANICAL_OUTPUT and load.efficiency < LOW_EFFICIENCY_LIMIT:
-        warnings.append(
-            CalculationWarning(
-                code=LoadWarningCode.LOW_EFFICIENCY,
-                message=("Equipment efficiency is below the preferred limit of 0.80."),
             )
         )
 
@@ -188,7 +209,7 @@ def _build_load_result(
         raw_values,
     )
 
-    status = CalculationStatus.WARNING if warnings else CalculationStatus.VALID
+    status = resolve_status(warnings)
 
     return LoadCalculationResult(
         load_code=load.code,
@@ -234,7 +255,10 @@ def calculate_load_group(
     Calculate and aggregate an electrical load group.
 
     Group coincidence is applied uniformly to active and reactive
-    demand after individual load calculations.
+    demand after individual load calculations; the result carries that
+    declared assumption in its assumptions field (Master Prompt A15 (e)).
+    A blank coincidence factor is aggregated with 1 and reported as not
+    established. The reported coincidence_factor is the value used.
     """
 
     if not isinstance(group, LoadGroupInput):
@@ -271,15 +295,24 @@ def calculate_load_group(
         Decimal("0"),
     )
 
-    demand_power_kw = pre_coincidence_demand_kw * group.coincidence_factor
+    coincidence_factor = _resolve_factor(group.coincidence_factor)
 
-    reactive_power_kvar = pre_coincidence_reactive_kvar * group.coincidence_factor
+    demand_power_kw = pre_coincidence_demand_kw * coincidence_factor
+
+    reactive_power_kvar = pre_coincidence_reactive_kvar * coincidence_factor
 
     apparent_power_kva = _square_root(
         demand_power_kw * demand_power_kw + reactive_power_kvar * reactive_power_kvar
     )
 
-    group_warnings = tuple(
+    own_warnings: list[CalculationWarning] = []
+
+    if group.coincidence_factor is None:
+        own_warnings.append(
+            _not_established_warning(LoadWarningCode.COINCIDENCE_FACTOR_NOT_ESTABLISHED)
+        )
+
+    member_warnings = tuple(
         CalculationWarning(
             code=warning.code,
             message=(f"{load_result.load_code}: {warning.message}"),
@@ -288,12 +321,14 @@ def calculate_load_group(
         for warning in load_result.warnings
     )
 
-    status = CalculationStatus.WARNING if group_warnings else CalculationStatus.VALID
+    group_warnings = tuple(own_warnings) + member_warnings
+
+    status = resolve_status(group_warnings)
 
     return LoadGroupCalculationResult(
         group_code=group.code,
         group_name=group.name,
-        coincidence_factor=group.coincidence_factor,
+        coincidence_factor=coincidence_factor,
         connected_power_kw=_round_power(connected_power_kw),
         pre_coincidence_demand_kw=_round_power(pre_coincidence_demand_kw),
         demand_power_kw=_round_power(demand_power_kw),

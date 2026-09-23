@@ -18,14 +18,31 @@ class CalculationStatus(StrEnum):
 
     VALID = "VALID"
     WARNING = "WARNING"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
 
 
 class LoadWarningCode(StrEnum):
     """Controlled warnings produced by load calculations."""
 
     ZERO_DEMAND = "ZERO_DEMAND"
-    LOW_POWER_FACTOR = "LOW_POWER_FACTOR"
-    LOW_EFFICIENCY = "LOW_EFFICIENCY"
+    UTILIZATION_FACTOR_NOT_ESTABLISHED = "UTILIZATION_FACTOR_NOT_ESTABLISHED"
+    DEMAND_FACTOR_NOT_ESTABLISHED = "DEMAND_FACTOR_NOT_ESTABLISHED"
+    EFFICIENCY_NOT_ESTABLISHED = "EFFICIENCY_NOT_ESTABLISHED"
+    COINCIDENCE_FACTOR_NOT_ESTABLISHED = "COINCIDENCE_FACTOR_NOT_ESTABLISHED"
+
+
+NOT_ESTABLISHED_WARNING_CODES = frozenset(
+    {
+        LoadWarningCode.UTILIZATION_FACTOR_NOT_ESTABLISHED,
+        LoadWarningCode.DEMAND_FACTOR_NOT_ESTABLISHED,
+        LoadWarningCode.EFFICIENCY_NOT_ESTABLISHED,
+        LoadWarningCode.COINCIDENCE_FACTOR_NOT_ESTABLISHED,
+    }
+)
+
+GROUP_COINCIDENCE_ASSUMPTION = (
+    "The group coincidence factor is applied equally to active and reactive demand."
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +68,57 @@ class CalculationWarning:
             "message",
             normalized_message,
         )
+
+
+def has_not_established_warning(
+    warnings: tuple["CalculationWarning", ...],
+) -> bool:
+    """Report whether any warning names a factor that is not established."""
+
+    return any(warning.code in NOT_ESTABLISHED_WARNING_CODES for warning in warnings)
+
+
+def resolve_status(
+    warnings: tuple["CalculationWarning", ...],
+) -> CalculationStatus:
+    """
+    Derive the reported status from the warnings.
+
+    A not-established factor outranks every other warning: the figures
+    were produced with an assumed 1 and an engineer must establish the
+    factor before the result may be used (Master Prompt A15).
+    """
+
+    if not warnings:
+        return CalculationStatus.VALID
+
+    if has_not_established_warning(warnings):
+        return CalculationStatus.REVIEW_REQUIRED
+
+    return CalculationStatus.WARNING
+
+
+def _require_status_matches_warnings(
+    status: CalculationStatus,
+    warnings: tuple["CalculationWarning", ...],
+) -> None:
+    """Keep the reported status consistent with the warning records."""
+
+    if status is CalculationStatus.VALID and warnings:
+        raise ValueError("VALID result must not contain warnings")
+
+    if status is CalculationStatus.WARNING:
+        if not warnings:
+            raise ValueError("WARNING result must contain at least one warning")
+
+        if has_not_established_warning(warnings):
+            raise ValueError(
+                "WARNING result must not contain a not-established warning; "
+                "the status must be REVIEW_REQUIRED"
+            )
+
+    if status is CalculationStatus.REVIEW_REQUIRED and not has_not_established_warning(warnings):
+        raise ValueError("REVIEW_REQUIRED result must contain at least one not-established warning")
 
 
 def _require_non_negative_decimal(
@@ -125,11 +193,10 @@ class LoadCalculationResult:
         if not all(isinstance(warning, CalculationWarning) for warning in self.warnings):
             raise TypeError("warnings must contain CalculationWarning records")
 
-        if self.status is CalculationStatus.VALID and self.warnings:
-            raise ValueError("VALID result must not contain warnings")
-
-        if self.status is CalculationStatus.WARNING and not self.warnings:
-            raise ValueError("WARNING result must contain at least one warning")
+        _require_status_matches_warnings(
+            self.status,
+            self.warnings,
+        )
 
         object.__setattr__(
             self,
@@ -158,6 +225,7 @@ class LoadGroupCalculationResult:
     load_results: tuple[LoadCalculationResult, ...]
     status: CalculationStatus = CalculationStatus.VALID
     warnings: tuple[CalculationWarning, ...] = ()
+    assumptions: tuple[str, ...] = (GROUP_COINCIDENCE_ASSUMPTION,)
 
     def __post_init__(self) -> None:
         """Validate the completed load-group result."""
@@ -204,17 +272,21 @@ class LoadGroupCalculationResult:
         if len(load_codes) != len(set(load_codes)):
             raise ValueError("load result codes must be unique")
 
+        if not all(
+            isinstance(assumption, str) and assumption.strip() for assumption in self.assumptions
+        ):
+            raise ValueError("assumptions must contain non-empty text")
+
         if not isinstance(self.status, CalculationStatus):
             raise TypeError("status must be a CalculationStatus value")
 
         if not all(isinstance(warning, CalculationWarning) for warning in self.warnings):
             raise TypeError("warnings must contain CalculationWarning records")
 
-        if self.status is CalculationStatus.VALID and self.warnings:
-            raise ValueError("VALID result must not contain warnings")
-
-        if self.status is CalculationStatus.WARNING and not self.warnings:
-            raise ValueError("WARNING result must contain at least one warning")
+        _require_status_matches_warnings(
+            self.status,
+            self.warnings,
+        )
 
         object.__setattr__(
             self,
@@ -229,9 +301,13 @@ class LoadGroupCalculationResult:
 
 
 __all__ = [
+    "GROUP_COINCIDENCE_ASSUMPTION",
+    "NOT_ESTABLISHED_WARNING_CODES",
     "CalculationStatus",
     "CalculationWarning",
     "LoadCalculationResult",
     "LoadGroupCalculationResult",
     "LoadWarningCode",
+    "has_not_established_warning",
+    "resolve_status",
 ]

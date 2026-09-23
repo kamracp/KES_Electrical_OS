@@ -96,10 +96,10 @@ async def test_calculate_load_group(
 
 
 @pytest.mark.api
-async def test_low_power_factor_warning_response(
+async def test_low_power_factor_no_longer_warns(
     client: AsyncClient,
 ) -> None:
-    """Low power factor should return a controlled warning."""
+    """The unreferenced 0.80 limit is withdrawn (A15 (b), GAP-015)."""
 
     payload = motor_payload()
     payload["power_factor"] = "0.75"
@@ -113,8 +113,8 @@ async def test_low_power_factor_warning_response(
 
     data = response.json()
 
-    assert data["status"] == "WARNING"
-    assert any(warning["code"] == "LOW_POWER_FACTOR" for warning in data["warnings"])
+    assert data["status"] == "VALID"
+    assert data["warnings"] == []
 
 
 @pytest.mark.api
