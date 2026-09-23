@@ -19,6 +19,10 @@ from app.schemas.load_demand import (
     LoadGroupCalculationResponse,
 )
 from app.schemas.project import ProjectRevisionSummary
+from app.schemas.transformer_sizing import (
+    TransformerSizingRequest,
+    TransformerSizingResponse,
+)
 
 
 class _ResponseBase(BaseModel):
@@ -134,6 +138,26 @@ class LoadRunResponse(BaseModel):
     result: LoadGroupCalculationResponse
 
 
+class TransformerRunCreateRequest(BaseModel):
+    """Calculate a transformer sizing study and persist the result as a run."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    study: TransformerSizingRequest
+    # The open revision this study belongs to; without it the run belongs to no project.
+    project_revision_id: UUID | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class TransformerRunResponse(BaseModel):
+    """The persisted run record together with the typed transformer result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    run: CalculationRunSummary
+    result: TransformerSizingResponse
+
+
 __all__ = [
     "CableRunCreateRequest",
     "CableRunResponse",
@@ -144,4 +168,6 @@ __all__ = [
     "FaultRunResponse",
     "LoadRunCreateRequest",
     "LoadRunResponse",
+    "TransformerRunCreateRequest",
+    "TransformerRunResponse",
 ]

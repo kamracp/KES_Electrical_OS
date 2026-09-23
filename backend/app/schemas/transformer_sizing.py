@@ -4,7 +4,7 @@ KESE-S2-M5
 """
 
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import (
     BaseModel,
@@ -15,12 +15,16 @@ from pydantic import (
     model_validator,
 )
 
+from app.domain.electrical.jurisdiction.jurisdiction_models import (
+    JurisdictionProfile,
+)
 from app.domain.electrical.loads.models import LoadScenario
 from app.domain.electrical.sources.models import (
     TransformerRedundancyMode,
     TransformerSizingInput,
 )
 from app.domain.electrical.sources.results import (
+    TransformerSizingResult,
     TransformerSizingStatus,
     TransformerSizingWarningCode,
 )
@@ -114,12 +118,15 @@ class TransformerSizingRequest(_RequestBase):
         min_length=1,
     )
 
-    future_growth_factor: FactorExactDecimal = Decimal("1")
-    design_margin_factor: FactorExactDecimal = Decimal("1.10")
+    # A blank factor means NOT ESTABLISHED and reaches the engine as None: it sizes
+    # with 1, names the factor in a warning and reports REVIEW_REQUIRED (A16 (a)).
+    # The schema never fills a default in its place.
+    future_growth_factor: FactorExactDecimal | None = None
+    design_margin_factor: FactorExactDecimal | None = None
 
-    ambient_derating_factor: RatioExactDecimal = Decimal("1")
-    altitude_derating_factor: RatioExactDecimal = Decimal("1")
-    harmonic_derating_factor: RatioExactDecimal = Decimal("1")
+    ambient_derating_factor: RatioExactDecimal | None = None
+    altitude_derating_factor: RatioExactDecimal | None = None
+    harmonic_derating_factor: RatioExactDecimal | None = None
 
     duty_units: StrictInt = Field(
         default=1,
@@ -133,12 +140,16 @@ class TransformerSizingRequest(_RequestBase):
     redundancy_mode: TransformerRedundancyMode = TransformerRedundancyMode.NONE
     scenario: LoadScenario = LoadScenario.NORMAL
 
+    # The sizing itself has no profile-dependent value; the profile is carried for
+    # the result, the run record and the design basis of the project revision.
+    jurisdiction_profile: JurisdictionProfile = JurisdictionProfile.IN
+
     notes: str | None = None
 
     @model_validator(mode="after")
     def validate_rating_schedule_and_redundancy(
         self,
-    ) -> "TransformerSizingRequest":
+    ) -> Self:
         """Validate controlled ratings and redundancy arrangement."""
 
         if len(self.available_unit_ratings_kva) != len(set(self.available_unit_ratings_kva)):
@@ -230,6 +241,53 @@ class TransformerSizingResponse(_ResponseBase):
         TransformerSizingWarningResponse,
         ...,
     ]
+
+    jurisdiction_profile: JurisdictionProfile
+
+    @classmethod
+    def from_domain(
+        cls,
+        result: TransformerSizingResult,
+        *,
+        jurisdiction_profile: JurisdictionProfile,
+    ) -> Self:
+        """
+        Create the response from the domain result and the requested profile.
+
+        The sizing engine carries no jurisdiction profile, so the profile of the
+        request is echoed here rather than read from the result.
+        """
+
+        return cls(
+            code=result.code,
+            name=result.name,
+            scenario=result.scenario,
+            redundancy_mode=result.redundancy_mode,
+            demand_power_kw=result.demand_power_kw,
+            demand_power_factor=result.demand_power_factor,
+            base_demand_kva=result.base_demand_kva,
+            future_growth_factor=result.future_growth_factor,
+            future_demand_kva=result.future_demand_kva,
+            design_margin_factor=result.design_margin_factor,
+            design_required_kva=result.design_required_kva,
+            combined_derating_factor=result.combined_derating_factor,
+            required_nameplate_capacity_kva=(result.required_nameplate_capacity_kva),
+            duty_units=result.duty_units,
+            standby_units=result.standby_units,
+            total_units=result.total_units,
+            required_unit_rating_kva=result.required_unit_rating_kva,
+            selected_unit_rating_kva=result.selected_unit_rating_kva,
+            installed_nameplate_capacity_kva=(result.installed_nameplate_capacity_kva),
+            derated_duty_capacity_kva=result.derated_duty_capacity_kva,
+            spare_derated_capacity_kva=result.spare_derated_capacity_kva,
+            loading_percent=result.loading_percent,
+            status=result.status,
+            warnings=tuple(
+                TransformerSizingWarningResponse.model_validate(warning)
+                for warning in result.warnings
+            ),
+            jurisdiction_profile=jurisdiction_profile,
+        )
 
 
 __all__ = [

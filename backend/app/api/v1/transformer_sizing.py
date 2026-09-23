@@ -33,7 +33,10 @@ def calculate_transformer_sizing(
 
     result = _service.calculate_transformer_sizing(payload)
 
-    return TransformerSizingResponse.model_validate(result)
+    return TransformerSizingResponse.from_domain(
+        result,
+        jurisdiction_profile=payload.jurisdiction_profile,
+    )
 
 
 __all__ = [

@@ -204,3 +204,30 @@ async def test_unsorted_rating_schedule_is_rejected(
     errors = response.json()["detail"]
 
     assert any("must be in ascending order" in error["msg"] for error in errors)
+
+
+@pytest.mark.api
+async def test_a_blank_design_margin_needs_review(
+    client: AsyncClient,
+) -> None:
+    """A16 (a): the API no longer applies the invented 1.10 margin."""
+
+    payload = transformer_payload()
+    payload["demand_power_factor"] = "1"
+    del payload["design_margin_factor"]
+
+    response = await client.post(
+        TRANSFORMER_SIZING_URL,
+        json=payload,
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["status"] == "REVIEW_REQUIRED"
+    assert [warning["code"] for warning in data["warnings"]] == ["DESIGN_MARGIN_NOT_ESTABLISHED"]
+    # Sized with 1, not 1.10; the response records the factor it used.
+    assert data["design_required_kva"] == "800.0000"
+    assert data["design_margin_factor"] == "1"
+    assert data["jurisdiction_profile"] == "IN"
