@@ -32,6 +32,7 @@ export type TransformerStudyDraft = {
   altitudeDeratingFactor: string;
   harmonicDeratingFactor: string;
   dutyUnits: string;
+  // Derived from the redundancy mode and the duty units; shown, never typed.
   standbyUnits: string;
   redundancyMode: string;
   scenario: string;
@@ -74,6 +75,27 @@ export function createInitialTransformerStudyDraft(): TransformerStudyDraft {
   };
 }
 
+// The standby count the backend requires for each redundancy mode
+// (schemas/transformer_sizing.py): NONE needs 0, N_PLUS_1 exactly 1, TWO_N the
+// same number as the duty units. The form shows this rather than asking for it,
+// so the rule can never be broken by typing.
+//
+// Under TWO_N the duty text is passed through exactly as typed - blank or not a
+// whole number included - so a bad value is reported once, against Duty units,
+// instead of twice.
+export function deriveStandbyUnits(redundancyMode: string, dutyUnits: string): string {
+  if (redundancyMode === "N_PLUS_1") {
+    return "1";
+  }
+
+  if (redundancyMode === "TWO_N") {
+    return dutyUnits;
+  }
+
+  return "0";
+}
+
+
 // An optional text or decimal field: sent trimmed, or left out when blank.
 function optional(key: string, typed: string): Record<string, string> {
   const value = typed.trim();
@@ -111,7 +133,7 @@ export function buildTransformerRunPayload(
       ...optional("altitude_derating_factor", draft.altitudeDeratingFactor),
       ...optional("harmonic_derating_factor", draft.harmonicDeratingFactor),
       duty_units: countValue(draft.dutyUnits),
-      standby_units: countValue(draft.standbyUnits),
+      standby_units: countValue(deriveStandbyUnits(draft.redundancyMode, draft.dutyUnits)),
       ...optional("redundancy_mode", draft.redundancyMode),
       ...optional("scenario", draft.scenario),
       ...optional("jurisdiction_profile", draft.jurisdictionProfile),

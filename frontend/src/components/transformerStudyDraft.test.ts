@@ -10,6 +10,7 @@ import { describeValidationIssue } from "../utils/validationMessages";
 import {
   buildTransformerRunPayload,
   createInitialTransformerStudyDraft,
+  deriveStandbyUnits,
   createRatingId,
   createUnitRatingDraft,
   TRANSFORMER_STUDY_LABELS,
@@ -67,6 +68,32 @@ describe("the initial transformer study draft", () => {
     const ids = [createRatingId(), createRatingId(), createUnitRatingDraft().id];
 
     expect(new Set(ids).size).toBe(3);
+  });
+});
+
+describe("deriveStandbyUnits", () => {
+  it("gives the standby count each redundancy mode requires", () => {
+    // The backend refuses any other combination
+    // (schemas/transformer_sizing.py), so the form derives it instead.
+    expect(deriveStandbyUnits("NONE", "2")).toBe("0");
+    expect(deriveStandbyUnits("N_PLUS_1", "2")).toBe("1");
+    expect(deriveStandbyUnits("TWO_N", "2")).toBe("2");
+  });
+
+  it("follows the duty units under 2N", () => {
+    expect(deriveStandbyUnits("TWO_N", "1")).toBe("1");
+    expect(deriveStandbyUnits("TWO_N", "3")).toBe("3");
+  });
+
+  it("passes a bad duty value through under 2N, so it is reported once", () => {
+    // Reported against Duty units, not twice against Standby units as well.
+    expect(deriveStandbyUnits("TWO_N", "")).toBe("");
+    expect(deriveStandbyUnits("TWO_N", "1.5")).toBe("1.5");
+  });
+
+  it("ignores the duty units when the mode does not use them", () => {
+    expect(deriveStandbyUnits("NONE", "4")).toBe("0");
+    expect(deriveStandbyUnits("N_PLUS_1", "4")).toBe("1");
   });
 });
 
@@ -156,6 +183,27 @@ describe("buildTransformerRunPayload", () => {
     draft.dutyUnits = "1.5";
 
     expect(study(buildTransformerRunPayload(draft)).duty_units).toBe("1.5");
+  });
+
+  it("sends the derived standby count, never the one held in the draft", () => {
+    const draft = filledStudy();
+    draft.redundancyMode = "TWO_N";
+    draft.dutyUnits = "2";
+    // Even if the draft field fell out of step, the payload follows the rule.
+    draft.standbyUnits = "99";
+
+    expect(study(buildTransformerRunPayload(draft)).standby_units).toBe(2);
+  });
+
+  it("sends a bad duty value as the standby count too under 2N", () => {
+    const draft = filledStudy();
+    draft.redundancyMode = "TWO_N";
+    draft.dutyUnits = "";
+
+    const built = study(buildTransformerRunPayload(draft));
+
+    expect(built.duty_units).toBe("");
+    expect(built.standby_units).toBe("");
   });
 });
 
