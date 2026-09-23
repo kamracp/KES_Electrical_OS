@@ -495,3 +495,61 @@ def test_invalid_redundancy_arrangements_are_rejected(
             duty_units=duty_units,
             standby_units=standby_units,
         )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "field_name",
+    [
+        "future_growth_factor",
+        "design_margin_factor",
+        "ambient_derating_factor",
+        "altitude_derating_factor",
+        "harmonic_derating_factor",
+    ],
+)
+def test_a_blank_factor_is_kept_as_not_established(field_name: str) -> None:
+    """A blank factor stays None; the model never substitutes unity (A16 (a))."""
+
+    sizing_input = make_sizing_input(**{field_name: None})
+
+    assert getattr(sizing_input, field_name) is None
+
+
+@pytest.mark.unit
+def test_all_factors_default_to_not_established() -> None:
+    """None of the five factors carries a silent default any more."""
+
+    sizing_input = TransformerSizingInput(
+        code="TR-002",
+        name="Bare Transformer",
+        demand_power_kw=Decimal("500"),
+        demand_power_factor=Decimal("0.90"),
+        available_unit_ratings_kva=(Decimal("1000"),),
+    )
+
+    assert sizing_input.future_growth_factor is None
+    assert sizing_input.design_margin_factor is None
+    assert sizing_input.ambient_derating_factor is None
+    assert sizing_input.altitude_derating_factor is None
+    assert sizing_input.harmonic_derating_factor is None
+    # The demand power factor is an engineering input, not a margin: still required.
+    assert sizing_input.demand_power_factor == Decimal("0.90")
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("field_name", "field_value"),
+    [
+        ("future_growth_factor", Decimal("0.99")),
+        ("design_margin_factor", Decimal("0.5")),
+        ("ambient_derating_factor", Decimal("1.01")),
+        ("altitude_derating_factor", Decimal("0")),
+        ("harmonic_derating_factor", Decimal("-0.1")),
+    ],
+)
+def test_a_given_factor_keeps_its_range(field_name: str, field_value: Decimal) -> None:
+    """A factor that IS given is still bound to its permitted range."""
+
+    with pytest.raises(ValueError):
+        make_sizing_input(**{field_name: field_value})

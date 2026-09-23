@@ -18,6 +18,7 @@ class TransformerSizingStatus(StrEnum):
 
     VALID = "VALID"
     WARNING = "WARNING"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
     NO_SOLUTION = "NO_SOLUTION"
 
 
@@ -25,9 +26,84 @@ class TransformerSizingWarningCode(StrEnum):
     """Controlled transformer-sizing warning codes."""
 
     DERATING_APPLIED = "DERATING_APPLIED"
-    HIGH_LOADING = "HIGH_LOADING"
-    LOW_LOADING = "LOW_LOADING"
     NO_STANDARD_RATING_AVAILABLE = "NO_STANDARD_RATING_AVAILABLE"
+    GROWTH_FACTOR_NOT_ESTABLISHED = "GROWTH_FACTOR_NOT_ESTABLISHED"
+    DESIGN_MARGIN_NOT_ESTABLISHED = "DESIGN_MARGIN_NOT_ESTABLISHED"
+    AMBIENT_DERATING_NOT_ESTABLISHED = "AMBIENT_DERATING_NOT_ESTABLISHED"
+    ALTITUDE_DERATING_NOT_ESTABLISHED = "ALTITUDE_DERATING_NOT_ESTABLISHED"
+    HARMONIC_DERATING_NOT_ESTABLISHED = "HARMONIC_DERATING_NOT_ESTABLISHED"
+
+
+NOT_ESTABLISHED_WARNING_CODES = frozenset(
+    {
+        TransformerSizingWarningCode.GROWTH_FACTOR_NOT_ESTABLISHED,
+        TransformerSizingWarningCode.DESIGN_MARGIN_NOT_ESTABLISHED,
+        TransformerSizingWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED,
+        TransformerSizingWarningCode.ALTITUDE_DERATING_NOT_ESTABLISHED,
+        TransformerSizingWarningCode.HARMONIC_DERATING_NOT_ESTABLISHED,
+    }
+)
+
+
+def has_not_established_warning(
+    warnings: tuple["TransformerSizingWarning", ...],
+) -> bool:
+    """Report whether any warning names a factor that is not established."""
+
+    return any(warning.code in NOT_ESTABLISHED_WARNING_CODES for warning in warnings)
+
+
+def resolve_status(
+    warnings: tuple["TransformerSizingWarning", ...],
+    *,
+    rating_selected: bool,
+) -> TransformerSizingStatus:
+    """
+    Derive the reported status from the warnings (Master Prompt A16 (d)).
+
+    Precedence: no adequate rating outranks everything, because there is no
+    result to review; a not-established factor then outranks any other
+    warning, because the figures were produced with an assumed 1.
+    """
+
+    if not rating_selected:
+        return TransformerSizingStatus.NO_SOLUTION
+
+    if has_not_established_warning(warnings):
+        return TransformerSizingStatus.REVIEW_REQUIRED
+
+    if warnings:
+        return TransformerSizingStatus.WARNING
+
+    return TransformerSizingStatus.VALID
+
+
+def _require_status_matches_warnings(
+    status: TransformerSizingStatus,
+    warnings: tuple["TransformerSizingWarning", ...],
+) -> None:
+    """Keep the reported status consistent with the warning records.
+
+    Only for a result that selected a rating; NO_SOLUTION carries its own rule.
+    """
+
+    if status is TransformerSizingStatus.VALID and warnings:
+        raise ValueError("VALID result must not contain warnings")
+
+    if status is TransformerSizingStatus.WARNING:
+        if not warnings:
+            raise ValueError("WARNING result must contain at least one warning")
+
+        if has_not_established_warning(warnings):
+            raise ValueError(
+                "WARNING result must not contain a not-established warning; "
+                "the status must be REVIEW_REQUIRED"
+            )
+
+    if status is TransformerSizingStatus.REVIEW_REQUIRED and not has_not_established_warning(
+        warnings
+    ):
+        raise ValueError("REVIEW_REQUIRED result must contain at least one not-established warning")
 
 
 def _require_decimal(
@@ -312,6 +388,11 @@ class TransformerSizingResult:
             if TransformerSizingWarningCode.NO_STANDARD_RATING_AVAILABLE not in warning_codes:
                 raise ValueError("NO_SOLUTION result requires NO_STANDARD_RATING_AVAILABLE warning")
         else:
+            _require_status_matches_warnings(
+                self.status,
+                self.warnings,
+            )
+
             _require_positive_decimal(
                 "selected_unit_rating_kva",
                 self.selected_unit_rating_kva,
@@ -344,8 +425,11 @@ class TransformerSizingResult:
 
 
 __all__ = [
+    "NOT_ESTABLISHED_WARNING_CODES",
     "TransformerSizingResult",
     "TransformerSizingStatus",
     "TransformerSizingWarning",
     "TransformerSizingWarningCode",
+    "has_not_established_warning",
+    "resolve_status",
 ]

@@ -3,6 +3,7 @@ Domain models for electrical source and transformer sizing.
 KESE-S2-M4
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
@@ -67,6 +68,19 @@ def _require_factor_not_below_one(
         raise ValueError(f"{field_name} must not be less than 1")
 
 
+def _require_optional(
+    field_name: str,
+    value: Decimal | None,
+    check: Callable[[str, Decimal], None],
+) -> None:
+    """Validate a factor only when it is given; None means NOT ESTABLISHED."""
+
+    if value is None:
+        return
+
+    check(field_name, value)
+
+
 def _normalize_required_text(
     field_name: str,
     value: str,
@@ -109,6 +123,11 @@ class TransformerSizingInput:
     available_unit_ratings_kva must come from the controlled project
     design basis, approved standard schedule or manufacturer-neutral
     equipment rating schedule.
+
+    A blank growth, design margin or derating factor (None) means NOT
+    ESTABLISHED, not unity: the engine sizes with 1, names the factor in
+    a warning and reports REVIEW_REQUIRED (Master Prompt A16 (a)). The
+    demand power factor has no such default and stays required.
     """
 
     code: str
@@ -119,12 +138,12 @@ class TransformerSizingInput:
 
     available_unit_ratings_kva: tuple[Decimal, ...]
 
-    future_growth_factor: Decimal = Decimal("1")
-    design_margin_factor: Decimal = Decimal("1.10")
+    future_growth_factor: Decimal | None = None
+    design_margin_factor: Decimal | None = None
 
-    ambient_derating_factor: Decimal = Decimal("1")
-    altitude_derating_factor: Decimal = Decimal("1")
-    harmonic_derating_factor: Decimal = Decimal("1")
+    ambient_derating_factor: Decimal | None = None
+    altitude_derating_factor: Decimal | None = None
+    harmonic_derating_factor: Decimal | None = None
 
     duty_units: int = 1
     standby_units: int = 0
@@ -161,29 +180,34 @@ class TransformerSizingInput:
             self.demand_power_factor,
         )
 
-        _require_factor_not_below_one(
+        _require_optional(
             "future_growth_factor",
             self.future_growth_factor,
+            _require_factor_not_below_one,
         )
 
-        _require_factor_not_below_one(
+        _require_optional(
             "design_margin_factor",
             self.design_margin_factor,
+            _require_factor_not_below_one,
         )
 
-        _require_ratio(
+        _require_optional(
             "ambient_derating_factor",
             self.ambient_derating_factor,
+            _require_ratio,
         )
 
-        _require_ratio(
+        _require_optional(
             "altitude_derating_factor",
             self.altitude_derating_factor,
+            _require_ratio,
         )
 
-        _require_ratio(
+        _require_optional(
             "harmonic_derating_factor",
             self.harmonic_derating_factor,
+            _require_ratio,
         )
 
         if isinstance(self.duty_units, bool) or not isinstance(self.duty_units, int):

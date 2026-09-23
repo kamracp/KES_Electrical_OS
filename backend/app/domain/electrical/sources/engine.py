@@ -18,13 +18,42 @@ from app.domain.electrical.sources.results import (
     TransformerSizingStatus,
     TransformerSizingWarning,
     TransformerSizingWarningCode,
+    resolve_status,
 )
 
 CAPACITY_QUANTUM = Decimal("0.0001")
 PERCENT_QUANTUM = Decimal("0.0001")
 
-HIGH_LOADING_LIMIT_PERCENT = Decimal("90")
-LOW_LOADING_LIMIT_PERCENT = Decimal("40")
+NOT_ESTABLISHED_FACTOR = Decimal("1")
+
+# Every factor the engineer may leave blank, with the warning that names it.
+NOT_ESTABLISHED_FACTORS: tuple[tuple[str, TransformerSizingWarningCode, str], ...] = (
+    (
+        "future_growth_factor",
+        TransformerSizingWarningCode.GROWTH_FACTOR_NOT_ESTABLISHED,
+        "Future growth factor",
+    ),
+    (
+        "design_margin_factor",
+        TransformerSizingWarningCode.DESIGN_MARGIN_NOT_ESTABLISHED,
+        "Design margin factor",
+    ),
+    (
+        "ambient_derating_factor",
+        TransformerSizingWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED,
+        "Ambient derating factor",
+    ),
+    (
+        "altitude_derating_factor",
+        TransformerSizingWarningCode.ALTITUDE_DERATING_NOT_ESTABLISHED,
+        "Altitude derating factor",
+    ),
+    (
+        "harmonic_derating_factor",
+        TransformerSizingWarningCode.HARMONIC_DERATING_NOT_ESTABLISHED,
+        "Harmonic derating factor",
+    ),
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,6 +90,30 @@ def _round_percent(
     )
 
 
+def _resolve_factor(value: Decimal | None) -> Decimal:
+    """Use the established factor, or 1 when the factor is not established."""
+
+    return NOT_ESTABLISHED_FACTOR if value is None else value
+
+
+def _not_established_warnings(
+    sizing_input: TransformerSizingInput,
+) -> list[TransformerSizingWarning]:
+    """Name every factor the engineer still has to establish (A16 (a))."""
+
+    return [
+        TransformerSizingWarning(
+            code=code,
+            message=(
+                f"{label} is not established; the calculation used 1. "
+                "The engineer must establish this factor."
+            ),
+        )
+        for field_name, code, label in NOT_ESTABLISHED_FACTORS
+        if getattr(sizing_input, field_name) is None
+    ]
+
+
 def _calculate_raw_values(
     sizing_input: TransformerSizingInput,
 ) -> _RawTransformerSizingValues:
@@ -71,14 +124,14 @@ def _calculate_raw_values(
 
         base_demand_kva = sizing_input.demand_power_kw / sizing_input.demand_power_factor
 
-        future_demand_kva = base_demand_kva * sizing_input.future_growth_factor
+        future_demand_kva = base_demand_kva * _resolve_factor(sizing_input.future_growth_factor)
 
-        design_required_kva = future_demand_kva * sizing_input.design_margin_factor
+        design_required_kva = future_demand_kva * _resolve_factor(sizing_input.design_margin_factor)
 
         combined_derating_factor = (
-            sizing_input.ambient_derating_factor
-            * sizing_input.altitude_derating_factor
-            * sizing_input.harmonic_derating_factor
+            _resolve_factor(sizing_input.ambient_derating_factor)
+            * _resolve_factor(sizing_input.altitude_derating_factor)
+            * _resolve_factor(sizing_input.harmonic_derating_factor)
         )
 
         required_nameplate_capacity_kva = design_required_kva / combined_derating_factor
@@ -119,7 +172,7 @@ def _build_no_solution_result(
 ) -> TransformerSizingResult:
     """Build a controlled result when no rating is adequate."""
 
-    warnings: list[TransformerSizingWarning] = []
+    warnings: list[TransformerSizingWarning] = _not_established_warnings(sizing_input)
 
     if raw_values.combined_derating_factor < Decimal("1"):
         warnings.append(
@@ -152,9 +205,9 @@ def _build_no_solution_result(
         demand_power_kw=sizing_input.demand_power_kw,
         demand_power_factor=(sizing_input.demand_power_factor),
         base_demand_kva=_round_capacity(raw_values.base_demand_kva),
-        future_growth_factor=(sizing_input.future_growth_factor),
+        future_growth_factor=_resolve_factor(sizing_input.future_growth_factor),
         future_demand_kva=_round_capacity(raw_values.future_demand_kva),
-        design_margin_factor=(sizing_input.design_margin_factor),
+        design_margin_factor=_resolve_factor(sizing_input.design_margin_factor),
         design_required_kva=_round_capacity(raw_values.design_required_kva),
         combined_derating_factor=_round_capacity(raw_values.combined_derating_factor),
         required_nameplate_capacity_kva=(
@@ -200,7 +253,7 @@ def _build_selected_rating_result(
             raw_values.design_required_kva / derated_duty_capacity_kva * Decimal("100")
         )
 
-    warnings: list[TransformerSizingWarning] = []
+    warnings: list[TransformerSizingWarning] = _not_established_warnings(sizing_input)
 
     if raw_values.combined_derating_factor < Decimal("1"):
         warnings.append(
@@ -210,27 +263,7 @@ def _build_selected_rating_result(
             )
         )
 
-    if loading_percent >= HIGH_LOADING_LIMIT_PERCENT:
-        warnings.append(
-            TransformerSizingWarning(
-                code=(TransformerSizingWarningCode.HIGH_LOADING),
-                message=("Calculated transformer duty loading is at or above 90 percent."),
-            )
-        )
-
-    if loading_percent < LOW_LOADING_LIMIT_PERCENT:
-        warnings.append(
-            TransformerSizingWarning(
-                code=(TransformerSizingWarningCode.LOW_LOADING),
-                message=(
-                    "Calculated transformer duty loading "
-                    "is below 40 percent; review possible "
-                    "oversizing and operating efficiency."
-                ),
-            )
-        )
-
-    status = TransformerSizingStatus.WARNING if warnings else TransformerSizingStatus.VALID
+    status = resolve_status(tuple(warnings), rating_selected=True)
 
     return TransformerSizingResult(
         code=sizing_input.code,
@@ -240,9 +273,9 @@ def _build_selected_rating_result(
         demand_power_kw=sizing_input.demand_power_kw,
         demand_power_factor=(sizing_input.demand_power_factor),
         base_demand_kva=_round_capacity(raw_values.base_demand_kva),
-        future_growth_factor=(sizing_input.future_growth_factor),
+        future_growth_factor=_resolve_factor(sizing_input.future_growth_factor),
         future_demand_kva=_round_capacity(raw_values.future_demand_kva),
-        design_margin_factor=(sizing_input.design_margin_factor),
+        design_margin_factor=_resolve_factor(sizing_input.design_margin_factor),
         design_required_kva=_round_capacity(raw_values.design_required_kva),
         combined_derating_factor=_round_capacity(raw_values.combined_derating_factor),
         required_nameplate_capacity_kva=(

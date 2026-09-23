@@ -16,6 +16,7 @@ from app.domain.electrical.sources.results import (
     TransformerSizingStatus,
     TransformerSizingWarning,
     TransformerSizingWarningCode,
+    resolve_status,
 )
 
 
@@ -150,7 +151,7 @@ def test_invalid_warning_message_is_rejected(
         match=match,
     ):
         TransformerSizingWarning(
-            code=TransformerSizingWarningCode.HIGH_LOADING,
+            code=TransformerSizingWarningCode.DERATING_APPLIED,
             message=message,  # type: ignore[arg-type]
         )
 
@@ -673,4 +674,113 @@ def test_negative_selected_rating_outputs_are_rejected(
     ):
         make_result(
             **{field_name: Decimal("-0.01")},
+        )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("warning_codes", "rating_selected", "expected_status"),
+    [
+        ((), True, TransformerSizingStatus.VALID),
+        (
+            (TransformerSizingWarningCode.DERATING_APPLIED,),
+            True,
+            TransformerSizingStatus.WARNING,
+        ),
+        (
+            (TransformerSizingWarningCode.DESIGN_MARGIN_NOT_ESTABLISHED,),
+            True,
+            TransformerSizingStatus.REVIEW_REQUIRED,
+        ),
+        (
+            (
+                TransformerSizingWarningCode.DERATING_APPLIED,
+                TransformerSizingWarningCode.GROWTH_FACTOR_NOT_ESTABLISHED,
+            ),
+            True,
+            TransformerSizingStatus.REVIEW_REQUIRED,
+        ),
+        (
+            (TransformerSizingWarningCode.DESIGN_MARGIN_NOT_ESTABLISHED,),
+            False,
+            TransformerSizingStatus.NO_SOLUTION,
+        ),
+    ],
+)
+def test_resolve_status_precedence(
+    warning_codes: tuple[TransformerSizingWarningCode, ...],
+    rating_selected: bool,
+    expected_status: TransformerSizingStatus,
+) -> None:
+    """A16 (d): NO_SOLUTION > REVIEW_REQUIRED > WARNING > VALID."""
+
+    warnings = tuple(
+        make_warning(code=code, message=f"{code.value} message.") for code in warning_codes
+    )
+
+    assert resolve_status(warnings, rating_selected=rating_selected) is expected_status
+
+
+@pytest.mark.unit
+def test_warning_status_rejects_a_not_established_warning() -> None:
+    """A not-established factor may not be reported as a plain WARNING."""
+
+    warning = make_warning(
+        code=(TransformerSizingWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED),
+        message="Ambient derating factor is not established.",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="the status must be REVIEW_REQUIRED",
+    ):
+        make_result(
+            status=TransformerSizingStatus.WARNING,
+            warnings=(warning,),
+        )
+
+
+@pytest.mark.unit
+def test_review_required_requires_a_not_established_warning() -> None:
+    """REVIEW_REQUIRED without an unestablished factor is inconsistent."""
+
+    with pytest.raises(
+        ValueError,
+        match="REVIEW_REQUIRED result must contain at least one not-established warning",
+    ):
+        make_result(
+            status=TransformerSizingStatus.REVIEW_REQUIRED,
+            warnings=(make_warning(),),
+        )
+
+
+@pytest.mark.unit
+def test_review_required_result_is_accepted() -> None:
+    """A REVIEW_REQUIRED result carrying its not-established warning is valid."""
+
+    warning = make_warning(
+        code=(TransformerSizingWarningCode.GROWTH_FACTOR_NOT_ESTABLISHED),
+        message="Future growth factor is not established.",
+    )
+
+    result = make_result(
+        status=TransformerSizingStatus.REVIEW_REQUIRED,
+        warnings=(warning,),
+    )
+
+    assert result.status is TransformerSizingStatus.REVIEW_REQUIRED
+    assert result.warnings == (warning,)
+
+
+@pytest.mark.unit
+def test_valid_status_still_rejects_any_warning() -> None:
+    """The VALID invariant is unchanged by the new status."""
+
+    with pytest.raises(
+        ValueError,
+        match="VALID result must not contain warnings",
+    ):
+        make_result(
+            status=TransformerSizingStatus.VALID,
+            warnings=(make_warning(),),
         )

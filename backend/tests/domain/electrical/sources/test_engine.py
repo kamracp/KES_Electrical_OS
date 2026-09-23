@@ -151,43 +151,31 @@ def test_growth_margin_and_derating_are_applied() -> None:
 
 
 @pytest.mark.unit
-def test_high_loading_warning_at_ninety_percent() -> None:
-    """Loading at 90 percent should produce a warning."""
+@pytest.mark.parametrize(
+    ("demand_power_kw", "expected_loading"),
+    [
+        (Decimal("900"), Decimal("90.0000")),
+        (Decimal("300"), Decimal("30.0000")),
+    ],
+)
+def test_loading_no_longer_warns(
+    demand_power_kw: Decimal,
+    expected_loading: Decimal,
+) -> None:
+    """The unreferenced 90 / 40 percent limits are withdrawn (A16 (c), GAP-016)."""
 
     result = calculate_transformer_sizing(
         make_sizing_input(
-            demand_power_kw=Decimal("900"),
+            demand_power_kw=demand_power_kw,
             demand_power_factor=Decimal("1"),
             design_margin_factor=Decimal("1"),
             available_unit_ratings_kva=(Decimal("1000"),),
         ),
     )
 
-    assert result.loading_percent == Decimal("90.0000")
-    assert result.status is TransformerSizingStatus.WARNING
-    assert warning_codes(result) == {
-        TransformerSizingWarningCode.HIGH_LOADING,
-    }
-
-
-@pytest.mark.unit
-def test_low_loading_warning_below_forty_percent() -> None:
-    """Loading below 40 percent should produce a warning."""
-
-    result = calculate_transformer_sizing(
-        make_sizing_input(
-            demand_power_kw=Decimal("300"),
-            demand_power_factor=Decimal("1"),
-            design_margin_factor=Decimal("1"),
-            available_unit_ratings_kva=(Decimal("1000"),),
-        ),
-    )
-
-    assert result.loading_percent == Decimal("30.0000")
-    assert result.status is TransformerSizingStatus.WARNING
-    assert warning_codes(result) == {
-        TransformerSizingWarningCode.LOW_LOADING,
-    }
+    assert result.loading_percent == expected_loading
+    assert result.status is TransformerSizingStatus.VALID
+    assert result.warnings == ()
 
 
 @pytest.mark.unit
@@ -342,3 +330,130 @@ def test_invalid_engine_input_is_rejected() -> None:
         calculate_transformer_sizing(
             "invalid",  # type: ignore[arg-type]
         )
+
+
+@pytest.mark.unit
+def test_every_factor_established_is_valid() -> None:
+    """A fully specified study carries no warning at all (A16 (a))."""
+
+    result = calculate_transformer_sizing(make_sizing_input())
+
+    assert result.status is TransformerSizingStatus.VALID
+    assert result.warnings == ()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("field_name", "expected_code"),
+    [
+        (
+            "future_growth_factor",
+            TransformerSizingWarningCode.GROWTH_FACTOR_NOT_ESTABLISHED,
+        ),
+        (
+            "design_margin_factor",
+            TransformerSizingWarningCode.DESIGN_MARGIN_NOT_ESTABLISHED,
+        ),
+        (
+            "ambient_derating_factor",
+            TransformerSizingWarningCode.AMBIENT_DERATING_NOT_ESTABLISHED,
+        ),
+        (
+            "altitude_derating_factor",
+            TransformerSizingWarningCode.ALTITUDE_DERATING_NOT_ESTABLISHED,
+        ),
+        (
+            "harmonic_derating_factor",
+            TransformerSizingWarningCode.HARMONIC_DERATING_NOT_ESTABLISHED,
+        ),
+    ],
+)
+def test_a_blank_factor_is_reported_as_not_established(
+    field_name: str,
+    expected_code: TransformerSizingWarningCode,
+) -> None:
+    """A blank factor sizes with 1, names itself and needs review (A16 (a))."""
+
+    established = calculate_transformer_sizing(make_sizing_input(**{field_name: Decimal("1")}))
+
+    result = calculate_transformer_sizing(make_sizing_input(**{field_name: None}))
+
+    assert result.status is TransformerSizingStatus.REVIEW_REQUIRED
+    assert expected_code in warning_codes(result)
+    # The figures are exactly those of a factor of 1; only the status differs.
+    assert result.required_nameplate_capacity_kva == established.required_nameplate_capacity_kva
+    assert result.selected_unit_rating_kva == established.selected_unit_rating_kva
+    assert result.loading_percent == established.loading_percent
+
+
+@pytest.mark.unit
+def test_a_blank_design_margin_no_longer_applies_ten_percent() -> None:
+    """The invented 1.10 margin is gone: a blank margin sizes with 1 (A16 (a))."""
+
+    result = calculate_transformer_sizing(
+        make_sizing_input(
+            demand_power_kw=Decimal("800"),
+            demand_power_factor=Decimal("1"),
+            design_margin_factor=None,
+        ),
+    )
+
+    assert result.design_required_kva == Decimal("800.0000")
+    # The result records the factor the sizing used, so a reader sees the 1.
+    assert result.design_margin_factor == Decimal("1")
+    assert result.status is TransformerSizingStatus.REVIEW_REQUIRED
+    assert warning_codes(result) == {
+        TransformerSizingWarningCode.DESIGN_MARGIN_NOT_ESTABLISHED,
+    }
+
+
+@pytest.mark.unit
+def test_several_blank_factors_are_all_named() -> None:
+    """Every unestablished factor gets its own warning."""
+
+    result = calculate_transformer_sizing(
+        make_sizing_input(
+            future_growth_factor=None,
+            design_margin_factor=None,
+            harmonic_derating_factor=None,
+        ),
+    )
+
+    assert result.status is TransformerSizingStatus.REVIEW_REQUIRED
+    assert warning_codes(result) == {
+        TransformerSizingWarningCode.GROWTH_FACTOR_NOT_ESTABLISHED,
+        TransformerSizingWarningCode.DESIGN_MARGIN_NOT_ESTABLISHED,
+        TransformerSizingWarningCode.HARMONIC_DERATING_NOT_ESTABLISHED,
+    }
+
+
+@pytest.mark.unit
+def test_no_adequate_rating_outranks_an_unestablished_factor() -> None:
+    """NO_SOLUTION wins: there is no sized result to review (A16 (d))."""
+
+    result = calculate_transformer_sizing(
+        make_sizing_input(
+            design_margin_factor=None,
+            available_unit_ratings_kva=(Decimal("100"),),
+        ),
+    )
+
+    assert result.status is TransformerSizingStatus.NO_SOLUTION
+    assert result.selected_unit_rating_kva is None
+    # The unestablished factor is still named, so the reason is not lost.
+    assert warning_codes(result) == {
+        TransformerSizingWarningCode.NO_STANDARD_RATING_AVAILABLE,
+        TransformerSizingWarningCode.DESIGN_MARGIN_NOT_ESTABLISHED,
+    }
+
+
+@pytest.mark.unit
+def test_a_derating_warning_alone_is_only_a_warning() -> None:
+    """A given derating factor below 1 warns, but needs no review."""
+
+    result = calculate_transformer_sizing(
+        make_sizing_input(ambient_derating_factor=Decimal("0.90")),
+    )
+
+    assert result.status is TransformerSizingStatus.WARNING
+    assert warning_codes(result) == {TransformerSizingWarningCode.DERATING_APPLIED}
