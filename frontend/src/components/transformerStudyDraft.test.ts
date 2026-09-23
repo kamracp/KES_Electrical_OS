@@ -283,6 +283,60 @@ describe("the payload the form will send", () => {
     }
   });
 
+  it("names the entry that breaks the ascending order", () => {
+    const draft = filledStudy();
+    draft.unitRatings = [
+      { ...createUnitRatingDraft(), value: "1000" },
+      { ...createUnitRatingDraft(), value: "1250" },
+      { ...createUnitRatingDraft(), value: "1250" },
+    ];
+
+    const parsed = transformerRunCreateRequestSchema.safeParse(
+      buildTransformerRunPayload(draft),
+    );
+
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      // A repeat is neither unique nor ascending; the third entry is the first
+      // one that breaks the rule, so that is the one named.
+      expect(describeValidationIssue(parsed.error.issues[0], TRANSFORMER_STUDY_LABELS)).toBe(
+        "Unit rating 3: Ratings must be unique and in ascending order.",
+      );
+    }
+  });
+
+  it("names the entry that goes backwards", () => {
+    const draft = filledStudy();
+    draft.unitRatings = [
+      { ...createUnitRatingDraft(), value: "1250" },
+      { ...createUnitRatingDraft(), value: "1000" },
+    ];
+
+    const parsed = transformerRunCreateRequestSchema.safeParse(
+      buildTransformerRunPayload(draft),
+    );
+
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(describeValidationIssue(parsed.error.issues[0], TRANSFORMER_STUDY_LABELS)).toBe(
+        "Unit rating 2: Ratings must be unique and in ascending order.",
+      );
+    }
+  });
+
+  it("accepts a schedule that ascends", () => {
+    const draft = filledStudy();
+    draft.unitRatings = [
+      { ...createUnitRatingDraft(), value: "1000" },
+      { ...createUnitRatingDraft(), value: "1250" },
+      { ...createUnitRatingDraft(), value: "1600" },
+    ];
+
+    expect(
+      transformerRunCreateRequestSchema.safeParse(buildTransformerRunPayload(draft)).success,
+    ).toBe(true);
+  });
+
   it("asks for at least one rating when the schedule has no entry at all", () => {
     const draft = filledStudy();
     draft.unitRatings = [];

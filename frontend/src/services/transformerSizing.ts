@@ -20,6 +20,9 @@ const optionalRequestText = (maxLength: number) =>
 // A16 (a)). The form must omit a blank field instead of sending "1".
 const optionalFactor = exactDecimalSchema.optional();
 
+/** The same sentence the Cable size schedule uses, with the right noun. */
+const RATINGS_ASCENDING = "Ratings must be unique and in ascending order.";
+
 export const transformerSizingRequestSchema = z
   .object({
     code: z.string().trim().min(1).max(50),
@@ -42,6 +45,27 @@ export const transformerSizingRequestSchema = z
   })
   .strict()
   .superRefine((values, ctx) => {
+    // Mirrors the backend rule (schemas/transformer_sizing.py): the schedule
+    // must be unique and ascending. Only the first offending entry is flagged,
+    // so the message points at one place on screen; an entry that is blank or
+    // not a plain decimal already carries its own issue.
+    let previous: number | null = null;
+    for (const [index, raw] of values.available_unit_ratings_kva.entries()) {
+      if (!exactDecimalSchema.safeParse(raw).success) {
+        continue;
+      }
+      const current = Number(raw);
+      if (previous !== null && !(current > previous)) {
+        ctx.addIssue({
+          code: "custom",
+          message: RATINGS_ASCENDING,
+          path: ["available_unit_ratings_kva", index],
+        });
+        break;
+      }
+      previous = current;
+    }
+
     if (values.demand_power_factor === undefined) {
       // Reported as a missing value rather than a custom rule, so the form's
       // describeValidationIssue turns it into "... is required." instead of
