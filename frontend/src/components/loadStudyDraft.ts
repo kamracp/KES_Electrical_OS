@@ -141,7 +141,8 @@ export const LOAD_STUDY_LABELS: ValidationLabels = {
     "study.coincidence_factor": "Coincidence factor",
     "study.jurisdiction_profile": "Jurisdiction profile",
     "study.loads": "Loads",
-    notes: "Notes",
+    // Named apart from a load row's own notes, which stay "Notes".
+    notes: "Study notes",
     "study.loads.*.code": "Load code",
     "study.loads.*.name": "Load name",
     "study.loads.*.quantity": "Quantity",
