@@ -30,6 +30,7 @@ from app.api.v1.generator_sizing import router as generator_sizing_router
 from app.api.v1.ht_panel import router as ht_panel_router
 from app.api.v1.load_calculation_run import router as load_calculation_run_router
 from app.api.v1.load_demand import router as load_demand_router
+from app.api.v1.load_run import router as load_run_router
 from app.api.v1.lt_pcc import router as lt_pcc_router
 from app.api.v1.projects import router as projects_router
 from app.api.v1.standard import router as standard_router
@@ -84,6 +85,7 @@ STUDY_ROUTERS = (
     cable_router,
     cable_run_router,
     fault_run_router,
+    load_run_router,
 )
 
 for reference_data_router in REFERENCE_DATA_ROUTERS:
