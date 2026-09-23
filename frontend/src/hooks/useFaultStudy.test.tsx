@@ -11,6 +11,8 @@ import {
   type ProjectState,
 } from "../app/projectContext";
 
+import { ApiError } from "../services/http";
+
 import type {
   FaultRunResponse,
   ShortCircuitStudyRequest,
@@ -18,8 +20,16 @@ import type {
 } from "../services/fault";
 import { useFaultStudy } from "./useFaultStudy";
 
+// The whole signature of createFaultRun, including the project revision it is
+// given as the third argument; the tests below read that argument.
 const createFaultRunMock = vi.hoisted(() =>
-  vi.fn<(payload: ShortCircuitStudyRequest, signal?: AbortSignal) => Promise<FaultRunResponse>>(),
+  vi.fn<
+    (
+      payload: ShortCircuitStudyRequest,
+      signal?: AbortSignal,
+      projectRevisionId?: string,
+    ) => Promise<FaultRunResponse>
+  >(),
 );
 
 vi.mock("../services/fault", () => ({
@@ -90,6 +100,17 @@ function workingIn(state: ProjectState): ProjectContextValue {
 }
 
 const NO_PROJECT = workingIn({ status: "none" });
+const REVISION_ID = "4b8e6d42-1c3f-4b5a-9e7d-8f9a0b1c2d3e";
+
+// "selected" is the open revision a run may be attached to; "read-only" is a project still
+// on screen whose revision takes no more runs, so the provider answers null.
+function projectRevision(status: "selected" | "read-only"): ProjectContextValue {
+  return workingIn({
+    status,
+    project: { id: "2a7d5c31-9b0e-4a21-8f6c-7d8e9f0a1b2c", code: "PRJ-001" },
+    revision: { id: REVISION_ID, revision_number: 1 },
+  } as unknown as ProjectState);
+}
 
 function createWrapper(project: ProjectContextValue = NO_PROJECT) {
   const queryClient = new QueryClient({
@@ -132,6 +153,58 @@ describe("useFaultStudy", () => {
     expect(createFaultRunMock).toHaveBeenCalledTimes(1);
     expect(createFaultRunMock.mock.calls[0]?.[0]).toBe(request);
     expect(createFaultRunMock.mock.calls[0]?.[1]).toBeInstanceOf(AbortSignal);
+  });
+
+  it("sends no project revision when the workspace is in no project", async () => {
+    createFaultRunMock.mockResolvedValue(runResponse);
+    const { result } = renderHook(() => useFaultStudy(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.calculate(request);
+    });
+
+    expect(createFaultRunMock.mock.calls[0]?.[2]).toBeUndefined();
+  });
+
+  it("sends the chosen open revision so the run belongs to that project", async () => {
+    createFaultRunMock.mockResolvedValue(runResponse);
+    const { result } = renderHook(() => useFaultStudy(), {
+      wrapper: createWrapper(projectRevision("selected")),
+    });
+
+    await act(async () => {
+      await result.current.calculate(request);
+    });
+
+    expect(createFaultRunMock.mock.calls[0]?.[2]).toBe(REVISION_ID);
+  });
+
+  it("sends nothing when the chosen revision takes no more runs", async () => {
+    createFaultRunMock.mockResolvedValue(runResponse);
+    const { result } = renderHook(() => useFaultStudy(), {
+      wrapper: createWrapper(projectRevision("read-only")),
+    });
+
+    await act(async () => {
+      await result.current.calculate(request);
+    });
+
+    // A read-only revision would be refused by the server; the run is stored
+    // without a project instead.
+    expect(createFaultRunMock.mock.calls[0]?.[2]).toBeUndefined();
+  });
+
+  it("keeps an ApiError an ApiError, so the session guard still sees the status", async () => {
+    createFaultRunMock.mockRejectedValue(new ApiError("Not authenticated", 401));
+    const { result } = renderHook(() => useFaultStudy(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.calculate(request).catch(() => undefined);
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeInstanceOf(ApiError);
+    expect((result.current.error as ApiError).status).toBe(401);
   });
 
   it("exposes a service error without transforming it", async () => {
