@@ -41,6 +41,7 @@ class EngineeringCalculationType(StrEnum):
     CABLE_SIZING = "CABLE_SIZING"
     SHORT_CIRCUIT = "SHORT_CIRCUIT"
     LOAD_DEMAND = "LOAD_DEMAND"
+    TRANSFORMER_SIZING = "TRANSFORMER_SIZING"
 
 
 class CalculationRun(

@@ -22,12 +22,12 @@ async def db(test_engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
         yield session
 
 
-def run(*, calculation_type: str) -> CalculationRun:
+def run(*, calculation_type: str, module_code: str = "EOS-02") -> CalculationRun:
     """Create an unassigned run of the given calculation type."""
 
     return CalculationRun(
         project_revision_id=None,
-        module_code="EOS-02",
+        module_code=module_code,
         calculation_type=calculation_type,
         calculation_key="LOAD-001",
         revision_number=1,
@@ -79,9 +79,29 @@ def test_the_enum_and_the_check_list_the_same_types() -> None:
         "CABLE_SIZING",
         "SHORT_CIRCUIT",
         "LOAD_DEMAND",
+        "TRANSFORMER_SIZING",
     }
 
     for member in EngineeringCalculationType:
         assert f"'{member.value}'" in condition
 
     assert condition.count("'") == 2 * len(EngineeringCalculationType)
+
+
+async def test_a_transformer_sizing_run_can_be_saved(db: AsyncSession) -> None:
+    """The transformer engine persists into the generic table too (A16)."""
+
+    db.add(
+        run(
+            calculation_type=EngineeringCalculationType.TRANSFORMER_SIZING.value,
+            module_code="EOS-03",
+        )
+    )
+    await db.commit()
+
+    saved = (
+        await db.execute(select(CalculationRun).where(CalculationRun.calculation_key == "LOAD-001"))
+    ).scalar_one()
+
+    assert saved.calculation_type == "TRANSFORMER_SIZING"
+    assert saved.module_code == "EOS-03"
