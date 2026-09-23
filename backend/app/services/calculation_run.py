@@ -30,14 +30,17 @@ from app.schemas.calculation_run import (
     CalculationRunSummary,
     FaultRunCreateRequest,
     LoadRunCreateRequest,
+    TransformerRunCreateRequest,
 )
 from app.schemas.fault import ShortCircuitStudyResponse
 from app.schemas.load_demand import LoadGroupCalculationResponse
 from app.schemas.project import ProjectRevisionSummary
+from app.schemas.transformer_sizing import TransformerSizingResponse
 from app.services.cable import CableSizingService
 from app.services.fault import FaultCalculationService
 from app.services.load_demand import LoadDemandService
 from app.services.project import ProjectConflictError, ProjectService
+from app.services.transformer_sizing import TransformerSizingService
 
 CABLE_MODULE_CODE = "EOS-06"
 # Bump whenever the cable engine's method, rounding or reference handling changes.
@@ -59,6 +62,11 @@ _FAULT_REFERENCE_FIELDS = (
 LOAD_MODULE_CODE = "EOS-02"
 # Bump whenever the load engine's method, rounding or reference handling changes.
 LOAD_ENGINE_VERSION = "load-engine 0.1.0"
+
+
+TRANSFORMER_MODULE_CODE = "EOS-03"
+# Bump whenever the transformer engine's method, rounding or reference handling changes.
+TRANSFORMER_ENGINE_VERSION = "transformer-engine 0.1.0"
 
 
 def content_hash(input_snapshot: dict[str, Any], result_snapshot: dict[str, Any]) -> str:
@@ -467,6 +475,114 @@ class LoadRunService:
         )
 
 
+class TransformerRunService:
+    """Calculate a transformer sizing study and persist it as a CalculationRun."""
+
+    def __init__(self, repository: CalculationRunRepository, projects: ProjectService) -> None:
+        self.repository = repository
+        self.projects = projects
+        self.engine_service = TransformerSizingService()
+
+    async def create(
+        self,
+        payload: TransformerRunCreateRequest,
+        *,
+        calculated_by: str,
+        organization_id: UUID,
+    ) -> tuple[CalculationRun, TransformerSizingResponse, bool]:
+        """Run the engine and freeze the evidence; False flag = latest revision reused (A11)."""
+
+        project_revision_id = await resolve_run_scope(
+            self.projects,
+            organization_id,
+            payload.project_revision_id,
+            str(payload.study.jurisdiction_profile),
+        )
+        result = self.engine_service.calculate_transformer_sizing(payload.study)
+        response = TransformerSizingResponse.from_domain(
+            result,
+            jurisdiction_profile=payload.study.jurisdiction_profile,
+        )
+
+        input_snapshot = payload.study.model_dump(mode="json")
+        result_snapshot = response.model_dump(mode="json")
+        # The transformer engine cites no reference of its own, so the run carries the
+        # reference state of the chosen jurisdiction profile instead - the same registry
+        # entry the cable and fault engines read (GAP-016 removed the unreferenced limits).
+        verification_status = str(
+            get_profile(payload.study.jurisdiction_profile).reference_data_status
+        )
+        references_snapshot = {
+            "jurisdiction_profile": result_snapshot["jurisdiction_profile"],
+            "reference_verification_status": verification_status,
+        }
+        calculation_key = payload.study.code
+        evidence_hash = content_hash(input_snapshot, result_snapshot)
+        latest = await self.repository.get_latest_revision(
+            TRANSFORMER_MODULE_CODE,
+            calculation_key,
+            project_revision_id=project_revision_id,
+        )
+        existing = reusable_run(latest, evidence_hash, TRANSFORMER_ENGINE_VERSION)
+        if existing is not None:
+            return existing, response, False
+
+        revision = await self.repository.get_next_revision_number(
+            TRANSFORMER_MODULE_CODE,
+            calculation_key,
+            project_revision_id=project_revision_id,
+        )
+
+        run = CalculationRun(
+            project_revision_id=project_revision_id,
+            module_code=TRANSFORMER_MODULE_CODE,
+            calculation_type=EngineeringCalculationType.TRANSFORMER_SIZING.value,
+            calculation_key=calculation_key,
+            revision_number=revision,
+            run_status=CalculationRunStatus.COMPLETED.value,
+            approval_status=CalculationApprovalStatus.NOT_SUBMITTED.value,
+            engine_version=TRANSFORMER_ENGINE_VERSION,
+            design_check_status=str(result_snapshot["status"]),
+            jurisdiction_profile=str(result_snapshot["jurisdiction_profile"]),
+            reference_verification_status=verification_status,
+            input_snapshot=input_snapshot,
+            result_snapshot=result_snapshot,
+            warnings_snapshot=list(result_snapshot.get("warnings", [])),
+            references_snapshot=references_snapshot,
+            content_hash=evidence_hash,
+            calculated_by=calculated_by,
+            is_immutable=False,
+            notes=payload.notes,
+        )
+        stored = await self.repository.create(run)
+        return stored, response, True
+
+    async def get(self, run_id: UUID) -> CalculationRun | None:
+        """Return one run by id (any module)."""
+
+        return await self.repository.get_by_id(run_id)
+
+    async def list_for_key(
+        self, calculation_key: str, *, project_revision_id: UUID | None = None
+    ) -> list[CalculationRun]:
+        """Return every transformer run revision for a study code in one scope, newest first."""
+
+        return await self.repository.list_by_calculation_key(
+            TRANSFORMER_MODULE_CODE,
+            calculation_key,
+            project_revision_id=project_revision_id,
+        )
+
+    async def list_recent(
+        self, limit: int = 20, *, project_revision_id: UUID | None = None
+    ) -> list[CalculationRun]:
+        """Return the most recent transformer runs of one scope."""
+
+        return await self.repository.list_recent(
+            TRANSFORMER_MODULE_CODE, limit=limit, project_revision_id=project_revision_id
+        )
+
+
 __all__ = [
     "CABLE_ENGINE_VERSION",
     "CABLE_MODULE_CODE",
@@ -474,9 +590,12 @@ __all__ = [
     "FAULT_MODULE_CODE",
     "LOAD_ENGINE_VERSION",
     "LOAD_MODULE_CODE",
+    "TRANSFORMER_ENGINE_VERSION",
+    "TRANSFORMER_MODULE_CODE",
     "CableRunService",
     "FaultRunService",
     "LoadRunService",
+    "TransformerRunService",
     "content_hash",
     "project_summaries",
     "resolve_run_scope",
