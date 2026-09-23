@@ -53,8 +53,14 @@ export const loadRequestSchema = z
     }
 
     if (values.power_factor === undefined) {
+      // Reported as a missing value rather than a custom rule, so the form's
+      // describeValidationIssue turns it into "Load 1 - Power factor is
+      // required." instead of pasting the raw sentence after the label.
+      // AC_POWER_FACTOR_REQUIRED stays the backend's own 422 wording.
       ctx.addIssue({
-        code: "custom",
+        code: "invalid_type",
+        expected: "string",
+        received: "undefined",
         message: AC_POWER_FACTOR_REQUIRED,
         path: ["power_factor"],
       });
