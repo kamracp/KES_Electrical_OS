@@ -198,26 +198,28 @@ function CheckTable({ title, rows }: CheckTableProps) {
   return (
     <section aria-label={title}>
       <h3>{title}</h3>
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Parameter</th>
-            <th scope="col">Value</th>
-            <th scope="col">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.key} data-row-key={row.key}>
-              <th scope="row">{row.label}</th>
-              <ValueCell row={row} />
-              <td data-check-status={row.status ?? ""}>
-                {row.status ? CHECK_STATUS_LABELS[row.status] : EMPTY_VALUE_TEXT}
-              </td>
+      <div data-table-scroll>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Parameter</th>
+              <th scope="col">Value</th>
+              <th scope="col">Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.key} data-row-key={row.key}>
+                <th scope="row">{row.label}</th>
+                <ValueCell row={row} />
+                <td data-check-status={row.status ?? ""}>
+                  {row.status ? CHECK_STATUS_LABELS[row.status] : EMPTY_VALUE_TEXT}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

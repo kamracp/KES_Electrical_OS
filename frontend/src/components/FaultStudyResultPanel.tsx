@@ -171,22 +171,24 @@ function CurrentsTable({ rows }: { rows: CurrentRow[] }) {
   return (
     <section aria-label="Fault currents">
       <h3>Fault currents</h3>
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Parameter</th>
-            <th scope="col">Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.key} data-row-key={row.key}>
-              <th scope="row">{row.label}</th>
-              <QuantityCell value={row.value} markEvaluated />
+      <div data-table-scroll>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Parameter</th>
+              <th scope="col">Value</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.key} data-row-key={row.key}>
+                <th scope="row">{row.label}</th>
+                <QuantityCell value={row.value} markEvaluated />
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
@@ -198,32 +200,34 @@ function SequenceTable({ rows }: { rows: SequenceResult[] }) {
       {rows.length === 0 ? (
         <p data-no-rows="true">{NO_ROWS_TEXT}</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Sequence</th>
-              <th scope="col">Available</th>
-              <th scope="col">R (ohm)</th>
-              <th scope="col">X (ohm)</th>
-              <th scope="col">Path references</th>
-              <th scope="col">Blocking references</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.sequence} data-sequence={row.sequence}>
-                <th scope="row">{SEQUENCE_LABELS[row.sequence]}</th>
-                <td data-available={row.available ? "true" : "false"}>
-                  {row.available ? "Yes" : "No"}
-                </td>
-                <QuantityCell value={row.resistance_ohm} />
-                <QuantityCell value={row.reactance_ohm} />
-                <td>{formatCodes(row.path_reference_codes)}</td>
-                <td>{formatCodes(row.blocking_reference_codes)}</td>
+        <div data-table-scroll>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Sequence</th>
+                <th scope="col">Available</th>
+                <th scope="col">R (ohm)</th>
+                <th scope="col">X (ohm)</th>
+                <th scope="col">Path references</th>
+                <th scope="col">Blocking references</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.sequence} data-sequence={row.sequence}>
+                  <th scope="row">{SEQUENCE_LABELS[row.sequence]}</th>
+                  <td data-available={row.available ? "true" : "false"}>
+                    {row.available ? "Yes" : "No"}
+                  </td>
+                  <QuantityCell value={row.resistance_ohm} />
+                  <QuantityCell value={row.reactance_ohm} />
+                  <td>{formatCodes(row.path_reference_codes)}</td>
+                  <td>{formatCodes(row.blocking_reference_codes)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );
@@ -236,34 +240,36 @@ function ContributionsTable({ rows }: { rows: SourceContribution[] }) {
       {rows.length === 0 ? (
         <p data-no-rows="true">{NO_ROWS_TEXT}</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Source</th>
-              <th scope="col">Type</th>
-              <th scope="col">Representation</th>
-              <th scope="col">Included</th>
-              <th scope="col">Ik'' (kA)</th>
-              <th scope="col">ip (kA)</th>
-              <th scope="col">Exclusion reason</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.source_code} data-source-code={row.source_code}>
-                <th scope="row">{row.source_code}</th>
-                <td>{SOURCE_TYPE_LABELS[row.source_type]}</td>
-                <td>{REPRESENTATION_LABELS[row.representation]}</td>
-                <td data-included={row.included ? "true" : "false"}>
-                  {row.included ? "Yes" : "No"}
-                </td>
-                <QuantityCell value={row.initial_symmetrical_current_ka} />
-                <QuantityCell value={row.peak_current_ka} />
-                <td>{formatText(row.exclusion_reason)}</td>
+        <div data-table-scroll>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Source</th>
+                <th scope="col">Type</th>
+                <th scope="col">Representation</th>
+                <th scope="col">Included</th>
+                <th scope="col">Ik'' (kA)</th>
+                <th scope="col">ip (kA)</th>
+                <th scope="col">Exclusion reason</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.source_code} data-source-code={row.source_code}>
+                  <th scope="row">{row.source_code}</th>
+                  <td>{SOURCE_TYPE_LABELS[row.source_type]}</td>
+                  <td>{REPRESENTATION_LABELS[row.representation]}</td>
+                  <td data-included={row.included ? "true" : "false"}>
+                    {row.included ? "Yes" : "No"}
+                  </td>
+                  <QuantityCell value={row.initial_symmetrical_current_ka} />
+                  <QuantityCell value={row.peak_current_ka} />
+                  <td>{formatText(row.exclusion_reason)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );

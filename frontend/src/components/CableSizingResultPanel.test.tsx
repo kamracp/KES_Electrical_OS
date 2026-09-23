@@ -242,4 +242,16 @@ describe("CableSizingResultPanel", () => {
     expect(source).toHaveAttribute("data-reference-source", "REQUEST_OVERRIDE");
     expect(source?.textContent).toContain("deviation from profile");
   });
+
+  it("keeps every result table in its own scroll container", () => {
+    render(<CableSizingResultPanel result={fullResult} />);
+
+    // A wide table scrolls inside its own container so the page body never
+    // scrolls sideways (styles/study.css, unscoped [data-table-scroll]).
+    const tables = document.querySelectorAll("table");
+    expect(tables.length).toBeGreaterThan(0);
+    for (const table of tables) {
+      expect(table.closest("[data-table-scroll]")).not.toBeNull();
+    }
+  });
 });
