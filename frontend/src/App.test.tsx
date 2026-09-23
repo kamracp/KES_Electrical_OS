@@ -48,8 +48,15 @@ describe("App home page", () => {
     expect(within(fault).getByRole("link", { name: "Open Short-circuit study" })).not.toBeNull();
 
     const loads = modules.querySelector('[data-module-code="EOS-02"]') as HTMLElement;
-    expect(loads.getAttribute("data-module-status")).toBe("BACKEND_ONLY");
-    expect(within(loads).queryByRole("link")).toBeNull();
+    expect(loads.getAttribute("data-module-status")).toBe("LIVE");
+    expect(within(loads).getByRole("link", { name: "Open Load and demand" }).getAttribute("href")).toBe(
+      "/load-demand",
+    );
+
+    // A module whose engine is built but has no page yet still carries no link.
+    const sources = modules.querySelector('[data-module-code="EOS-03"]') as HTMLElement;
+    expect(sources.getAttribute("data-module-status")).toBe("BACKEND_ONLY");
+    expect(within(sources).queryByRole("link")).toBeNull();
   });
 
   it("keeps the workspace heading and the API health status", () => {

@@ -32,6 +32,7 @@ describe("module registry", () => {
     expect(getModule("EOS-99")).toBeUndefined();
     expect(liveModules().map((module) => module.code)).toEqual([
       "EOS-01",
+      "EOS-02",
       "EOS-04",
       "EOS-06",
     ]);

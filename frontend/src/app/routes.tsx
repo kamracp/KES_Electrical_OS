@@ -4,6 +4,7 @@ import { App } from "../App";
 import { CableSizingPage } from "../pages/CableSizingPage";
 import { ChangePasswordPage } from "../pages/ChangePasswordPage";
 import { FaultStudyPage } from "../pages/FaultStudyPage";
+import { LoadStudyPage } from "../pages/LoadStudyPage";
 import { LoginPage } from "../pages/LoginPage";
 import { ProjectsPage } from "../pages/ProjectsPage";
 import { UsersPage } from "../pages/UsersPage";
@@ -61,6 +62,7 @@ export const routes: RouteObject[] = [
         ),
         children: [
           { index: true, element: <App /> },
+          { path: "load-demand", element: <LoadStudyPage /> },
           { path: "fault-study", element: <FaultStudyPage /> },
           { path: "cable-sizing", element: <CableSizingPage /> },
           // Every signed-in member may read the project configuration; the server decides

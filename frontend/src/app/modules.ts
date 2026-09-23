@@ -31,8 +31,8 @@ export const MODULES: readonly ModuleDefinition[] = [
     code: "EOS-02",
     name: "Load and demand",
     summary: "Connected load, diversity and maximum demand estimation.",
-    status: "BACKEND_ONLY",
-    route: null,
+    status: "LIVE",
+    route: "/load-demand",
   },
   {
     code: "EOS-03",

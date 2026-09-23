@@ -220,3 +220,13 @@
 [data-study-project] [data-study-project-hint] {
   color: var(--kes-color-muted);
 }
+
+/* ---- Wide result tables ------------------------------------------------ */
+
+/* A per-load table is wider than the result column on a narrow screen. The
+   table scrolls inside its own container so the page body never scrolls
+   sideways. Same declaration as the users and projects pages; unscoped here
+   because every study page shares this stylesheet. */
+[data-table-scroll] {
+  overflow-x: auto;
+}
