@@ -2,13 +2,63 @@
 
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import type { PropsWithChildren } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { AuthContext, type AuthContextValue } from "../app/authContext";
+import type { Session } from "../services/auth";
 import { LoadStudyForm } from "./LoadStudyForm";
+import { createLoadRowDraft, createRowId } from "./loadStudyDraft";
+
+const USER_ID = "7d1f3a52-4a8e-4f0b-9c61-2b0f8e4d5a10";
+const DRAFT_KEY = `keos:draft:v1:${USER_ID}:load-demand`;
 
 afterEach(() => {
   cleanup();
+  window.sessionStorage.clear();
 });
+
+// A signed-in user, so the form keeps its draft in the tab's storage.
+function SignedIn({ children }: PropsWithChildren) {
+  const session = {
+    user: {
+      id: USER_ID,
+      email: "engineer@example.com",
+      full_name: "Test Engineer",
+      must_change_password: false,
+    },
+    organization: { id: "c1b7f1de-32a4-4c0b-8a4e-3f1f2a9d5b22", code: "KES", name: "KES Works" },
+    role: "ENGINEER",
+    session_expires_at: "2026-09-27T10:00:00Z",
+    idle_timeout_minutes: 720,
+  } as Session;
+  const auth: AuthContextValue = {
+    state: { status: "signed-in", session },
+    signIn: vi.fn(),
+    signOut: vi.fn(),
+    refresh: vi.fn(),
+  };
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
+}
+
+function renderSignedIn() {
+  return render(<LoadStudyForm onSubmit={vi.fn()} />, { wrapper: SignedIn });
+}
+
+function restoreNotice(): HTMLElement | null {
+  return screen.queryByText("Draft restored from this session.");
+}
+
+function storedDraft(): Record<string, unknown> | null {
+  return JSON.parse(window.sessionStorage.getItem(DRAFT_KEY) ?? "null");
+}
+
+function fillTwoLoads(): void {
+  fillStudy();
+  fillThreePhaseRow(1, "PUMP-01", true);
+  fireEvent.click(screen.getByRole("button", { name: "Add load" }));
+  fillDcRow(2, "DC-01");
+}
 
 function studyFieldset(): HTMLElement {
   return screen.getByRole("group", { name: "Study definition" });
@@ -209,5 +259,100 @@ describe("LoadStudyForm", () => {
     expect(within(studyFieldset()).getByLabelText("Study code")).toBeDisabled();
     expect(within(loadRow(1)).getByLabelText("Load code")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Add load" })).toBeDisabled();
+  });
+});
+
+describe("the LoadStudyForm draft", () => {
+  it("comes back after the page is left and opened again, and says so", () => {
+    const first = renderSignedIn();
+    fillTwoLoads();
+    first.unmount();
+
+    renderSignedIn();
+
+    expect(rows()).toHaveLength(2);
+    expect(within(studyFieldset()).getByLabelText("Study code")).toHaveValue("LOAD-001");
+    expect(within(loadRow(1)).getByLabelText("Load code")).toHaveValue("PUMP-01");
+    expect(within(loadRow(1)).getByLabelText("Power factor")).toHaveValue("0.85");
+    expect(within(loadRow(2)).getByLabelText("Load code")).toHaveValue("DC-01");
+    expect(within(loadRow(2)).getByLabelText("Phase system")).toHaveValue("DC");
+    // The DC row still has no power factor to type.
+    expect(within(loadRow(2)).getByLabelText("Power factor")).toBeDisabled();
+    expect(restoreNotice()).toHaveAttribute("role", "status");
+  });
+
+  it("drops the notice at the first edit", () => {
+    const first = renderSignedIn();
+    fillTwoLoads();
+    first.unmount();
+    renderSignedIn();
+
+    type(studyFieldset(), "Coincidence factor", "0.9");
+
+    expect(restoreNotice()).not.toBeInTheDocument();
+    expect(storedDraft()).toMatchObject({ coincidenceFactor: "0.9" });
+  });
+
+  it("empties the form to one blank load and forgets the draft on Clear form", () => {
+    renderSignedIn();
+    fillTwoLoads();
+    expect(storedDraft()).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear form" }));
+
+    expect(rows()).toHaveLength(1);
+    expect(within(studyFieldset()).getByLabelText("Study code")).toHaveValue("");
+    expect(within(loadRow(1)).getByLabelText("Load code")).toHaveValue("");
+    expect(window.sessionStorage.getItem(DRAFT_KEY)).toBeNull();
+  });
+
+  it("ignores a stored draft of another shape", () => {
+    window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ code: "OLD", loads: "PUMP-01" }));
+
+    renderSignedIn();
+
+    expect(within(studyFieldset()).getByLabelText("Study code")).toHaveValue("");
+    expect(restoreNotice()).not.toBeInTheDocument();
+    expect(window.sessionStorage.getItem(DRAFT_KEY)).toBeNull();
+  });
+
+  it("gives a load added after a restore an id no restored row has", () => {
+    // The ids the counter would hand out next are exactly the ones the stored draft uses.
+    const next = Number(createRowId("load").replace("load-", "")) + 1;
+    const restoredIds = [`load-${next}`, `load-${next + 1}`];
+    const stored = {
+      code: "LOAD-001",
+      name: "Process Pump Loads",
+      jurisdictionProfile: "IN",
+      coincidenceFactor: "",
+      notes: "",
+      loads: restoredIds.map((id) => ({ ...createLoadRowDraft(), id })),
+    };
+    window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(stored));
+    renderSignedIn();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add load" }));
+
+    const ids = [...document.querySelectorAll("[data-load-row]")].map((row) =>
+      row.getAttribute("data-load-row"),
+    );
+    expect(ids).toHaveLength(3);
+    expect(new Set(ids).size).toBe(3);
+    expect(restoredIds).not.toContain(ids[2]);
+    expect(within(loadRow(3)).getByLabelText("Load code")).toHaveFocus();
+  });
+
+  it("stores nothing while nobody is signed in", () => {
+    render(<LoadStudyForm onSubmit={vi.fn()} />);
+
+    fillTwoLoads();
+
+    expect(window.sessionStorage.length).toBe(0);
+  });
+
+  it("is disabled like the rest of the form while a calculation is running", () => {
+    render(<LoadStudyForm disabled onSubmit={vi.fn()} />, { wrapper: SignedIn });
+
+    expect(screen.getByRole("button", { name: "Clear form" })).toBeDisabled();
   });
 });

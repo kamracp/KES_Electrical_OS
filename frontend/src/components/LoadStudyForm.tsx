@@ -4,6 +4,7 @@ import {
   loadRunCreateRequestSchema,
   type LoadRunCreateRequest,
 } from "../services/loadDemand";
+import { useStudyDraft } from "../hooks/useStudyDraft";
 import { describeValidationIssue } from "../utils/validationMessages";
 import { LoadRow } from "./LoadRow";
 import {
@@ -11,6 +12,8 @@ import {
   buildLoadRunPayload,
   createInitialLoadStudyDraft,
   createLoadRowDraft,
+  loadStudyDraftSchema,
+  seedRowIdCounter,
   type LoadRowDraft,
   type LoadStudyDraft,
 } from "./loadStudyDraft";
@@ -27,7 +30,12 @@ type LoadStudyFormProps = {
 // The payload carries no project revision: the page adds the selected revision
 // when it calls the API, exactly as the Fault page does.
 export function LoadStudyForm({ disabled = false, onSubmit }: LoadStudyFormProps) {
-  const [draft, setDraft] = useState<LoadStudyDraft>(createInitialLoadStudyDraft);
+  // The entries outlive a reload, Back and the sidebar for as long as the tab is open.
+  const { draft, setDraft, restored, clear } = useStudyDraft<LoadStudyDraft>({
+    module: "load-demand",
+    createInitial: createInitialLoadStudyDraft,
+    schema: loadStudyDraftSchema,
+  });
   const [validationError, setValidationError] = useState<string | null>(null);
   const [rowToFocus, setRowToFocus] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -55,6 +63,8 @@ export function LoadStudyForm({ disabled = false, onSubmit }: LoadStudyFormProps
   }
 
   function addLoad() {
+    // A restored draft brings ids the counter of this page load has not handed out yet.
+    seedRowIdCounter(draft.loads.map((load) => load.id));
     const load = createLoadRowDraft();
     setDraft((current) => ({ ...current, loads: [...current.loads, load] }));
     setRowToFocus(load.id);
@@ -65,6 +75,12 @@ export function LoadStudyForm({ disabled = false, onSubmit }: LoadStudyFormProps
       ...current,
       loads: current.loads.filter((load) => load.id !== id),
     }));
+  }
+
+  // Empties the form only; a result already on the page stays until "Clear results".
+  function clearForm() {
+    setValidationError(null);
+    clear();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -86,6 +102,8 @@ export function LoadStudyForm({ disabled = false, onSubmit }: LoadStudyFormProps
 
   return (
     <form aria-label="Load study inputs" ref={formRef} onSubmit={handleSubmit}>
+      {restored ? <p role="status">Draft restored from this session.</p> : null}
+
       <fieldset disabled={disabled}>
         <legend>Study definition</legend>
 
@@ -171,6 +189,9 @@ export function LoadStudyForm({ disabled = false, onSubmit }: LoadStudyFormProps
 
       <button disabled={disabled} type="submit">
         Calculate load study
+      </button>
+      <button disabled={disabled} type="button" onClick={clearForm}>
+        Clear form
       </button>
     </form>
   );

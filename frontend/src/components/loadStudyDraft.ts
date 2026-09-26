@@ -1,3 +1,11 @@
+import { z } from "zod";
+
+import { jurisdictionProfileSchema } from "../services/cableContract";
+import {
+  loadScenarioSchema,
+  phaseSystemSchema,
+  powerBasisSchema,
+} from "../services/loadDemandContract";
 import type { ValidationLabels } from "../utils/validationMessages";
 
 // Draft model of the Load and demand study form (EOS-02): what the user is
@@ -39,12 +47,60 @@ export type LoadStudyDraft = {
   loads: LoadRowDraft[];
 };
 
+// The shape a draft kept in the browser tab must still have to be restored: exactly the
+// fields above, typed text as strings and the choices as values the contract knows (the
+// phase system may still be unchosen). A draft saved by an older form fails here and is
+// dropped instead of half-filling this one.
+export const loadStudyDraftSchema = z
+  .object({
+    code: z.string(),
+    name: z.string(),
+    jurisdictionProfile: jurisdictionProfileSchema,
+    coincidenceFactor: z.string(),
+    notes: z.string(),
+    loads: z
+      .array(
+        z
+          .object({
+            id: z.string(),
+            code: z.string(),
+            name: z.string(),
+            quantity: z.string(),
+            ratedPowerKw: z.string(),
+            phaseSystem: z.union([z.literal(""), phaseSystemSchema]),
+            voltageV: z.string(),
+            powerFactor: z.string(),
+            efficiency: z.string(),
+            utilizationFactor: z.string(),
+            demandFactor: z.string(),
+            scenario: loadScenarioSchema,
+            powerBasis: powerBasisSchema,
+            notes: z.string(),
+          })
+          .strict(),
+      )
+      .min(1),
+  })
+  .strict();
+
 let nextRowNumber = 1;
 
 export function createRowId(prefix: "load"): string {
   const id = `${prefix}-${nextRowNumber}`;
   nextRowNumber += 1;
   return id;
+}
+
+// Row ids come from a counter that starts again at 1 on every page load, while a restored
+// draft brings the ids it was saved with. Moving the counter past every id in use keeps a
+// row added afterwards from taking the id of one already on screen.
+export function seedRowIdCounter(ids: readonly string[]): void {
+  for (const id of ids) {
+    const match = /^load-(\d+)$/.exec(id);
+    if (match !== null) {
+      nextRowNumber = Math.max(nextRowNumber, Number(match[1]) + 1);
+    }
+  }
 }
 
 // Enum defaults are filled in only where the backend itself has one. The phase

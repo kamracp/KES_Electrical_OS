@@ -13,6 +13,8 @@ import {
   createLoadRowDraft,
   createRowId,
   LOAD_STUDY_LABELS,
+  loadStudyDraftSchema,
+  seedRowIdCounter,
   type LoadRowDraft,
   type LoadStudyDraft,
 } from "./loadStudyDraft";
@@ -84,6 +86,52 @@ describe("the initial load study draft", () => {
     const ids = [createRowId("load"), createRowId("load"), createLoadRowDraft().id];
 
     expect(new Set(ids).size).toBe(3);
+  });
+});
+
+describe("loadStudyDraftSchema", () => {
+  it("accepts the initial draft, a filled one and one kept through JSON", () => {
+    expect(loadStudyDraftSchema.safeParse(createInitialLoadStudyDraft()).success).toBe(true);
+    expect(loadStudyDraftSchema.safeParse(JSON.parse(JSON.stringify(filledStudy()))).success).toBe(
+      true,
+    );
+  });
+
+  it("refuses a draft with a field this form does not have", () => {
+    const draft = { ...createInitialLoadStudyDraft(), unitRatings: [] };
+
+    expect(loadStudyDraftSchema.safeParse(draft).success).toBe(false);
+  });
+
+  it("refuses a row with a missing field or a choice the contract does not know", () => {
+    const { notes: _notes, ...rowWithoutNotes } = createLoadRowDraft();
+    const unknownPhase = { ...createLoadRowDraft(), phaseSystem: "TWO_PHASE" };
+
+    for (const row of [rowWithoutNotes, unknownPhase]) {
+      const draft = { ...createInitialLoadStudyDraft(), loads: [row] };
+      expect(loadStudyDraftSchema.safeParse(draft).success).toBe(false);
+    }
+  });
+
+  it("refuses a draft without any load", () => {
+    const draft = { ...createInitialLoadStudyDraft(), loads: [] };
+
+    expect(loadStudyDraftSchema.safeParse(draft).success).toBe(false);
+  });
+});
+
+describe("seedRowIdCounter", () => {
+  it("moves the next id past every id in use", () => {
+    seedRowIdCounter(["load-900", "load-902", "load-901"]);
+
+    expect(createRowId("load")).toBe("load-903");
+  });
+
+  it("never moves the counter back and ignores ids of another form", () => {
+    seedRowIdCounter(["load-950"]);
+    seedRowIdCounter(["load-2", "rating-5000", "something"]);
+
+    expect(createRowId("load")).toBe("load-951");
   });
 });
 
