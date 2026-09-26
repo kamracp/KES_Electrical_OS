@@ -4,6 +4,7 @@ import {
   shortCircuitStudyRequestSchema,
   type ShortCircuitStudyRequest,
 } from "../services/fault";
+import { useStudyDraft } from "../hooks/useStudyDraft";
 import { describeValidationIssue } from "../utils/validationMessages";
 import { FaultBranchRow } from "./FaultBranchRow";
 import { FaultBusRow } from "./FaultBusRow";
@@ -15,6 +16,8 @@ import {
   createBusDraft,
   createInitialFaultStudyDraft,
   createSourceDraft,
+  faultStudyDraftSchema,
+  seedRowIdCounter,
   type BranchDraft,
   type BusDraft,
   type FaultStudyDraft,
@@ -35,7 +38,12 @@ function busLabel(bus: BusDraft, index: number): string {
 // v1 (one bus, one source on it, fault at that bus), so that case is filled in
 // and sent exactly as before.
 export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormProps) {
-  const [draft, setDraft] = useState<FaultStudyDraft>(createInitialFaultStudyDraft);
+  // The entries outlive a reload, Back and the sidebar for as long as the tab is open.
+  const { draft, setDraft, restored, clear } = useStudyDraft<FaultStudyDraft>({
+    module: "fault-study",
+    createInitial: createInitialFaultStudyDraft,
+    schema: faultStudyDraftSchema,
+  });
   const [validationError, setValidationError] = useState<string | null>(null);
 
   function updateStudy(patch: Partial<FaultStudyDraft>) {
@@ -67,7 +75,15 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
     }));
   }
 
+  // A restored draft brings ids the counter of this page load has not handed out yet.
+  function seedFromDraft() {
+    seedRowIdCounter(
+      [...draft.buses, ...draft.sources, ...draft.branches].map((row) => row.id),
+    );
+  }
+
   function addBus() {
+    seedFromDraft();
     const bus = createBusDraft();
     setDraft((current) => ({ ...current, buses: [...current.buses, bus] }));
   }
@@ -75,19 +91,24 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
   // A new source is connected for the user only when there is no choice to make.
   function addSource() {
     const onlyBus = draft.buses.length === 1 ? draft.buses[0] : undefined;
+    seedFromDraft();
     const source = createSourceDraft(onlyBus?.id ?? "");
     setDraft((current) => ({ ...current, sources: [...current.sources, source] }));
   }
 
   function addBranch() {
+    seedFromDraft();
     const branch = createBranchDraft();
     setDraft((current) => ({ ...current, branches: [...current.branches, branch] }));
   }
 
-  // Sources and branches on the removed bus keep their stale id: their rows
-  // show "not chosen" and the validation names them. The fault moves only
-  // when a single bus is left, otherwise the user chooses again.
+  // Sources and branches on the removed bus lose that link in the same update:
+  // their rows show "not chosen" and the validation names them, and the draft
+  // never holds an id of a bus that is gone (a stored draft with one is refused
+  // on restore). The fault moves only when a single bus is left, otherwise the
+  // user chooses again.
   function removeBus(id: string) {
+    const unlink = (busId: string) => (busId === id ? "" : busId);
     setDraft((current) => {
       const buses = current.buses.filter((bus) => bus.id !== id);
       const faultBusKept = buses.some((bus) => bus.id === current.faultBusId);
@@ -95,6 +116,12 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
       return {
         ...current,
         buses,
+        sources: current.sources.map((source) => ({ ...source, busId: unlink(source.busId) })),
+        branches: current.branches.map((branch) => ({
+          ...branch,
+          fromBusId: unlink(branch.fromBusId),
+          toBusId: unlink(branch.toBusId),
+        })),
         faultBusId: faultBusKept ? current.faultBusId : (onlyBus?.id ?? ""),
       };
     });
@@ -112,6 +139,12 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
       ...current,
       branches: current.branches.filter((branch) => branch.id !== id),
     }));
+  }
+
+  // Empties the form only; a result already on the page stays until "Clear results".
+  function clearForm() {
+    setValidationError(null);
+    clear();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -139,6 +172,8 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
 
   return (
     <form aria-label="Fault study inputs" onSubmit={handleSubmit}>
+      {restored ? <p role="status">Draft restored from this session.</p> : null}
+
       <fieldset disabled={disabled}>
         <legend>Study definition</legend>
 
@@ -295,6 +330,9 @@ export function FaultStudyForm({ disabled = false, onSubmit }: FaultStudyFormPro
 
       <button disabled={disabled} type="submit">
         Calculate fault study
+      </button>
+      <button disabled={disabled} type="button" onClick={clearForm}>
+        Clear form
       </button>
     </form>
   );

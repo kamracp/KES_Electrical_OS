@@ -10,6 +10,8 @@ import {
   createInitialFaultStudyDraft,
   createRowId,
   createSourceDraft,
+  faultStudyDraftSchema,
+  seedRowIdCounter,
   type FaultStudyDraft,
 } from "./faultStudyDraft";
 
@@ -62,6 +64,77 @@ describe("fault study draft", () => {
   it("gives every row a different id", () => {
     const ids = [createRowId("bus"), createRowId("bus"), createBusDraft().id, createBranchDraft().id];
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+// Bus 1 with the source, bus 2 behind a branch, the fault at bus 2.
+function twoBusDraft(): FaultStudyDraft {
+  const draft = filledDraft();
+  const board = createBusDraft();
+  const feeder = { ...createBranchDraft(), fromBusId: draft.buses[0]!.id, toBusId: board.id };
+  return { ...draft, buses: [...draft.buses, board], branches: [feeder], faultBusId: board.id };
+}
+
+function isValidDraft(draft: unknown): boolean {
+  return faultStudyDraftSchema.safeParse(draft).success;
+}
+
+describe("faultStudyDraftSchema", () => {
+  it("accepts the initial draft, a two-bus draft and one kept through JSON", () => {
+    expect(isValidDraft(createInitialFaultStudyDraft())).toBe(true);
+    expect(isValidDraft(twoBusDraft())).toBe(true);
+    expect(isValidDraft(JSON.parse(JSON.stringify(twoBusDraft())))).toBe(true);
+  });
+
+  it("accepts a bus that is not chosen yet, as a new branch or source has it", () => {
+    const draft = twoBusDraft();
+    draft.branches.push(createBranchDraft());
+    draft.sources.push(createSourceDraft());
+
+    expect(isValidDraft({ ...draft, faultBusId: "" })).toBe(true);
+  });
+
+  it("refuses a draft with a field this form does not have or a choice the contract does not know", () => {
+    expect(isValidDraft({ ...twoBusDraft(), loads: [] })).toBe(false);
+    expect(isValidDraft({ ...twoBusDraft(), faultType: "FOUR_PHASE" })).toBe(false);
+  });
+
+  it("refuses a draft without a bus or without a source", () => {
+    expect(isValidDraft({ ...twoBusDraft(), buses: [] })).toBe(false);
+    expect(isValidDraft({ ...twoBusDraft(), sources: [] })).toBe(false);
+  });
+
+  it("refuses a row that points at a bus the draft does not have", () => {
+    const stale = "bus-999999";
+    const draft = twoBusDraft();
+    const source = { ...draft.sources[0]!, busId: stale };
+    const branch = { ...draft.branches[0]!, toBusId: stale };
+
+    expect(isValidDraft({ ...draft, faultBusId: stale })).toBe(false);
+    expect(isValidDraft({ ...draft, sources: [source] })).toBe(false);
+    expect(isValidDraft({ ...draft, branches: [branch] })).toBe(false);
+  });
+
+  it("refuses a draft that uses one id for two rows", () => {
+    const draft = twoBusDraft();
+    const twin = { ...draft.branches[0]!, id: draft.sources[0]!.id };
+
+    expect(isValidDraft({ ...draft, branches: [twin] })).toBe(false);
+  });
+});
+
+describe("seedRowIdCounter", () => {
+  it("moves the one shared counter past every bus, source and branch id in use", () => {
+    seedRowIdCounter(["bus-900", "source-902", "branch-901"]);
+
+    expect(createRowId("branch")).toBe("branch-903");
+  });
+
+  it("never moves the counter back and ignores ids of another form", () => {
+    seedRowIdCounter(["bus-950"]);
+    seedRowIdCounter(["source-2", "load-5000", "something"]);
+
+    expect(createRowId("bus")).toBe("bus-951");
   });
 });
 

@@ -1,3 +1,14 @@
+import { z } from "zod";
+
+import { jurisdictionProfileSchema } from "../services/cableContract";
+import {
+  faultBranchTypeSchema,
+  faultSourceTypeSchema,
+  faultTypeSchema,
+  neutralEarthingModeSchema,
+  shortCircuitCaseSchema,
+  sourceRepresentationSchema,
+} from "../services/faultContract";
 import type { ValidationLabels } from "../utils/validationMessages";
 
 // Draft model of the Fault study form (Fault UI v2): what the user is typing,
@@ -64,12 +75,115 @@ export type FaultStudyDraft = {
   branches: BranchDraft[];
 };
 
+// A choice the user has not made yet is held as "" - a new row starts that way.
+function chosenOrBlank<T extends z.ZodType<string>>(choice: T) {
+  return z.union([z.literal(""), choice]);
+}
+
+const impedanceDraftSchema = z
+  .object({ resistanceOhm: z.string(), reactanceOhm: z.string() })
+  .strict();
+
+const busDraftSchema = z
+  .object({
+    id: z.string(),
+    code: z.string(),
+    name: z.string(),
+    nominalVoltageV: z.string(),
+    voltageFactorMax: z.string(),
+    voltageFactorMin: z.string(),
+    neutralEarthingMode: chosenOrBlank(neutralEarthingModeSchema),
+    neutralResistanceOhm: z.string(),
+    neutralReactanceOhm: z.string(),
+  })
+  .strict();
+
+const sourceDraftSchema = z
+  .object({
+    id: z.string(),
+    code: z.string(),
+    name: z.string(),
+    busId: z.string(),
+    sourceType: chosenOrBlank(faultSourceTypeSchema),
+    representation: chosenOrBlank(sourceRepresentationSchema),
+    positive: impedanceDraftSchema,
+    negative: impedanceDraftSchema,
+    zero: impedanceDraftSchema,
+    currentContributionKa: z.string(),
+    inService: z.boolean(),
+  })
+  .strict();
+
+const branchDraftSchema = z
+  .object({
+    id: z.string(),
+    code: z.string(),
+    name: z.string(),
+    fromBusId: z.string(),
+    toBusId: z.string(),
+    branchType: chosenOrBlank(faultBranchTypeSchema),
+    positive: impedanceDraftSchema,
+    negative: impedanceDraftSchema,
+    zero: impedanceDraftSchema,
+    parallelCircuits: z.string(),
+    inService: z.boolean(),
+  })
+  .strict();
+
+// The shape a draft kept in the browser tab must still have to be restored: exactly the
+// fields above, typed text as strings and the choices as values the contract knows or "".
+// The rows point at buses by id, so the links are checked too: every id is used once, and
+// every bus reference is either not chosen yet ("") or a bus of this draft. A draft with a
+// broken link is dropped as a whole rather than restored with a row pointing nowhere.
+export const faultStudyDraftSchema = z
+  .object({
+    studyCode: z.string(),
+    studyName: z.string(),
+    calculationCase: chosenOrBlank(shortCircuitCaseSchema),
+    faultType: chosenOrBlank(faultTypeSchema),
+    faultBusId: z.string(),
+    frequencyHz: z.string(),
+    jurisdictionProfile: jurisdictionProfileSchema,
+    buses: z.array(busDraftSchema).min(1),
+    sources: z.array(sourceDraftSchema).min(1),
+    branches: z.array(branchDraftSchema),
+  })
+  .strict()
+  .superRefine((draft, context) => {
+    const ids = [...draft.buses, ...draft.sources, ...draft.branches].map((row) => row.id);
+    if (new Set(ids).size !== ids.length) {
+      context.addIssue({ code: "custom", message: "A row id is used more than once." });
+    }
+
+    const busIds = new Set(draft.buses.map((bus) => bus.id));
+    const references = [
+      draft.faultBusId,
+      ...draft.sources.map((source) => source.busId),
+      ...draft.branches.flatMap((branch) => [branch.fromBusId, branch.toBusId]),
+    ];
+    if (references.some((busId) => busId !== "" && !busIds.has(busId))) {
+      context.addIssue({ code: "custom", message: "A row points at a bus the draft does not have." });
+    }
+  });
+
 let nextRowNumber = 1;
 
 export function createRowId(prefix: "bus" | "source" | "branch"): string {
   const id = `${prefix}-${nextRowNumber}`;
   nextRowNumber += 1;
   return id;
+}
+
+// Buses, sources and branches share one counter that starts again at 1 on every page load,
+// while a restored draft brings the ids it was saved with. Moving the counter past every id
+// in use keeps a row added afterwards from taking the id of one already on screen.
+export function seedRowIdCounter(ids: readonly string[]): void {
+  for (const id of ids) {
+    const match = /^(?:bus|source|branch)-(\d+)$/.exec(id);
+    if (match !== null) {
+      nextRowNumber = Math.max(nextRowNumber, Number(match[1]) + 1);
+    }
+  }
 }
 
 function emptyImpedance(): ImpedanceDraft {
