@@ -66,6 +66,9 @@ class LoadCalculationRun(
     Every run stores complete input, result, assumption, warning and
     standards snapshots. A changed calculation must be stored as a new
     revision instead of overwriting an approved run.
+
+    Retired 2026-09-26 (A15 d): no routes or service; table kept; old live table had 0 rows
+    at retirement.
     """
 
     __tablename__ = "load_calculation_runs"

@@ -28,7 +28,6 @@ from app.api.v1.fault import router as fault_router
 from app.api.v1.fault_run import router as fault_run_router
 from app.api.v1.generator_sizing import router as generator_sizing_router
 from app.api.v1.ht_panel import router as ht_panel_router
-from app.api.v1.load_calculation_run import router as load_calculation_run_router
 from app.api.v1.load_demand import router as load_demand_router
 from app.api.v1.load_run import router as load_run_router
 from app.api.v1.lt_pcc import router as lt_pcc_router
@@ -82,7 +81,6 @@ STUDY_ROUTERS = (
     generator_sizing_router,
     ht_panel_router,
     lt_pcc_router,
-    load_calculation_run_router,
     cable_router,
     cable_run_router,
     fault_run_router,

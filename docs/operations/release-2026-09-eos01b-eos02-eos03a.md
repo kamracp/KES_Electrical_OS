@@ -77,7 +77,7 @@ enough for frontend tests to time out (seen 2026-09-26: 4 timeouts together, 661
    ssh -i $KEOS_SSH_KEY $KEOS_SSH_HOST 'cd /opt/kes-electrical-os && git rev-parse --short HEAD'
    ```
 
-   Write the hash down here: `PREVIOUS_SHA = ________`.
+   Write the hash down here: `PREVIOUS_SHA = c9b99c0` (founder, 2026-09-26).
 
 2. The live Alembic revision:
 
@@ -87,6 +87,7 @@ enough for frontend tests to time out (seen 2026-09-26: 4 timeouts together, 661
 
    Must show `c9f5a3b7d2e4 (head)`. Anything else (for example `a7d3e9b1c5f2`, meaning EOS-01 (b) is
    not live yet): **stop** — the release would then run four migrations, which needs a founder decision.
+   Result 2026-09-26: `c9f5a3b7d2e4 (head)`.
 
 3. Rows in the old load runs table:
 
@@ -94,7 +95,7 @@ enough for frontend tests to time out (seen 2026-09-26: 4 timeouts together, 661
    ssh -i $KEOS_SSH_KEY $KEOS_SSH_HOST "sudo -u postgres psql -d kes_electrical_os -tAc 'SELECT count(*) FROM load_calculation_runs;'"
    ```
 
-   Prints one number. Write it down: `LOAD_CALCULATION_RUNS_ROWS = ____`.
+   Prints one number. Write it down: `LOAD_CALCULATION_RUNS_ROWS = 0` (founder, 2026-09-26).
 
    - `0` → EOS-02 commit 7 removes the whole `/electrical/calculation-runs` router (the table stays).
    - more than `0` → commit 7 removes only the four write routes and keeps the four read routes, so
