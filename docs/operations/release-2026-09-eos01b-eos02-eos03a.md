@@ -37,10 +37,13 @@ Facts this checklist relies on (checked at `4863077`):
 2. HEAD pushed:
 
    ```bash
-   cd /home/chander/projects/KES_Electrical_OS && git fetch -q && git rev-parse --short HEAD origin/master
+   cd /home/chander/projects/KES_Electrical_OS && git fetch -q && git rev-parse HEAD origin/master
    ```
 
-   Must print the same hash twice.
+   Must print the same hash twice. (`--short` accepts only one revision, so it is not used here.)
+
+Run the two gates one after the other, never at the same time: run together they slow the machine
+enough for frontend tests to time out (seen 2026-09-26: 4 timeouts together, 661 / 661 alone).
 
 3. Backend gate:
 
