@@ -13,6 +13,8 @@ Status register: docs/project-status.md (Active slice, Releases, Follow-ups). Re
   Never commit with a failing gate. Show the founder the diff and the test count before committing; push after.
 - Mirror the style of neighbouring files (repositories, services, schemas, API routers, tests) instead of
   inventing a new pattern. Code and comments in English only.
+- Never run Prettier (or any formatter other than ruff for Python) in this repo — there is no Prettier
+  config; it rewrites whole files. Frontend formatting follows the neighbouring code by hand.
 - Schema changes: change the ORM model, then `cd backend && ../.venv/bin/alembic revision --autogenerate`
   with a given --rev-id, review the file, prove locally with `alembic upgrade head && alembic check &&
   alembic downgrade -1 && alembic upgrade head`. A guard test fails if a model table has no migration.
