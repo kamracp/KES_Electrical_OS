@@ -51,7 +51,8 @@ enough for frontend tests to time out (seen 2026-09-26: 4 timeouts together, 661
    cd /home/chander/projects/KES_Electrical_OS && bash scripts/check_backend.sh > /tmp/gate-backend.log 2>&1; echo "gate exit: $?"; tail -3 /tmp/gate-backend.log
    ```
 
-   Must show `gate exit: 0`, a pytest line `1308 passed` (or more after commit 7) and `backend gate: PASS`.
+   Must show `gate exit: 0`, a pytest line `1298 passed` (1308 before commit 7, which removed 10 tests of the
+   retired path) and `backend gate: PASS`.
 
 4. Frontend gate:
 
@@ -287,10 +288,10 @@ Register commits after a green smoke (each its own commit):
 
 | Slice | Commit | Hash |
 |---|---|---|
-| EOS-02 | 7 — retire `/electrical/calculation-runs` (step b) | `________` |
-| EOS-02 | 16 — close, release row | `________` |
-| EOS-03a | 15 — close, release row | `________` |
-| EOS-01 (b) | 15b — close with the live smoke (e1) | `________` |
+| EOS-02 | 7 — retire `/electrical/calculation-runs` (step b) | `f22a71f` |
+| EOS-02 | 16 — close, release row | release-close commit of 2026-09-26 (one commit for all three, founder decision) |
+| EOS-03a | 15 — close, release row | release-close commit of 2026-09-26 (one commit for all three, founder decision) |
+| EOS-01 (b) | 15b — close with the live smoke (e1) | release-close commit of 2026-09-26 (one commit for all three, founder decision) |
 
 The release row records: deployed hash, date, backup `file` / `size` / `tables` / `alembic` (c1),
 migration `c9f5a3b7d2e4` -> `d2a8b6c4e1f9` -> `e3b9d7f5a2c6`, `deploy <hash>: DONE`, service `active`,
@@ -301,3 +302,14 @@ Follow-ups to record as DONE in the register:
 
 - Issue revision and Archive project ask for confirmation (`5f1a6d5`), next to 15c Switch off (`f466fcc`).
 - `CLAUDE.md`: never run Prettier in this repo (`4863077`).
+
+## Result 2026-09-26
+
+Released `f22a71f`; live smoke PASSED (founder, browser). Backup
+`kes-electrical-os-20260926T125404Z-before-eos02-eos03a.dump` (104292 bytes, 13 tables, alembic
+`c9f5a3b7d2e4`), restore test 19 runs; migrations `d2a8b6c4e1f9`, `e3b9d7f5a2c6`; live bundle
+`index-D-xiAMeU.js`; new routes 401 without a session.
+
+Deviation from e1: PRJ-001 was found ARCHIVED, so every project step used a new project PRJ-002
+"Release smoke" on PLANT-1 (Rev 1, then Rev 2). The unassigned SC-MSB-01 run came back as revision 16,
+not as the reused revision 15. Details: `docs/project-status.md`, Releases row of 2026-09-26.
