@@ -1,3 +1,8 @@
+import { z } from "zod";
+
+import { jurisdictionProfileSchema } from "../services/cableContract";
+import { loadScenarioSchema } from "../services/loadDemandContract";
+import { transformerRedundancyModeSchema } from "../services/transformerSizingContract";
 import type { ValidationLabels } from "../utils/validationMessages";
 
 // Draft model of the Transformer sizing study form (EOS-03a): what the user is
@@ -41,12 +46,48 @@ export type TransformerStudyDraft = {
   unitRatings: UnitRatingDraft[];
 };
 
+// The shape a draft kept in the browser tab must still have to be restored: exactly the
+// fields above, typed text as strings and the choices as values the contract knows. A draft
+// saved by an older form fails here and is dropped instead of half-filling this one.
+export const transformerStudyDraftSchema = z
+  .object({
+    code: z.string(),
+    name: z.string(),
+    demandPowerKw: z.string(),
+    demandPowerFactor: z.string(),
+    futureGrowthFactor: z.string(),
+    designMarginFactor: z.string(),
+    ambientDeratingFactor: z.string(),
+    altitudeDeratingFactor: z.string(),
+    harmonicDeratingFactor: z.string(),
+    dutyUnits: z.string(),
+    standbyUnits: z.string(),
+    redundancyMode: transformerRedundancyModeSchema,
+    scenario: loadScenarioSchema,
+    jurisdictionProfile: jurisdictionProfileSchema,
+    notes: z.string(),
+    unitRatings: z.array(z.object({ id: z.string(), value: z.string() }).strict()).min(1),
+  })
+  .strict();
+
 let nextRatingNumber = 1;
 
 export function createRatingId(): string {
   const id = `rating-${nextRatingNumber}`;
   nextRatingNumber += 1;
   return id;
+}
+
+// Rating ids come from a counter that starts again at 1 on every page load, while a
+// restored draft brings the ids it was saved with. Moving the counter past every id in use
+// keeps an entry added afterwards from taking the id of one already on screen.
+export function seedRatingIdCounter(ids: readonly string[]): void {
+  for (const id of ids) {
+    const match = /^rating-(\d+)$/.exec(id);
+    if (match !== null) {
+      nextRatingNumber = Math.max(nextRatingNumber, Number(match[1]) + 1);
+    }
+  }
 }
 
 export function createUnitRatingDraft(): UnitRatingDraft {

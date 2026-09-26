@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState, type SetStateAction } from "react";
+import { useCallback, useContext, useEffect, useState, type SetStateAction } from "react";
 import type { z } from "zod";
 
-import { useAuth } from "../app/authContext";
+import { AuthContext } from "../app/authContext";
 
 // Keeps a study form's entries for the life of the browser tab, so a reload, Back or a trip
 // through the sidebar does not throw away a half-filled form.
@@ -107,8 +107,10 @@ function load<T>(key: string | null, options: StudyDraftOptions<T>): DraftState<
 }
 
 export function useStudyDraft<T>(options: StudyDraftOptions<T>): StudyDraft<T> {
-  const { state: authState } = useAuth();
-  const userId = authState.status === "signed-in" ? authState.session.user.id : null;
+  // Read without useAuth on purpose: a form rendered outside the AuthProvider (on its own, in
+  // a test) has no user, exactly like a signed-out visitor.
+  const auth = useContext(AuthContext);
+  const userId = auth?.state.status === "signed-in" ? auth.state.session.user.id : null;
   // Not signed in: plain state in memory, nothing is written.
   const key = userId === null ? null : draftKey(userId, options.module);
 

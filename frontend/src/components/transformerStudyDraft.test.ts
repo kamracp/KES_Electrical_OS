@@ -13,6 +13,8 @@ import {
   deriveStandbyUnits,
   createRatingId,
   createUnitRatingDraft,
+  seedRatingIdCounter,
+  transformerStudyDraftSchema,
   TRANSFORMER_STUDY_LABELS,
   type TransformerStudyDraft,
 } from "./transformerStudyDraft";
@@ -68,6 +70,52 @@ describe("the initial transformer study draft", () => {
     const ids = [createRatingId(), createRatingId(), createUnitRatingDraft().id];
 
     expect(new Set(ids).size).toBe(3);
+  });
+});
+
+describe("transformerStudyDraftSchema", () => {
+  it("accepts the initial draft and a draft kept through JSON", () => {
+    const draft = createInitialTransformerStudyDraft();
+
+    expect(transformerStudyDraftSchema.safeParse(draft).success).toBe(true);
+    expect(transformerStudyDraftSchema.safeParse(JSON.parse(JSON.stringify(draft))).success).toBe(
+      true,
+    );
+  });
+
+  it("refuses a draft with a field this form does not have", () => {
+    const draft = { ...createInitialTransformerStudyDraft(), loadRows: [] };
+
+    expect(transformerStudyDraftSchema.safeParse(draft).success).toBe(false);
+  });
+
+  it("refuses a draft with a missing field or a choice the contract does not know", () => {
+    const { notes: _notes, ...withoutNotes } = createInitialTransformerStudyDraft();
+    const unknownMode = { ...createInitialTransformerStudyDraft(), redundancyMode: "N_PLUS_2" };
+
+    expect(transformerStudyDraftSchema.safeParse(withoutNotes).success).toBe(false);
+    expect(transformerStudyDraftSchema.safeParse(unknownMode).success).toBe(false);
+  });
+
+  it("refuses a draft without any rating entry", () => {
+    const draft = { ...createInitialTransformerStudyDraft(), unitRatings: [] };
+
+    expect(transformerStudyDraftSchema.safeParse(draft).success).toBe(false);
+  });
+});
+
+describe("seedRatingIdCounter", () => {
+  it("moves the next id past every id in use", () => {
+    seedRatingIdCounter(["rating-900", "rating-902", "rating-901"]);
+
+    expect(createRatingId()).toBe("rating-903");
+  });
+
+  it("never moves the counter back and ignores ids of another form", () => {
+    seedRatingIdCounter(["rating-950"]);
+    seedRatingIdCounter(["rating-2", "load-5000", "something"]);
+
+    expect(createRatingId()).toBe("rating-951");
   });
 });
 

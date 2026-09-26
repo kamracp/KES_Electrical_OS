@@ -6,6 +6,7 @@ import {
 } from "../services/transformerSizing";
 import { loadScenarioSchema } from "../services/loadDemandContract";
 import { transformerRedundancyModeSchema } from "../services/transformerSizingContract";
+import { useStudyDraft } from "../hooks/useStudyDraft";
 import { describeValidationIssue } from "../utils/validationMessages";
 import { SCENARIO_LABELS } from "./LoadRow";
 import {
@@ -14,6 +15,8 @@ import {
   createInitialTransformerStudyDraft,
   createUnitRatingDraft,
   deriveStandbyUnits,
+  seedRatingIdCounter,
+  transformerStudyDraftSchema,
   type TransformerStudyDraft,
   type UnitRatingDraft,
 } from "./transformerStudyDraft";
@@ -50,9 +53,12 @@ export function TransformerStudyForm({
   disabled = false,
   onSubmit,
 }: TransformerStudyFormProps) {
-  const [draft, setDraft] = useState<TransformerStudyDraft>(
-    createInitialTransformerStudyDraft,
-  );
+  // The entries outlive a reload, Back and the sidebar for as long as the tab is open.
+  const { draft, setDraft, restored, clear } = useStudyDraft<TransformerStudyDraft>({
+    module: "transformer-sizing",
+    createInitial: createInitialTransformerStudyDraft,
+    schema: transformerStudyDraftSchema,
+  });
   const [validationError, setValidationError] = useState<string | null>(null);
   const [ratingToFocus, setRatingToFocus] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -89,6 +95,8 @@ export function TransformerStudyForm({
   }
 
   function addRating() {
+    // A restored draft brings ids the counter of this page load has not handed out yet.
+    seedRatingIdCounter(draft.unitRatings.map((rating) => rating.id));
     const rating: UnitRatingDraft = createUnitRatingDraft();
     setDraft((current) => ({ ...current, unitRatings: [...current.unitRatings, rating] }));
     setRatingToFocus(rating.id);
@@ -99,6 +107,12 @@ export function TransformerStudyForm({
       ...current,
       unitRatings: current.unitRatings.filter((rating) => rating.id !== id),
     }));
+  }
+
+  // Empties the form only; a result already on the page stays until "Clear results".
+  function clearForm() {
+    setValidationError(null);
+    clear();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -140,6 +154,8 @@ export function TransformerStudyForm({
 
   return (
     <form aria-label="Transformer sizing inputs" ref={formRef} onSubmit={handleSubmit}>
+      {restored ? <p role="status">Draft restored from this session.</p> : null}
+
       <fieldset disabled={disabled}>
         <legend>Study definition</legend>
 
@@ -300,6 +316,9 @@ export function TransformerStudyForm({
 
       <button disabled={disabled} type="submit">
         Calculate transformer size
+      </button>
+      <button disabled={disabled} type="button" onClick={clearForm}>
+        Clear form
       </button>
     </form>
   );
