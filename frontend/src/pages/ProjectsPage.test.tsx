@@ -331,6 +331,7 @@ describe("ProjectsPage", () => {
   });
 
   it("opens the next revision, issues one and archives the project", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     createRevisionMock.mockResolvedValue(revision(REVISION_2, 2, "OPEN"));
     issueRevisionMock.mockResolvedValue(revision(REVISION_2, 2, "ISSUED"));
     archiveProjectMock.mockResolvedValue({ ...PROJECT, status: "ARCHIVED" });
@@ -354,6 +355,68 @@ describe("ProjectsPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Archive project" }));
     await waitFor(() => expect(archiveProjectMock).toHaveBeenCalledWith(PROJECT_ID));
+    confirmSpy.mockRestore();
+  });
+
+  it("issues the open revision once the question is answered", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    issueRevisionMock.mockResolvedValue(revision(REVISION_2, 2, "ISSUED"));
+    renderPage();
+    await openProject();
+
+    fireEvent.click(screen.getByRole("button", { name: "Issue revision" }));
+
+    expect(confirmSpy).toHaveBeenCalledWith(
+      "Issue revision 2 of PRJ-001? An issued revision is frozen and cannot be edited or reopened.",
+    );
+    await waitFor(() => expect(issueRevisionMock).toHaveBeenCalledTimes(1));
+    expect(issueRevisionMock).toHaveBeenCalledWith(PROJECT_ID, REVISION_2);
+    confirmSpy.mockRestore();
+  });
+
+  it("does not issue when the question is answered no", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderPage();
+    await openProject();
+
+    fireEvent.click(screen.getByRole("button", { name: "Issue revision" }));
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(issueRevisionMock).not.toHaveBeenCalled();
+    // No request means nothing to report either way.
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    confirmSpy.mockRestore();
+  });
+
+  it("archives the project once the question is answered", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    archiveProjectMock.mockResolvedValue({ ...PROJECT, status: "ARCHIVED" });
+    renderPage();
+    await openProject();
+
+    fireEvent.click(screen.getByRole("button", { name: "Archive project" }));
+
+    expect(confirmSpy).toHaveBeenCalledWith(
+      "Archive project PRJ-001? It cannot be changed, take new revisions or runs, " +
+        "or be restored afterwards. Its revisions stay as the record.",
+    );
+    await waitFor(() => expect(archiveProjectMock).toHaveBeenCalledTimes(1));
+    expect(archiveProjectMock).toHaveBeenCalledWith(PROJECT_ID);
+    confirmSpy.mockRestore();
+  });
+
+  it("does not archive when the question is answered no", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderPage();
+    await openProject();
+
+    fireEvent.click(screen.getByRole("button", { name: "Archive project" }));
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(archiveProjectMock).not.toHaveBeenCalled();
+    // No request means nothing to report either way.
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    confirmSpy.mockRestore();
   });
 
   it("changes the name, the client and the description of a project", async () => {

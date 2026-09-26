@@ -71,6 +71,22 @@ function switchOffQuestion(code: string): string {
   );
 }
 
+/** Asked before an open revision is issued; there is no route that reopens an issued revision. */
+function issueQuestion(revisionNumber: number, code: string): string {
+  return (
+    `Issue revision ${revisionNumber} of ${code}? ` +
+    "An issued revision is frozen and cannot be edited or reopened."
+  );
+}
+
+/** Asked before a project is archived; there is no route that restores an archived project. */
+function archiveQuestion(code: string): string {
+  return (
+    `Archive project ${code}? It cannot be changed, take new revisions or runs, ` +
+    "or be restored afterwards. Its revisions stay as the record."
+  );
+}
+
 function describeFailure(caught: unknown, fallback: string): string {
   return caught instanceof Error && caught.message.trim() !== "" ? caught.message : fallback;
 }
@@ -220,14 +236,19 @@ function ProjectDetailPanel({ projectId, canWrite, canIssue, siteName, onChanged
   }
 
   async function issueOpenRevision(): Promise<void> {
-    if (openRevisionId === null) {
+    // Issuing freezes the revision for good, so it asks first.
+    const openRevision = detail.revisions.find((revision) => revision.id === openRevisionId);
+    if (
+      openRevision === undefined ||
+      !window.confirm(issueQuestion(openRevision.revision_number, detail.code))
+    ) {
       return;
     }
 
     setActionError(null);
 
     try {
-      const issued = await issueMutation.mutateAsync(openRevisionId);
+      const issued = await issueMutation.mutateAsync(openRevision.id);
       onChanged(`${issued.label} of ${detail.code} was issued and is now frozen.`);
     } catch (caught) {
       setActionError(describeFailure(caught, "The revision was not issued."));
@@ -235,6 +256,11 @@ function ProjectDetailPanel({ projectId, canWrite, canIssue, siteName, onChanged
   }
 
   async function archive(): Promise<void> {
+    // Archiving cannot be undone and ends all further work in the project, so it asks first.
+    if (!window.confirm(archiveQuestion(detail.code))) {
+      return;
+    }
+
     setActionError(null);
 
     try {
